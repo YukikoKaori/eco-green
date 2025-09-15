@@ -9,5 +9,4 @@ public class EvDealerManagementSystemApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(EvDealerManagementSystemApplication.class, args);
 	}
-
 }
