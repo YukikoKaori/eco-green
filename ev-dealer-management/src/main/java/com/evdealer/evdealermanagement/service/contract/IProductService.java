@@ -4,7 +4,7 @@ import com.evdealer.evdealermanagement.dto.Product.detail.ProductDetail;
 
 import java.util.List;
 
-public interface ProductService {
+public interface IProductService {
     List<ProductDetail> getAllProducts();
     ProductDetail getProductById();
 }
