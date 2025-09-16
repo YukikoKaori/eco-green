@@ -1,4 +1,4 @@
-package entity;
+package entity.battery;
 
 public class BatteryDetails {
 }

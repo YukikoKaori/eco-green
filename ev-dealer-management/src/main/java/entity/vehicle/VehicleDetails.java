@@ -1,4 +1,4 @@
-package entity;
+package entity.vehicle;
 
 public class VehicleDetails {
 }
