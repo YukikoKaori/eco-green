@@ -1,4 +1,4 @@
-package com.evdealer.evdealermanagement.service.impl;
+package com.evdealer.evdealermanagement.service.implement;
 
 import com.evdealer.evdealermanagement.service.contract.IJwtService;
 import io.jsonwebtoken.Claims;
@@ -27,10 +27,9 @@ public class JwtServiceImpl implements IJwtService {
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 10*60*60*1000))
+                .setExpiration(new Date(System.currentTimeMillis() + 3*60*60*1000))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
-
     }
 
     @Override

@@ -1,31 +1,26 @@
-package com.evdealer.evdealermanagement.entity.battery;
+package com.evdealer.evdealermanagement.entity.vehicle;
 
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "battery_types")
+@Table(name = "vehicle_categories")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class BatteryTypes {
+public class VehicleCategories {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(columnDefinition = "TINYINT UNSIGNED")
-    private Integer id;
+    private Byte id;
 
     @Column(nullable = false, unique = true, length = 50)
     private String name;
 
-    @Column(name = "typical_voltage_v")
-    private Double typicalVoltageV;
-
-    @Column(name = "typical_lifespan_cycles")
-    private Integer typicalLifespanCycles;
+    private String description;
 
     @Enumerated(EnumType.STRING)
     private Status status;

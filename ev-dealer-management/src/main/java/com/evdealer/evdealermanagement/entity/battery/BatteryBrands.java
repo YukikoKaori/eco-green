@@ -5,27 +5,25 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "battery_types")
+@Table(name = "battery_brands")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class BatteryTypes {
+public class BatteryBrands {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(columnDefinition = "TINYINT UNSIGNED")
-    private Integer id;
+    private Short id;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, unique = true, length = 100)
     private String name;
 
-    @Column(name = "typical_voltage_v")
-    private Double typicalVoltageV;
+    private String country;
 
-    @Column(name = "typical_lifespan_cycles")
-    private Integer typicalLifespanCycles;
+    @Column(name = "logo_url", length = 500)
+    private String logoUrl;
 
     @Enumerated(EnumType.STRING)
     private Status status;

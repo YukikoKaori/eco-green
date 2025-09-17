@@ -1,6 +1,6 @@
 package com.evdealer.evdealermanagement.configurations;
 
-import com.evdealer.evdealermanagement.service.impl.JwtServiceImpl;
+import com.evdealer.evdealermanagement.service.implement.JwtServiceImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
