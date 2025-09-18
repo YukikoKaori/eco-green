@@ -1,4 +1,4 @@
 package com.evdealer.evdealermanagement.service.implement;
 
-public interface EmailService {
+public class EmailService {
 }
