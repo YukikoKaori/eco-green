@@ -1,5 +1,6 @@
 package com.evdealer.evdealermanagement.dto.Account.custom;
 
+import com.evdealer.evdealermanagement.entity.account.Account;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -7,38 +8,41 @@ import java.util.Collection;
 import java.util.List;
 
 public class CustomAccountDetails implements UserDetails {
+
+    private final Account account;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        return List.of(() -> "ROLE_" + account.getRole().name());
     }
 
     @Override
     public String getPassword() {
-        return "";
+        return account.getPasswordHash();
     }
 
     @Override
     public String getUsername() {
-        return "";
+        return account.getUsername();
     }
 
     @Override
     public boolean isAccountNonExpired() {
-        return UserDetails.super.isAccountNonExpired();
+        return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return UserDetails.super.isAccountNonLocked();
+        return Account.Status.ACTIVE.equals(account.getStatus());
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return UserDetails.super.isCredentialsNonExpired();
+        return true;
     }
 
     @Override
     public boolean isEnabled() {
-        return UserDetails.super.isEnabled();
+        return true;
     }
 }

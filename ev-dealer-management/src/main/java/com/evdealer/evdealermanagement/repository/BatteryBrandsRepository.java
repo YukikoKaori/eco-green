@@ -1,4 +1,4 @@
 package com.evdealer.evdealermanagement.repository;
 
-public class BatteryTypeRepository {
+public interface BatteryBrandsRepository {
 }

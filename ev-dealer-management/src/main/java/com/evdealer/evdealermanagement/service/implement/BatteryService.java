@@ -1,4 +1,4 @@
 package com.evdealer.evdealermanagement.service.implement;
 
-public class ProductServiceImpl {
+public class BatteryService {
 }

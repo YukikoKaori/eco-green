@@ -1,6 +1,6 @@
 package com.evdealer.evdealermanagement.configurations;
 
-import com.evdealer.evdealermanagement.service.implement.JwtServiceImpl;
+import com.evdealer.evdealermanagement.service.implement.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +22,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
-    private JwtServiceImpl jwtService;
+    private JwtService jwtService;
 
     @Autowired
     private UserDetailsService userDetailsService;

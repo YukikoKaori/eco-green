@@ -13,7 +13,7 @@ import java.security.Key;
 import java.util.Date;
 
 @Service
-public class JwtServiceImpl implements IJwtService {
+public class JwtService implements IJwtService {
 
     private static final String SECRET_KEY = "MySuperSecretKey1234567890MySuperSecretKey";
 
