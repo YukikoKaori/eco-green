@@ -32,11 +32,4 @@ public class AuthenticationController {
     public ApiResponse<Void> logout(){
         return new ApiResponse<>(200, "Logout success", null);
     }
-
-    @PostMapping("/register")
-    @ResponseBody
-    public ApiResponse<AccountRegisterResponse> register(@RequestBody AccountRegisterRequest request){
-        var response = authService.register(request);
-        return new ApiResponse<>(200, "Register success", response);
-    }
 }
