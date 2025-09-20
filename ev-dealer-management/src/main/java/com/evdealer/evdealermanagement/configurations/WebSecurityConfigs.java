@@ -20,7 +20,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
-@EnableWebSecurity // turn on Spring Security and allow custom
+@EnableWebSecurity
 public class WebSecurityConfigs {
 
     @Autowired
@@ -44,26 +44,21 @@ public class WebSecurityConfigs {
     }
 
     @Bean
-    public SecurityFilterChain publicFilterChain(HttpSecurity http) throws Exception{
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer:: disable)
-                .securityMatcher("/auth/**", "/vehicle/**", "/battery/**")
+                .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(configurationSource()))
-                .authorizeHttpRequests((auth -> auth.anyRequest().permitAll()));
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/auth/**", "/vehicle/**", "/battery/**", "/product/**").permitAll() // public
+                        .requestMatchers("/member/**", "/admin/**").authenticated() // private
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
-    @Bean
-    public SecurityFilterChain privateFilterChain (HttpSecurity http) throws Exception{
-        http
-                .securityMatcher("/member/**", "/admin/**")
-                .csrf(AbstractHttpConfigurer:: disable)
-                .cors(cors -> cors.configurationSource(configurationSource()))
-                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-        return http.build();
-    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
