@@ -23,7 +23,7 @@ public class AuthenticationController {
     @PostMapping("/login")
     @ResponseBody
     public ApiResponse<AccountLoginResponse> login(@RequestBody AccountLoginRequest request){
-        var response = authService.login(request.getUsername(), request.getPassword());
+        AccountLoginResponse response = authService.login(request.getUsername(), request.getPassword());
         return new ApiResponse<>(200, "Login success", response);
     }
 
