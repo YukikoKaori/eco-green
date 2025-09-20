@@ -20,7 +20,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
-@EnableWebSecurity
+@EnableWebSecurity // turn on Spring Security and allow custom
 public class WebSecurityConfigs {
 
     @Autowired
@@ -47,7 +47,7 @@ public class WebSecurityConfigs {
     public SecurityFilterChain publicFilterChain(HttpSecurity http) throws Exception{
         http
                 .csrf(AbstractHttpConfigurer:: disable)
-                .securityMatcher("/auth/", "/vehicle/**", "/battery/**")
+                .securityMatcher("/auth/**", "/vehicle/**", "/battery/**")
                 .cors(cors -> cors.configurationSource(configurationSource()))
                 .authorizeHttpRequests((auth -> auth.anyRequest().permitAll()));
         return http.build();

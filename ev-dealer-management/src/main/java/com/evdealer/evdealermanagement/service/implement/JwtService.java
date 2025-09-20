@@ -33,7 +33,7 @@ public class JwtService implements IJwtService {
     }
 
     @Override
-    public Claims extractAllClaims(String token) {
+    public Claims extractAllClaims(String token) { //parse token
         return Jwts.parserBuilder()
                 .setSigningKey(getSignKey())
                 .build()
