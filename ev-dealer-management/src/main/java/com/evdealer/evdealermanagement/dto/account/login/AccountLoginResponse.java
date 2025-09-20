@@ -1,5 +1,24 @@
 package com.evdealer.evdealermanagement.dto.account.login;
 
-public class AccountLoginResponse {
+import com.evdealer.evdealermanagement.entity.account.Account;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class AccountLoginResponse {
+    private String email;
+    private String fullName;
+    private String phone;
+    private String nationalId;
+    private String address;
+    private Account.Role role;
+    private Account.Status status;
+    private String token;
 }
