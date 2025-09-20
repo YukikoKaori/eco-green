@@ -6,27 +6,28 @@ import com.evdealer.evdealermanagement.dto.account.profile.AccountProfileRespons
 import com.evdealer.evdealermanagement.dto.account.profile.AccountUpdateRequest;
 import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterRequest;
 import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterResponse;
+import com.evdealer.evdealermanagement.entity.account.Account;
+import com.evdealer.evdealermanagement.mapper.account.AccountMapper;
+import com.evdealer.evdealermanagement.repository.AccountRepository;
 import com.evdealer.evdealermanagement.service.contract.IAccountService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+@Service
 public class ProfileService implements IAccountService {
-    @Override
-    public AccountRegisterResponse memberRegister(AccountRegisterRequest request) {
-        return null;
+
+
+    private final AccountRepository accountRepository;
+
+    public ProfileService(AccountRepository accountRepository) {
+        this.accountRepository = accountRepository;
     }
 
-    @Override
-    public AccountLoginResponse memberLogin(AccountLoginRequest request) {
-        return null;
-    }
 
     @Override
-    public void memberLogout(String token) {
-
-    }
-
-    @Override
-    public AccountProfileResponse getProfile(Long userId) {
-        return null;
+    public AccountProfileResponse getProfile(String username) {
+        Account account = accountRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("Account not found"));
+        return AccountMapper.toDto(account);
     }
 
     @Override
