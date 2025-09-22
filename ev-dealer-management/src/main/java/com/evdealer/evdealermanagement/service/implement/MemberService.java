@@ -89,7 +89,7 @@ public class MemberService implements IAccountService {
 
         // Chỉ cập nhật field an toàn (fullName, address, avatarUrl, phone, taxCode,
         // username)
-        AccountMapper.apply(request, acc);
+        AccountMapper.updateAccountFromRequest(request, acc);
 
         // KHÔNG cho member đổi status/email/role/password_hash/national_id...
         // acc.setStatus(...) -> BỎ

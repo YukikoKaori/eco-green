@@ -29,7 +29,6 @@ public final class AccountMapper {
         res.setTaxCode(a.getTaxCode());
         res.setUsername(a.getUsername());
 
-        // các trường chỉ hiển thị
         res.setEmail(a.getEmail());
         res.setUpdatedAt(a.getUpdatedAt());
         return res;
@@ -42,31 +41,31 @@ public final class AccountMapper {
      * KHÔNG cập nhật: email, role, status, password_hash, national_id, created_at,
      * updated_at
      */
-    public static void apply(AccountUpdateRequest req, Account a) {
+    public static void updateAccountFromRequest(AccountUpdateRequest req, Account a) {
         if (a == null || req == null)
             return;
 
         if (hasText(req.getFullName()))
-            a.setFullName(normalize(req.getFullName()));
+            a.setFullName(trimToNull(req.getFullName()));
         if (req.getAddress() != null)
-            a.setAddress(normalize(req.getAddress()));
+            a.setAddress(trimToNull(req.getAddress()));
         if (req.getAvatarUrl() != null)
-            a.setAvatarUrl(normalize(req.getAvatarUrl()));
+            a.setAvatarUrl(trimToNull(req.getAvatarUrl()));
         if (req.getPhone() != null)
-            a.setPhone(normalize(req.getPhone()));
+            a.setPhone(trimToNull(req.getPhone()));
         if (req.getTaxCode() != null)
-            a.setTaxCode(normalize(req.getTaxCode()));
+            a.setTaxCode(trimToNull(req.getTaxCode()));
         if (req.getUsername() != null)
-            a.setUsername(normalize(req.getUsername()));
+            a.setUsername(trimToNull(req.getUsername()));
 
         // Lưu ý: updatedAt set ở Service khi save
     }
 
-    private static boolean hasText(String s) {
+    private static boolean hasText(String s) {// Kiểm tra xem có phải là text ko
         return StringUtils.hasText(s);
     }
 
-    private static String normalize(String s) {
+    private static String trimToNull(String s) { // Loại bỏ khoảng trắng
         return s == null ? null : s.trim();
     }
 }
