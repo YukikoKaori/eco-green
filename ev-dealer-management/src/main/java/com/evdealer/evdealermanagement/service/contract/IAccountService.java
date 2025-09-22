@@ -10,4 +10,7 @@ public interface IAccountService {
 
     // Cập nhật profile
     AccountProfileResponse updateProfile(Long userId, AccountUpdateRequest request);
+
+    // Xóa account
+    void deleteAccount(Long userId);
 }
