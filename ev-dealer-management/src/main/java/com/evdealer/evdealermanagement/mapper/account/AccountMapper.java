@@ -4,7 +4,7 @@ import com.evdealer.evdealermanagement.dto.account.profile.AccountProfileRespons
 import com.evdealer.evdealermanagement.entity.account.Account;
 
 public class AccountMapper {
-    public static AccountProfileResponse toDto(Account account) {
+    public static AccountProfileResponse mapToAccountProfileResponse(Account account) {
         return AccountProfileResponse.builder()
                 .id(account.getId())
                 .username(account.getUsername())

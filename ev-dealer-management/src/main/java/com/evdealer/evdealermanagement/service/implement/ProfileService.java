@@ -7,6 +7,8 @@ import com.evdealer.evdealermanagement.dto.account.profile.AccountUpdateRequest;
 import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterRequest;
 import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterResponse;
 import com.evdealer.evdealermanagement.entity.account.Account;
+import com.evdealer.evdealermanagement.exceptions.AppException;
+import com.evdealer.evdealermanagement.exceptions.ErrorCode;
 import com.evdealer.evdealermanagement.mapper.account.AccountMapper;
 import com.evdealer.evdealermanagement.repository.AccountRepository;
 import com.evdealer.evdealermanagement.service.contract.IAccountService;
@@ -26,8 +28,8 @@ public class ProfileService implements IAccountService {
 
     @Override
     public AccountProfileResponse getProfile(String username) {
-        Account account = accountRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("Account not found"));
-        return AccountMapper.toDto(account);
+        Account account = accountRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        return AccountMapper.mapToAccountProfileResponse(account);
     }
 
     @Override
