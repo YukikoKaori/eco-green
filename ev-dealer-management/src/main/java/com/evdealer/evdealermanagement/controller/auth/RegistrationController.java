@@ -3,6 +3,7 @@ package com.evdealer.evdealermanagement.controller.auth;
 import com.evdealer.evdealermanagement.dto.account.login.ApiResponse;
 import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterRequest;
 import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterResponse;
+import com.evdealer.evdealermanagement.exceptions.ErrorCode;
 import com.evdealer.evdealermanagement.service.implement.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -21,6 +22,6 @@ public class RegistrationController {
     @ResponseBody
     public ApiResponse<AccountRegisterResponse> register(@RequestBody AccountRegisterRequest request){
         AccountRegisterResponse response = authService.register(request);
-        return new ApiResponse<>(200, "Register success", response);
+        return new ApiResponse<>(ErrorCode.SUCCESS.getCode(), ErrorCode.SUCCESS.getMessage(), response);
     }
 }
