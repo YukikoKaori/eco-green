@@ -4,6 +4,8 @@ import com.evdealer.evdealermanagement.dto.account.login.AccountLoginResponse;
 import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterRequest;
 import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterResponse;
 import com.evdealer.evdealermanagement.entity.account.Account;
+import com.evdealer.evdealermanagement.exceptions.AppException;
+import com.evdealer.evdealermanagement.exceptions.ErrorCode;
 import com.evdealer.evdealermanagement.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -35,13 +37,12 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(username, password)
             );
         } catch (BadCredentialsException ex) {
-            // ném lại để GlobalExceptionHandler xử lý
-            throw new BadCredentialsException("Wrong password or username");
+            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         String token = jwtService.generateToken(userDetails);
         Account account = accountRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         return AccountLoginResponse.builder()
                 .email(account.getEmail())
                 .fullName(account.getFullName())
@@ -56,15 +57,18 @@ public class AuthService {
 
     public AccountRegisterResponse register(AccountRegisterRequest request) {
         if(request.getUsername() == null || request.getUsername().isBlank()) {
-            throw new BadCredentialsException("Username is empty");
+            throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD);
         }
 
         if(request.getPassword() == null || request.getPassword().length() < 6) {
-            throw new BadCredentialsException("Password must be at least 6 characters");
+            throw new AppException(ErrorCode.PASSWORD_TOO_SHORT);
         }
 
         if(accountRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new BadCredentialsException("Username already exists");
+            throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS);
+        }
+        if(accountRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         String hashedPassword = passwordEncoder.encode(request.getPassword());

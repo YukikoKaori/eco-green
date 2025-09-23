@@ -117,4 +117,10 @@ public class MemberService implements IAccountService {
         }
         accountRepository.deleteById(userId);
     }
+
+    @Override
+    public AccountProfileResponse getProfile(String username) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getProfile'");
+    }
 }

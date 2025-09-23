@@ -68,4 +68,19 @@ public final class AccountMapper {
     private static String trimToNull(String s) { // Loại bỏ khoảng trắng
         return s == null ? null : s.trim();
     }
+
+    public static AccountProfileResponse mapToAccountProfileResponse(Account account) {
+        return AccountProfileResponse.builder()
+                .id(account.getId())
+                .username(account.getUsername())
+                .email(account.getEmail())
+                .fullName(account.getFullName())
+                .phone(account.getPhone())
+                .address(account.getAddress())
+                .avatarUrl(account.getAvatarUrl())
+                .status(account.getStatus())
+                .emailVerified(account.getEmailVerified())
+                .createdAt(account.getCreatedAt())
+                .build();
+    }
 }

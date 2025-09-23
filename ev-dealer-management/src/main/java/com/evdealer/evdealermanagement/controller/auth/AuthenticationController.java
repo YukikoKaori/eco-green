@@ -5,6 +5,7 @@ import com.evdealer.evdealermanagement.dto.account.login.AccountLoginResponse;
 import com.evdealer.evdealermanagement.dto.account.login.ApiResponse;
 import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterRequest;
 import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterResponse;
+import com.evdealer.evdealermanagement.exceptions.ErrorCode;
 import com.evdealer.evdealermanagement.service.implement.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,12 +25,12 @@ public class AuthenticationController {
     @ResponseBody
     public ApiResponse<AccountLoginResponse> login(@RequestBody AccountLoginRequest request){
         AccountLoginResponse response = authService.login(request.getUsername(), request.getPassword());
-        return new ApiResponse<>(200, "Login success", response);
+        return new ApiResponse<>(ErrorCode.SUCCESS.getCode(), ErrorCode.SUCCESS.getMessage(), response);
     }
 
     @PostMapping("/logout")
     @ResponseBody
     public ApiResponse<Void> logout(){
-        return new ApiResponse<>(200, "Logout success", null);
+        return new ApiResponse<>(ErrorCode.SUCCESS.getCode(), ErrorCode.SUCCESS.getMessage(), null);
     }
 }
