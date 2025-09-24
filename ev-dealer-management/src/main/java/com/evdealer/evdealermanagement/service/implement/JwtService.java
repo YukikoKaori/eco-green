@@ -56,16 +56,15 @@ public class JwtService implements IJwtService {
        return expiration.before(new Date());
     }
 
-    @Override
     public boolean validateToken(String token, UserDetails userDetails) {
         try {
             Jwts.parserBuilder()
                     .setSigningKey(getSignKey())
                     .build()
-                    .parseClaimsJws(token);
+                    .parseClaimsJws(token); // This already throws exception if expired
             String username = extractUsername(token);
-            return username.equals(userDetails.getUsername()) && !isExpired(token);
-        }catch (IllegalArgumentException exception) {
+            return username.equals(userDetails.getUsername()) && !isExpired(token); // Redundant check
+        } catch (IllegalArgumentException exception) { // Wrong exception type
             System.out.println("Error at validate token: " + exception);
             return false;
         }

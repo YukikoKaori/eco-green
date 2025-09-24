@@ -22,16 +22,16 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class WebSecurityConfigs {
 
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
-    public CorsConfigurationSource configurationSource() {
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of("http://localhost:5173/"));
+        config.setAllowedOrigins(List.of("http://localhost:5173"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         config.setExposedHeaders(List.of("Authorization"));
@@ -48,11 +48,17 @@ public class WebSecurityConfigs {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(configurationSource()))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/vehicle/**", "/battery/**", "/product/**").permitAll() // public
-                        .requestMatchers("/member/**", "/admin/**").authenticated() // private
+                        // Public APIs
+                        .requestMatchers("/auth/**", "/vehicle/**", "/battery/**", "/product/**").permitAll()
+
+                        // Private APIs (role-based)
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/member/**").hasAnyRole("MEMBER", "ADMIN")
+
+                        // Các request khác yêu cầu phải login
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -60,14 +66,13 @@ public class WebSecurityConfigs {
         return http.build();
     }
 
-
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception{
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 }

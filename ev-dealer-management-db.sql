@@ -1,9 +1,13 @@
 -- ========================================================
--- DATABASE SCHEMA HOÀN CHỈNH (EMAIL + GOOGLE/FB LOGIN + CART + ORDER + PAYMENT + AUCTION)
+-- DATABASE SCHEMA HOÀN CHỈNH (ECO_GREEN)
 -- ========================================================
 
+DROP DATABASE IF EXISTS eco_green;
+CREATE DATABASE eco_green CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE eco_green;
+
 -- ======================
--- 1. Bảng quản lý tài khoản (Member & Admin)
+-- 1. Bảng quản lý tài khoản (Member & Admin & Staff)
 -- ======================
 CREATE TABLE accounts (
     id                        BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, -- Khóa chính
@@ -19,8 +23,9 @@ CREATE TABLE accounts (
 
     address                   TEXT,                                       -- Địa chỉ
     avatar_url                VARCHAR(500),                               -- Ảnh đại diện
-    role                      ENUM('member','admin') NOT NULL DEFAULT 'member', -- Quyền
-    status                    ENUM('active','inactive') DEFAULT 'active', -- Trạng thái tài khoản
+    role                      ENUM('MEMBER','ADMIN','STAFF') NOT NULL DEFAULT 'MEMBER', -- Quyền
+    staff_permissions         JSON NULL,                                  -- Quyền của staff
+    status                    ENUM('ACTIVE','INACTIVE','BANNED','PENDING') DEFAULT 'ACTIVE', -- Trạng thái tài khoản
     email_verified            BOOLEAN DEFAULT FALSE,                      -- Đã xác minh email chưa
     created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,        -- Ngày tạo
     updated_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Ngày cập nhật
@@ -40,7 +45,7 @@ CREATE TABLE accounts (
 CREATE TABLE social_accounts (
     id                        BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, -- Khóa chính
     account_id                BIGINT UNSIGNED NOT NULL,                   -- Tham chiếu đến accounts
-    provider                  ENUM('google','facebook') NOT NULL,         -- Nhà cung cấp (Google/Facebook)
+    provider                  ENUM('GOOGLE','FACEBOOK') NOT NULL,         -- Nhà cung cấp (Google/Facebook)
     provider_user_id          VARCHAR(255) NOT NULL,                      -- ID user bên Google/Facebook
     email                     VARCHAR(255),                               -- Email từ provider
     avatar_url                VARCHAR(500),                               -- Ảnh đại diện từ provider
@@ -60,7 +65,7 @@ CREATE TABLE vehicle_brands (
     name                      VARCHAR(100) NOT NULL UNIQUE,               -- Tên hãng xe
     country                   VARCHAR(50),                                -- Quốc gia
     logo_url                  VARCHAR(500),                               -- Logo
-    status                    ENUM('active','inactive') DEFAULT 'active', -- Trạng thái
+    status                    ENUM('ACTIVE','INACTIVE') DEFAULT 'ACTIVE', -- Trạng thái
     created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     INDEX idx_status          (status)
@@ -74,7 +79,7 @@ CREATE TABLE battery_brands (
     name                      VARCHAR(100) NOT NULL UNIQUE,               -- Tên hãng pin
     country                   VARCHAR(50),
     logo_url                  VARCHAR(500),
-    status                    ENUM('active','inactive') DEFAULT 'active',
+    status                    ENUM('ACTIVE','INACTIVE') DEFAULT 'ACTIVE',
     created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     INDEX idx_status          (status)
@@ -87,7 +92,7 @@ CREATE TABLE vehicle_categories (
     id                        TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name                      VARCHAR(50) NOT NULL UNIQUE,                -- Loại xe (scooter, car,…)
     description               TEXT,                                       -- Mô tả
-    status                    ENUM('active','inactive') DEFAULT 'active',
+    status                    ENUM('ACTIVE','INACTIVE') DEFAULT 'ACTIVE',
     created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -99,7 +104,7 @@ CREATE TABLE battery_types (
     name                      VARCHAR(50) NOT NULL UNIQUE,                -- Loại pin
     typical_voltage_v         DECIMAL(4,1),                               -- Điện áp điển hình
     typical_lifespan_cycles   INT UNSIGNED,                               -- Chu kỳ sạc
-    status                    ENUM('active','inactive') DEFAULT 'active',
+    status                    ENUM('ACTIVE','INACTIVE') DEFAULT 'ACTIVE',
     created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     INDEX idx_status          (status)
@@ -112,14 +117,14 @@ CREATE TABLE products (
     id                        BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     title                     VARCHAR(255) NOT NULL,                      -- Tiêu đề
     description               TEXT,                                       -- Mô tả chi tiết
-    type                      ENUM('vehicle','battery') NOT NULL,         -- Loại sản phẩm
+    type                      ENUM('VEHICLE','BATTERY') NOT NULL,         -- Loại sản phẩm
 
     price                     DECIMAL(15,2) NULL,                         -- Giá bán
-    condition_type            ENUM('new','used') NOT NULL DEFAULT 'used', -- Tình trạng
+    condition_type            ENUM('NEW','USED') NOT NULL DEFAULT 'USED', -- Tình trạng
     is_negotiable             BOOLEAN DEFAULT TRUE,                       -- Có thương lượng không
     posting_fee               DECIMAL(10,2) DEFAULT 0.00,                 -- Phí đăng bài
 
-    sale_type                 ENUM('fixed_price','negotiation','auction') NOT NULL DEFAULT 'fixed_price', -- Kiểu bán
+    sale_type                 ENUM('FIXED_PRICE','NEGOTIATION','AUCTION') NOT NULL DEFAULT 'FIXED_PRICE', -- Kiểu bán
     auction_end_time          TIMESTAMP NULL,                             -- Thời gian kết thúc đấu giá (nếu có)
 
     seller_id                 BIGINT UNSIGNED NOT NULL,                   -- Người bán
@@ -129,7 +134,8 @@ CREATE TABLE products (
     ward                      VARCHAR(100),
     address_detail            TEXT,
 
-    status                    ENUM('draft','pending','active','sold','expired','rejected') DEFAULT 'draft', -- Trạng thái
+    status                    ENUM('DRAFT','PENDING','ACTIVE','SOLD','EXPIRED','REJECTED') DEFAULT 'DRAFT', -- Trạng thái
+    reject_reason             VARCHAR(500) NULL,                          -- Lý do từ chối
     approved_by               BIGINT UNSIGNED NULL,                       -- Người duyệt
     expires_at                TIMESTAMP NULL,                             -- Thời gian hết hạn
 
@@ -182,7 +188,7 @@ CREATE TABLE vehicle_details (
     motor_power_w             INT UNSIGNED,
     weight_kg                 DECIMAL(6,1),
 
-    built_in_battery_capacity_ah DECIMAL(8,2),
+    battery_capacity          DECIMAL(10,2),                              -- Dung lượng pin tích hợp
     built_in_battery_voltage_v   DECIMAL(6,2),
     removable_battery         BOOLEAN DEFAULT TRUE,
 
@@ -211,7 +217,7 @@ CREATE TABLE battery_details (
     battery_type_id           TINYINT UNSIGNED NOT NULL,                  -- Loại pin
     brand_id                  SMALLINT UNSIGNED,                          -- Hãng pin
 
-    capacity_ah               DECIMAL(8,2) NOT NULL,                      -- Dung lượng (Ah)
+    capacity_kwh              DECIMAL(10,2) NOT NULL,                     -- Dung lượng (kWh)
     voltage_v                 DECIMAL(6,2) NOT NULL,                      -- Điện áp (V)
     energy_wh                 DECIMAL(10,2),                              -- Năng lượng (Wh)
     weight_kg                 DECIMAL(6,1),
@@ -227,6 +233,7 @@ CREATE TABLE battery_details (
     health_percent            TINYINT UNSIGNED,                           -- % sức khỏe
     max_charge_current_a      DECIMAL(6,2),
     max_discharge_current_a   DECIMAL(6,2),
+    warranty_months           INT,
 
     FOREIGN KEY (product_id)      REFERENCES products(id) ON DELETE CASCADE,
     FOREIGN KEY (battery_type_id) REFERENCES battery_types(id) ON DELETE RESTRICT,
@@ -245,7 +252,7 @@ CREATE TABLE vehicle_battery_compatibility (
     vehicle_product_id        BIGINT UNSIGNED NOT NULL,                   -- Xe
     battery_product_id        BIGINT UNSIGNED NOT NULL,                   -- Pin
 
-    compatibility_level       ENUM('perfect','good','partial') NOT NULL DEFAULT 'good',
+    compatibility_level       ENUM('PERFECT','GOOD','PARTIAL') NOT NULL DEFAULT 'GOOD',
     created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (vehicle_product_id) REFERENCES products(id) ON DELETE CASCADE,
@@ -262,15 +269,15 @@ CREATE TABLE vehicle_battery_compatibility (
 -- ======================
 CREATE TABLE carts (
     id                        BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id                   BIGINT UNSIGNED NOT NULL,                   -- Người sở hữu giỏ
-    status                    ENUM('active','checked_out') DEFAULT 'active',
+    account_id                BIGINT UNSIGNED NOT NULL UNIQUE,            -- Một user chỉ có một giỏ
+    status                    ENUM('ACTIVE','CHECKED_OUT') DEFAULT 'ACTIVE',
     created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (user_id)     REFERENCES accounts(id) ON DELETE CASCADE
+    FOREIGN KEY (account_id)  REFERENCES accounts(id) ON DELETE CASCADE
 );
 
 CREATE TABLE cart_items (
-    id                        BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    cart_item_id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     cart_id                   BIGINT UNSIGNED NOT NULL,
     product_id                BIGINT UNSIGNED NOT NULL,
     quantity                  INT UNSIGNED DEFAULT 1,
@@ -285,15 +292,27 @@ CREATE TABLE cart_items (
 -- 11. Bảng yêu thích
 -- ======================
 CREATE TABLE wishlists (
-    id                        BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id                   BIGINT UNSIGNED NOT NULL,
+    wishlist_id               BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    account_id                BIGINT UNSIGNED NOT NULL,
     product_id                BIGINT UNSIGNED NOT NULL,
     created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (user_id)     REFERENCES accounts(id) ON DELETE CASCADE,
+    FOREIGN KEY (account_id)  REFERENCES accounts(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id)  REFERENCES products(id) ON DELETE CASCADE,
 
-    UNIQUE KEY unique_wishlist (user_id, product_id)
+    UNIQUE KEY unique_wishlist (account_id, product_id)
+);
+
+-- ======================
+-- 12.1. Bảng phương thức thanh toán
+-- ======================
+CREATE TABLE payment_methods (
+    method_id                 BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name                      VARCHAR(50) NOT NULL UNIQUE,  -- 'MoMo','ZaloPay','VNPay','Bank Transfer','COD'
+    type                      ENUM('COD','BANK','EWALLET','CARD') NOT NULL,
+    logo_url                  VARCHAR(500),
+    is_active                 BOOLEAN DEFAULT TRUE,
+    processing_fee_percent    DECIMAL(4,2) DEFAULT 0.00
 );
 
 -- ======================
@@ -301,13 +320,26 @@ CREATE TABLE wishlists (
 -- ======================
 CREATE TABLE orders (
     id                        BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id                   BIGINT UNSIGNED NOT NULL,
-    status                    ENUM('pending','paid','shipped','completed','cancelled') DEFAULT 'pending',
+    user_id                   BIGINT UNSIGNED NOT NULL,                   -- Khách hàng mua (để tương thích cũ)
+    buyer_id                  BIGINT UNSIGNED NULL,                       -- Người mua (rõ ràng hơn)
+    seller_id                 BIGINT UNSIGNED NULL,                       -- Người bán
+    product_id                BIGINT UNSIGNED NULL,                       -- Sản phẩm
+    quantity                  INT UNSIGNED NOT NULL DEFAULT 1,            -- Số lượng
+    
+    status                    ENUM('PENDING','PAID','SHIPPED','COMPLETED','CANCELLED') DEFAULT 'PENDING',
     total_price               DECIMAL(15,2) NOT NULL,
     shipping_address          TEXT,
     created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (user_id)     REFERENCES accounts(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id)     REFERENCES accounts(id) ON DELETE CASCADE,
+    FOREIGN KEY (buyer_id)    REFERENCES accounts(id) ON DELETE SET NULL,
+    FOREIGN KEY (seller_id)   REFERENCES accounts(id) ON DELETE SET NULL,
+    FOREIGN KEY (product_id)  REFERENCES products(id) ON DELETE SET NULL,
+    
+    INDEX idx_buyer           (buyer_id),
+    INDEX idx_seller          (seller_id),
+    INDEX idx_product_order   (product_id)
 );
 
 CREATE TABLE order_items (
@@ -322,38 +354,27 @@ CREATE TABLE order_items (
 );
 
 -- ======================
--- 12.1. Bảng phương thức thanh toán
--- ======================
-CREATE TABLE payment_methods (
-    id                        TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name                      VARCHAR(50) NOT NULL UNIQUE,  -- 'MoMo','ZaloPay','VNPay','Bank Transfer','COD'
-    type                      ENUM('cod','bank','ewallet','card') NOT NULL,
-    logo_url                  VARCHAR(500),
-    is_active                 BOOLEAN DEFAULT TRUE,
-    processing_fee_percent    DECIMAL(4,2) DEFAULT 0.00
-);
-
--- ======================
 -- 12.2. Bảng thanh toán
 -- ======================
 CREATE TABLE payments (
-    id                        BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    payment_id                BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     order_id                  BIGINT UNSIGNED NOT NULL,
-    payment_method_id         TINYINT UNSIGNED NOT NULL,
+    payment_method_id         TINYINT UNSIGNED NULL,                      -- Để tương thích cũ
+    method_id                 BIGINT UNSIGNED NULL,                       -- Tham chiếu mới
 
     amount                    DECIMAL(15,2) NOT NULL,                     -- Số tiền thanh toán
     fee                       DECIMAL(10,2) DEFAULT 0.00,                 -- Phí xử lý
 
     transaction_id            VARCHAR(255),                               -- ID từ gateway
     gateway_reference         VARCHAR(255),                               -- Mã tham chiếu
-    status                    ENUM('pending','processing','completed','failed','refunded') DEFAULT 'pending',
+    status                    ENUM('PENDING','PROCESSING','COMPLETED','FAILED','REFUNDED') DEFAULT 'PENDING',
     gateway_response          JSON,                                       -- Lưu raw response
 
     paid_at                   TIMESTAMP NULL,                             -- Ngày thanh toán
     created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (order_id)    REFERENCES orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (payment_method_id) REFERENCES payment_methods(id),
+    FOREIGN KEY (method_id)   REFERENCES payment_methods(method_id) ON DELETE SET NULL,
 
     INDEX idx_status          (status),
     INDEX idx_transaction     (transaction_id)
@@ -363,18 +384,18 @@ CREATE TABLE payments (
 -- 13. Bảng đấu giá
 -- ======================
 CREATE TABLE auctions (
-    id                        BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    auction_id                BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     product_id                BIGINT UNSIGNED NOT NULL,                   -- Sản phẩm đấu giá
     seller_id                 BIGINT UNSIGNED NOT NULL,                   -- Người bán
 
-    starting_price            DECIMAL(15,2) NOT NULL,                     -- Giá khởi điểm
+    start_price               DECIMAL(15,2) NOT NULL,                     -- Giá khởi điểm
     reserve_price             DECIMAL(15,2),                              -- Giá sàn
     current_price             DECIMAL(15,2) DEFAULT 0.00,                 -- Giá hiện tại
     bid_increment             DECIMAL(10,2) DEFAULT 1000,                 -- Bước giá
 
-    start_time                TIMESTAMP NOT NULL,
+    start_time                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     end_time                  TIMESTAMP NOT NULL,
-    status                    ENUM('pending','active','ended','cancelled') DEFAULT 'pending',
+    status                    ENUM('PENDING','ACTIVE','ENDED','CANCELLED') DEFAULT 'PENDING',
 
     created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
@@ -386,16 +407,51 @@ CREATE TABLE auctions (
 -- 14. Bảng lượt đặt giá (bid)
 -- ======================
 CREATE TABLE auction_bids (
-    id                        BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    bid_id                    BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     auction_id                BIGINT UNSIGNED NOT NULL,
     bidder_id                 BIGINT UNSIGNED NOT NULL,
 
-    bid_amount                DECIMAL(15,2) NOT NULL,
-    bid_time                  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    amount                    DECIMAL(15,2) NOT NULL,
+    created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (auction_id)  REFERENCES auctions(id) ON DELETE CASCADE,
+    FOREIGN KEY (auction_id)  REFERENCES auctions(auction_id) ON DELETE CASCADE,
     FOREIGN KEY (bidder_id)   REFERENCES accounts(id) ON DELETE CASCADE,
 
-    INDEX idx_bid_amount      (bid_amount),
-    INDEX idx_bidder          (bidder_id)
+    INDEX idx_bid_amount      (amount),
+    INDEX idx_bidder          (bidder_id),
+    INDEX idx_auction         (auction_id)
+);
+
+-- ======================
+-- 15. Bảng báo cáo (MỚI)
+-- ======================
+CREATE TABLE reports (
+    id                        BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    reporter_id               BIGINT UNSIGNED NOT NULL,                   -- Người báo cáo
+    product_id                BIGINT UNSIGNED NULL,                       -- Sản phẩm bị báo cáo (có thể null)
+    order_id                  BIGINT UNSIGNED NULL,                       -- Đơn hàng bị báo cáo (có thể null)
+    
+    report_type               ENUM('SCAM','FAKE_INFO','DAMAGED_PRODUCT','OTHER') NOT NULL, -- Loại báo cáo
+    description               TEXT,                                       -- Mô tả chi tiết
+    evidence_urls             JSON,                                       -- Link ảnh/video chứng minh
+    
+    status                    ENUM('PENDING','RESOLVED','REJECTED') DEFAULT 'PENDING', -- Trạng thái xử lý
+    staff_id                  BIGINT UNSIGNED NULL,                       -- Staff xử lý
+    staff_notes               TEXT,                                       -- Ghi chú của staff
+    resolved_at               TIMESTAMP NULL,                             -- Thời gian giải quyết
+    
+    created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (reporter_id) REFERENCES accounts(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id)  REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (order_id)    REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (staff_id)    REFERENCES accounts(id) ON DELETE SET NULL,
+    
+    INDEX idx_reporter        (reporter_id),
+    INDEX idx_product         (product_id),
+    INDEX idx_order           (order_id),
+    INDEX idx_status          (status),
+    INDEX idx_type            (report_type),
+    INDEX idx_staff           (staff_id)
 );
