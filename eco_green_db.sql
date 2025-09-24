@@ -22,6 +22,7 @@ CREATE TABLE accounts (
     national_id_issued_date   DATE,                                       -- Ngày cấp CCCD/CMND
     tax_code                  VARCHAR(20) UNIQUE,                         -- Mã số thuế cá nhân
 
+    date_of_birth             DATE,                                       -- Ngày tháng năm sinh
     address                   TEXT,                                       -- Địa chỉ
     avatar_url                VARCHAR(500),                               -- Ảnh đại diện
     role                      ENUM('MEMBER','ADMIN','STAFF') NOT NULL DEFAULT 'MEMBER', -- Quyền
@@ -31,9 +32,9 @@ CREATE TABLE accounts (
     created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,        -- Ngày tạo
     updated_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Ngày cập nhật
 
-    INDEX idx_username        (username), -- Index cho tìm kiếm username
-    INDEX idx_email           (email),    -- Index cho tìm kiếm email
-    INDEX idx_phone           (phone),    -- Index cho tìm kiếm số điện thoại
+    INDEX idx_username        (username),
+    INDEX idx_email           (email),
+    INDEX idx_phone           (phone),
     INDEX idx_national_id     (national_id),
     INDEX idx_tax_code        (tax_code),
     INDEX idx_status          (status),

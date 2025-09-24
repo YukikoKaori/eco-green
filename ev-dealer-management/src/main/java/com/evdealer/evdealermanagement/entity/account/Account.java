@@ -2,6 +2,8 @@ package com.evdealer.evdealermanagement.entity.account;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -35,10 +37,13 @@ public class Account {
     private String nationalId;
 
     @Column(name = "national_id_issued_date")
-    private LocalDateTime nationalIdIssuedDate;
+    private LocalDate nationalIdIssuedDate;
 
     @Column(name = "tax_code", unique = true, length = 20)
     private String taxCode;
+
+    @Column (name = "date_of_birth")
+    private LocalDate dateOfBirth;
 
     private String address;
 
