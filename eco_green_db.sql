@@ -1,5 +1,6 @@
 -- ========================================================
 -- DATABASE SCHEMA HOÀN CHỈNH (ECO_GREEN)
+-- Tất cả ENUM values đều viết HOA để phù hợp với Java conventions
 -- ========================================================
 
 DROP DATABASE IF EXISTS eco_green;
