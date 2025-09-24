@@ -60,6 +60,6 @@ public class Account {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public enum Role { MEMBER, ADMIN }
+    public enum Role { MEMBER, ADMIN, STAFF }
     public enum Status { ACTIVE, INACTIVE }
 }

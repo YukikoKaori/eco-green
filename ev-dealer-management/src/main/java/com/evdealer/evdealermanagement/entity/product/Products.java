@@ -60,8 +60,12 @@ public class Products {
     @Column(name = "address_detail", columnDefinition = "TEXT")
     private String addressDetail;
 
+
     @Enumerated(EnumType.STRING)
     private Status status;
+
+    @Column(name = "reject_reason")
+    private String rejectReason;
 
     @ManyToOne
     @JoinColumn(name = "approved_by")

@@ -2,39 +2,145 @@ package com.evdealer.evdealermanagement.service.implement;
 
 import com.evdealer.evdealermanagement.dto.product.detail.ProductDetail;
 import com.evdealer.evdealermanagement.entity.product.Products;
+import com.evdealer.evdealermanagement.mapper.product.ProductMapper;
 import com.evdealer.evdealermanagement.repository.ProductRepository;
 import com.evdealer.evdealermanagement.service.contract.IProductService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class ProductService implements IProductService {
 
-    @Autowired
     private final ProductRepository productRepository;
-
-    public ProductService(ProductRepository productRepository) {
-        this.productRepository = productRepository;
-    }
+    private final VehicleService vehicleService;
+    private final BatteryService batteryService;
 
     @Override
     public List<ProductDetail> getAllProducts() {
         try {
+            log.debug("Fetching all products");
             return productRepository.findAll()
                     .stream()
-                    .map(ProductDetail::fromEntity)
+                    .map(ProductMapper::toDetailDto)
                     .toList();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
+            log.error("Error fetching all products", e);
             return List.of();
         }
     }
 
+    @Override
+    public Optional<ProductDetail> getProductById(Long id) {
+        if (id == null || id <= 0) {
+            log.warn("Invalid product ID: {}", id);
+            return Optional.empty();
+        }
+
+        try {
+            log.debug("Fetching product by ID: {}", id);
+            return productRepository.findById(id)
+                    .map(ProductMapper::toDetailDto);
+        } catch (Exception e) {
+            log.error("Error fetching product by ID: {}", id, e);
+            return Optional.empty();
+        }
+    }
 
     @Override
-    public ProductDetail getProductById() {
-        return null;
+    public List<ProductDetail> getProductByName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            log.warn("Product name is null or empty");
+            return List.of();
+        }
+
+        try {
+            log.debug("Searching products by name: {}", name);
+
+            List<Long> vehicleProductIds = vehicleService.getVehicleIdByName(name);
+            List<Long> batteryProductIds = batteryService.getBatteryIdByName(name);
+
+            List<Long> allProductIds = Stream.concat(
+                    vehicleProductIds.stream(),
+                    batteryProductIds.stream()
+            ).distinct().toList();
+
+            if (allProductIds.isEmpty()) {
+                log.debug("No products found with name: {}", name);
+                return List.of();
+            }
+
+            return productRepository.findAllById(allProductIds)
+                    .stream()
+                    .map(ProductMapper::toDetailDto)
+                    .toList();
+
+        } catch (Exception e) {
+            log.error("Error searching products by name: {}", name, e);
+            return List.of();
+        }
+    }
+
+    @Override
+    public List<ProductDetail> getProductByType(String type) {
+        if (type == null || type.trim().isEmpty()) {
+            log.warn("Product type is null or empty");
+            return List.of();
+        }
+
+        try {
+            log.debug("Fetching products by type: {}", type);
+            Products.ProductType enumType = Products.ProductType.valueOf(type.toUpperCase());
+            return productRepository.findByType(enumType)
+                    .stream()
+                    .map(ProductMapper::toDetailDto)
+                    .toList();
+
+        } catch (Exception e) {
+            log.error("Error fetching products by type: {}", type, e);
+            throw new RuntimeException("Failed to fetch products by type: " + type, e);
+        }
+    }
+
+
+
+    @Override
+    public List<ProductDetail> getProductByBrand(String brand) {
+        if (brand == null || brand.trim().isEmpty()) {
+            log.warn("Brand name is null or empty");
+            return List.of();
+        }
+
+        try {
+            log.debug("Fetching products by brand: {}", brand);
+
+            List<Long> vehicleProductIds = vehicleService.getVehicleIdByBrand(brand);
+            List<Long> batteryProductIds = batteryService.getBatteryIdByBrand(brand);
+
+            List<Long> allProductIds = Stream.concat(
+                    vehicleProductIds.stream(),
+                    batteryProductIds.stream()
+            ).distinct().toList();
+
+            if (allProductIds.isEmpty()) {
+                log.debug("No products found for brand: {}", brand);
+                return List.of();
+            }
+
+            return productRepository.findAllById(allProductIds)
+                    .stream()
+                    .map(ProductDetail::fromEntity)
+                    .toList();
+
+        } catch (Exception e) {
+            log.error("Error fetching products by brand: {}", brand, e);
+            throw new RuntimeException("Failed to fetch products by brand: " + brand, e);
+        }
     }
 }
