@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -17,6 +18,7 @@ public class AccountLoginResponse {
     private String fullName;
     private String phone;
     private String nationalId;
+    private LocalDate dateOfBirth;
     private String address;
     private Account.Role role;
     private Account.Status status;
