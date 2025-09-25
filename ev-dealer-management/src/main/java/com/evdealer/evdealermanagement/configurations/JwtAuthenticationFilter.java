@@ -31,28 +31,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
-            // Lấy token
             String jwt = getJwtFromRequest(request);
 
-            // Kiểm tra token có tồn tại hay chưa
-            if ( !jwtService.isExpired(jwt)) {
+            if (jwt != null && !jwtService.isExpired(jwt)) { // Add null check
                 String username = jwtService.extractUsername(jwt);
 
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-                if (jwtService.validateToken(jwt, userDetails)) {
-                    UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                    authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                    if (jwtService.validateToken(jwt, userDetails)) {
+                        UsernamePasswordAuthenticationToken authenticationToken =
+                                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                        authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                    }
                 }
             }
-        }
-        catch (Exception e) {
-            System.err.println("JWT Authentication error: "+ e.getMessage());
+        } catch (Exception e) {
+            System.err.println("JWT Authentication error: " + e.getMessage());
+            // Consider logging more details for debugging
         }
 
-        // Tiếp tục filter
         filterChain.doFilter(request, response);
     }
 

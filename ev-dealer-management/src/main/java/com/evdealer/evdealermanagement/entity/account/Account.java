@@ -3,7 +3,6 @@ package com.evdealer.evdealermanagement.entity.account;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 
 import org.apache.catalina.security.SecurityUtil;
