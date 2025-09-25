@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-EvDealerManagementSystemApplication<ev-dealer-management>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.evdealer.evdealermanagement.EvDealerManagementSystemApplication",
+            "projectName": "ev-dealer-management",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

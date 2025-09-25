@@ -3,8 +3,11 @@ package com.evdealer.evdealermanagement.entity.account;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+
+import org.apache.catalina.security.SecurityUtil;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Entity
 @Table(name = "accounts")
@@ -37,13 +40,10 @@ public class Account {
     private String nationalId;
 
     @Column(name = "national_id_issued_date")
-    private LocalDate nationalIdIssuedDate;
+    private LocalDateTime nationalIdIssuedDate;
 
     @Column(name = "tax_code", unique = true, length = 20)
     private String taxCode;
-
-    @Column (name = "date_of_birth")
-    private LocalDate dateOfBirth;
 
     private String address;
 
@@ -59,12 +59,24 @@ public class Account {
     @Column(name = "email_verified")
     private Boolean emailVerified = false;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public enum Role { MEMBER, ADMIN, STAFF }
-    public enum Status { ACTIVE, INACTIVE }
+    @PreUpdate
+    public void handleBeforeUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public enum Role {
+        MEMBER, ADMIN
+    }
+
+    public enum Status {
+        ACTIVE, INACTIVE
+    }
 }
