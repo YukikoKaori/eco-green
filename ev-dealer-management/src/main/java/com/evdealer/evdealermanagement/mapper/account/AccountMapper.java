@@ -5,18 +5,11 @@ import com.evdealer.evdealermanagement.dto.account.profile.AccountUpdateRequest;
 import com.evdealer.evdealermanagement.entity.account.Account;
 import org.springframework.util.StringUtils;
 
-/**
- * Mapper thuần Java:
- * - toProfileResponse: Entity -> Response DTO
- * - apply: Request DTO -> (update) Entity (partial update, không đụng field
- * nhạy cảm)
- */
 public final class AccountMapper {
 
     private AccountMapper() {
     }
 
-    /** Entity -> DTO (cho GET/PUT response) */
     public static AccountProfileResponse toProfileResponse(Account a) {
         if (a == null)
             return null;
@@ -34,31 +27,44 @@ public final class AccountMapper {
         return res;
     }
 
-    /**
-     * Request -> (update) Entity
-     * Chỉ cập nhật các field an toàn:
-     * full_name, address, avatar_url, phone, tax_code, username
-     * KHÔNG cập nhật: email, role, status, password_hash, national_id, created_at,
-     * updated_at
-     */
-    public static void updateAccountFromRequest(AccountUpdateRequest req, Account a) {
-        if (a == null || req == null)
+    public static void updateAccountFromRequest(AccountUpdateRequest req, Account account) {
+        if (req == null || account == null)
             return;
 
-        if (hasText(req.getFullName()))
-            a.setFullName(trimToNull(req.getFullName()));
-        if (req.getAddress() != null)
-            a.setAddress(trimToNull(req.getAddress()));
-        if (req.getAvatarUrl() != null)
-            a.setAvatarUrl(trimToNull(req.getAvatarUrl()));
-        if (req.getPhone() != null)
-            a.setPhone(trimToNull(req.getPhone()));
-        if (req.getTaxCode() != null)
-            a.setTaxCode(trimToNull(req.getTaxCode()));
-        if (req.getUsername() != null)
-            a.setUsername(trimToNull(req.getUsername()));
+        // fullName
+        if (hasText(req.getFullName())) {
+            account.setFullName(trimToNull(req.getFullName()));
+        }
 
-        // Lưu ý: updatedAt set ở Service khi save
+        // address
+        if (req.getAddress() != null) {
+            account.setAddress(trimToNull(req.getAddress()));
+        }
+
+        // avatarUrl
+        if (req.getAvatarUrl() != null) {
+            account.setAvatarUrl(trimToNull(req.getAvatarUrl()));
+        }
+
+        // phone
+        if (req.getPhone() != null) {
+            account.setPhone(trimToNull(req.getPhone()));
+        }
+
+        // taxCode
+        if (req.getTaxCode() != null) {
+            account.setTaxCode(trimToNull(req.getTaxCode()));
+        }
+
+        // username
+        if (req.getUsername() != null) {
+            account.setUsername(trimToNull(req.getUsername()));
+        }
+
+        // status (enum)
+        if (req.getStatus() != null) {
+            account.setStatus(Account.Status.valueOf(req.getStatus().name()));
+        }
     }
 
     private static boolean hasText(String s) {// Kiểm tra xem có phải là text ko
@@ -81,6 +87,8 @@ public final class AccountMapper {
                 .status(account.getStatus())
                 .emailVerified(account.getEmailVerified())
                 .createdAt(account.getCreatedAt())
+                .updatedAt(account.getUpdatedAt())
+                .taxCode(account.getTaxCode())
                 .build();
     }
 }

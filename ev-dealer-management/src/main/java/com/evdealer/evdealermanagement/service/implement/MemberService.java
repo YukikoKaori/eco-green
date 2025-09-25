@@ -4,123 +4,99 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.evdealer.evdealermanagement.dto.account.profile.AccountProfileResponse;
 import com.evdealer.evdealermanagement.dto.account.profile.AccountUpdateRequest;
 import com.evdealer.evdealermanagement.entity.account.Account;
+import com.evdealer.evdealermanagement.exceptions.AppException;
+import com.evdealer.evdealermanagement.exceptions.ErrorCode;
 import com.evdealer.evdealermanagement.exceptions.ResourceNotFoundException;
 import com.evdealer.evdealermanagement.mapper.account.AccountMapper;
 import com.evdealer.evdealermanagement.repository.AccountRepository;
 import com.evdealer.evdealermanagement.service.contract.IAccountService;
 
-import lombok.RequiredArgsConstructor;
-
-// @Service
-// public class MemberService {
-//     private final AccountRepository accountRepository;
-
-//     public MemberService(AccountRepository accountRepository) {
-//         this.accountRepository = accountRepository;
-//     }
-
-//     public Account getAccountById(Long id) {
-//         Optional<Account> accountOptional = this.accountRepository.findById(id);
-//         if (accountOptional.isPresent()) {
-//             return accountOptional.get();
-//         }
-//         return null;
-//     }
-
-//     public Account updateMemberProfile(Account accountRequest) {
-//         Account existingAccount = this.getAccountById(accountRequest.getId());
-//         if (existingAccount != null) {
-//             existingAccount.setFullName(accountRequest.getFullName());
-//             existingAccount.setAddress(accountRequest.getAddress());
-//             existingAccount.setAvatarUrl(accountRequest.getAvatarUrl());
-//             existingAccount.setPhone(accountRequest.getPhone());
-//             existingAccount.setStatus(accountRequest.getStatus());
-//             existingAccount.setTaxCode(accountRequest.getTaxCode());
-//             existingAccount.setUsername(accountRequest.getUsername());
-//             existingAccount.setStatus(accountRequest.getStatus());
-
-//             existingAccount.setUpdatedAt(LocalDateTime.now());
-
-//             return this.accountRepository.save(existingAccount);
-//         }
-//         return null;
-//     }
-
-//     public void deleteAccount(Long id) {
-//         this.accountRepository.deleteById(id);
-//     }
-
-// }
-
 @Service
-@RequiredArgsConstructor
-public class MemberService implements IAccountService {
+public class MemberService {
+//    private final AccountRepository accountRepository;
+//
+//    public MemberService(AccountRepository accountRepository) {
+//        this.accountRepository = accountRepository;
+//    }
+//
+//    public Account getAccountById(Long id) {
+//        Optional<Account> accountOptional = this.accountRepository.findById(id);
+//        if (accountOptional.isPresent()) {
+//            return accountOptional.get();
+//        }
+//        return null;
+//    }
 
-    private final AccountRepository accountRepository;
+    // public Account updateMemberProfile(Account accountRequest) {
+    // Account existingAccount = this.getAccountById(accountRequest.getId());
+    // if (existingAccount != null) {
+    // existingAccount.setFullName(accountRequest.getFullName());
+    // existingAccount.setAddress(accountRequest.getAddress());
+    // existingAccount.setAvatarUrl(accountRequest.getAvatarUrl());
+    // existingAccount.setPhone(accountRequest.getPhone());
+    // existingAccount.setStatus(accountRequest.getStatus());
+    // existingAccount.setTaxCode(accountRequest.getTaxCode());
+    // existingAccount.setUsername(accountRequest.getUsername());
+    // existingAccount.setStatus(accountRequest.getStatus());
 
-    @Override
-    @Transactional(readOnly = true)
-    public AccountProfileResponse getProfile(Long userId) {
-        Account acc = accountRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + userId));
-        return AccountMapper.toProfileResponse(acc);
-    }
+    // existingAccount.setUpdatedAt(LocalDateTime.now());
+    // this.accountRepository.save(existingAccount);
 
-    @Override
-    @Transactional
-    public AccountProfileResponse updateProfile(Long userId, AccountUpdateRequest request) {
-        Account acc = accountRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + userId));
+    // return this.accountRepository.save(existingAccount);
+    // }
+    // return null;
+    // }
 
-        // (Tuỳ chọn) Validate unique constraints nếu hệ thống có yêu cầu
-        if (request.getUsername() != null &&
-                accountRepository.existsByUsernameAndIdNot(request.getUsername(), userId)) {
-            throw new IllegalArgumentException("Username already taken");
-        }
-        if (request.getPhone() != null &&
-                accountRepository.existsByPhoneAndIdNot(request.getPhone(), userId)) {
-            throw new IllegalArgumentException("Phone already used");
-        }
+    // public void deleteAccount(Long id) {
+    // this.accountRepository.deleteById(id);
+    // }
 
-        // Chỉ cập nhật field an toàn (fullName, address, avatarUrl, phone, taxCode,
-        // username)
-        AccountMapper.updateAccountFromRequest(request, acc);
+    // @Override
+    // public AccountProfileResponse getProfile(String username) {
+    // Account account = accountRepository.findByUsername(username)
+    // .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    // return AccountMapper.mapToAccountProfileResponse(account);
+    // }
 
-        // KHÔNG cho member đổi status/email/role/password_hash/national_id...
-        // acc.setStatus(...) -> BỎ
+    // @Override
+    // public AccountProfileResponse updateProfile(Long userId, AccountUpdateRequest
+    // accountRequest) {
+    // Account existingAccount = accountRepository.findById(userId)
+    // .orElseThrow(() -> new ResourceNotFoundException("Account not found: " +
+    // userId));
+    // if (accountRequest.getUsername() != null &&
+    // accountRepository.existsByUsernameAndIdNot(accountRequest.getUsername(),
+    // userId)) {
+    // throw new IllegalArgumentException("Username already taken");
+    // }
+    // if (accountRequest.getPhone() != null &&
+    // accountRepository.existsByPhoneAndIdNot(accountRequest.getPhone(), userId)) {
+    // throw new IllegalArgumentException("Phone already used");
+    // }
+    // if (existingAccount != null) {
+    // existingAccount.setFullName(accountRequest.getFullName());
+    // existingAccount.setAddress(accountRequest.getAddress());
+    // existingAccount.setAvatarUrl(accountRequest.getAvatarUrl());
+    // existingAccount.setPhone(accountRequest.getPhone());
+    // existingAccount.setTaxCode(accountRequest.getTaxCode());
+    // existingAccount.setUsername(accountRequest.getUsername());
+    // existingAccount.setStatus(
+    // accountRequest.getStatus() != null
+    // ? Account.Status.valueOf(accountRequest.getStatus().name())
+    // : null);
+    // existingAccount.setUpdatedAt(LocalDateTime.now());
+    // Account saved = accountRepository.save(existingAccount);
+    // return AccountMapper.mapToAccountProfileResponse(saved);
+    // }
+    // return null;
+    // }
 
-        acc.setUpdatedAt(LocalDateTime.now());
-
-        Account saved = accountRepository.save(acc);
-        return AccountMapper.toProfileResponse(saved);
-    }
-
-    // Nếu vẫn cần xài nội bộ:
-    // Tránh trả null. Quăng NotFound thay vì null để dễ debug.
-    public Account getAccountEntityById(Long id) {
-        return accountRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + id));
-    }
-
-    // Chức năng admin/xoá tài khoản – GIỮ nếu bạn có use-case, nhưng không liên
-    // quan update profile của member
-    @Override
-    @Transactional
-    public void deleteAccount(Long userId) {
-        if (!accountRepository.existsById(userId)) {
-            throw new ResourceNotFoundException("Account not found: " + userId);
-        }
-        accountRepository.deleteById(userId);
-    }
-
-    @Override
-    public AccountProfileResponse getProfile(String username) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getProfile'");
-    }
+    // @Override
+    // public AccountProfileResponse getProfile(Long userId) {
+    // return null;
+    // }
 }

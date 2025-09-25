@@ -9,9 +9,13 @@ import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterRespo
 import com.evdealer.evdealermanagement.entity.account.Account;
 import com.evdealer.evdealermanagement.exceptions.AppException;
 import com.evdealer.evdealermanagement.exceptions.ErrorCode;
+import com.evdealer.evdealermanagement.exceptions.ResourceNotFoundException;
 import com.evdealer.evdealermanagement.mapper.account.AccountMapper;
 import com.evdealer.evdealermanagement.repository.AccountRepository;
 import com.evdealer.evdealermanagement.service.contract.IAccountService;
+
+import java.time.LocalDateTime;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,20 +36,31 @@ public class ProfileService implements IAccountService {
     }
 
     @Override
-    public AccountProfileResponse updateProfile(Long userId, AccountUpdateRequest request) {
-        return null;
+    public AccountProfileResponse updateProfile(Long userId, AccountUpdateRequest accountRequest) {
+        Account existingAccount = accountRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND));
+        if (accountRequest.getUsername() != null &&
+                accountRepository.existsByUsernameAndIdNot(accountRequest.getUsername(), userId)) {
+            throw new IllegalArgumentException("Username already taken");
+        }
+        if (accountRequest.getPhone() != null &&
+                accountRepository.existsByPhoneAndIdNot(accountRequest.getPhone(), userId)) {
+            throw new IllegalArgumentException("Phone already used");
+        }
+        AccountMapper.updateAccountFromRequest(accountRequest, existingAccount);
+        existingAccount.setUpdatedAt(LocalDateTime.now());
+        Account saved = accountRepository.save(existingAccount);
+        return AccountMapper.mapToAccountProfileResponse(saved);
     }
 
     @Override
     public void deleteAccount(Long userId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'deleteAccount'");
+        this.accountRepository.deleteById(userId);
     }
 
     @Override
     public AccountProfileResponse getProfile(Long userId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getProfile'");
+        return null;
     }
 
 }

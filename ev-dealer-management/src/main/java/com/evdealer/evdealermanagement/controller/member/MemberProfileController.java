@@ -37,8 +37,6 @@ package com.evdealer.evdealermanagement.controller.member;
 
 import com.evdealer.evdealermanagement.dto.account.profile.AccountProfileResponse;
 import com.evdealer.evdealermanagement.dto.account.profile.AccountUpdateRequest;
-import com.evdealer.evdealermanagement.exceptions.ForbiddenException;
-import com.evdealer.evdealermanagement.exceptions.UnauthorizedException;
 import com.evdealer.evdealermanagement.service.contract.IAccountService;
 import com.evdealer.evdealermanagement.service.contract.IUserContextService;
 import jakarta.validation.Valid;
@@ -58,11 +56,6 @@ public class MemberProfileController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('MEMBER','ADMIN')")
     public ResponseEntity<AccountProfileResponse> getProfile(@PathVariable Long id) {
-        Long currentUserId = userContextService.getCurrentUserId()
-                .orElseThrow(() -> new UnauthorizedException("Unauthenticated"));
-        // if (!currentUserId.equals(id)) {
-        // throw new ForbiddenException("You can only access your own profile");
-        // }
         return ResponseEntity.ok(accountService.getProfile(id));
     }
 
@@ -71,11 +64,13 @@ public class MemberProfileController {
     public ResponseEntity<AccountProfileResponse> updateProfile(
             @PathVariable Long id,
             @Valid @RequestBody AccountUpdateRequest request) {
-        Long currentUserId = userContextService.getCurrentUserId()
-                .orElseThrow(() -> new UnauthorizedException("Unauthenticated"));
-        // if (!currentUserId.equals(id)) {
-        // throw new ForbiddenException("You can only update your own profile");
-        // }
         return ResponseEntity.ok(accountService.updateProfile(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MEMBER','ADMIN')")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        accountService.deleteAccount(id);
+        return ResponseEntity.noContent().build();
     }
 }

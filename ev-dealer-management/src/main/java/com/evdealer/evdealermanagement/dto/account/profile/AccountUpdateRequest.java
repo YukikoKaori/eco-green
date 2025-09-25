@@ -29,5 +29,11 @@ public class AccountUpdateRequest {
     @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
     private String username;
 
+    private Status status; // Sử dụng enum Status
+    // Enum cho Status
+
+    public enum Status {
+        ACTIVE, INACTIVE
+    }
     // Getters and Setters
 }

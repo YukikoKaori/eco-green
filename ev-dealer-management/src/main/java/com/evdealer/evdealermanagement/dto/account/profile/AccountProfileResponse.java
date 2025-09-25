@@ -1,30 +1,36 @@
 package com.evdealer.evdealermanagement.dto.account.profile;
 
-import java.io.ObjectInputFilter.Status;
+import com.evdealer.evdealermanagement.entity.account.Account;
+
+import jakarta.persistence.PreUpdate;
+import lombok.*;
+
+import java.time.Instant;
 import java.time.LocalDateTime;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import org.apache.catalina.security.SecurityUtil;
 
-@Getter
-@Setter
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class AccountProfileResponse {
     private Long id;
-    private String fullName;
-    private String address;
-    private String avatarUrl;
-    private String phone;
-    private String taxCode;
     private String username;
     private String email;
+    private String fullName;
+    private String phone;
+    private String address;
+    private String avatarUrl;
+    private Account.Status status;
     private Boolean emailVerified;
-    private LocalDateTime updatedAt;
     private LocalDateTime createdAt;
-    private Status status;
+
+    private LocalDateTime updatedAt;
+    private String taxCode;
+
+    @PreUpdate
+    public void handleBeforeUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

@@ -26,12 +26,10 @@ public class ProductService implements IProductService {
                     .stream()
                     .map(ProductDetail::fromEntity)
                     .toList();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return List.of();
         }
     }
-
 
     @Override
     public ProductDetail getProductById() {
