@@ -48,6 +48,7 @@ public class AuthService {
                 .fullName(account.getFullName())
                 .phone(account.getPhone())
                 .nationalId(account.getNationalId())
+                .dateOfBirth(account.getDateOfBirth())
                 .address(account.getAddress())
                 .role(account.getRole())
                 .status(account.getStatus())
