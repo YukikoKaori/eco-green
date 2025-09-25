@@ -10,7 +10,7 @@ import java.util.List;
 
 public class CustomAccountDetails implements UserDetails {
 
-    @Autowired
+
     private final Account account;
 
     public CustomAccountDetails(Account account) {
@@ -20,6 +20,10 @@ public class CustomAccountDetails implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(() -> "ROLE_" + account.getRole().name());
+    }
+
+    public Long getId() {
+        return account.getId();
     }
 
     @Override

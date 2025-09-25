@@ -16,6 +16,7 @@ public class AccountMapper {
                 .status(account.getStatus())
                 .emailVerified(account.getEmailVerified())
                 .createdAt(account.getCreatedAt())
+                .dateOfBirth(account.getDateOfBirth())
                 .build();
     }
 }

@@ -1,5 +1,6 @@
 package com.evdealer.evdealermanagement.service.implement;
 
+import com.evdealer.evdealermanagement.dto.account.custom.CustomAccountDetails;
 import com.evdealer.evdealermanagement.entity.account.Account;
 import com.evdealer.evdealermanagement.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,10 +25,12 @@ public class AccountDetailsService implements UserDetailsService {
         Account account = accountRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User Not Found"));
 
-        return User.builder()
-                .username(account.getUsername())
-                .password(account.getPasswordHash())
-                .roles(String.valueOf(account.getRole()))
-                .build();
+        return new CustomAccountDetails(account);
+
+//        return User.builder()
+//                .username(account.getUsername())
+//                .password(account.getPasswordHash())
+//                .roles(String.valueOf(account.getRole()))
+//                .build();
     }
 }

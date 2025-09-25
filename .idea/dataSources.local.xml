@@ -14,6 +14,7 @@
           <node kind="schema">
             <name qname="@" />
             <name qname="eco-green" />
+            <name qname="eco_green" />
           </node>
         </introspection-scope>
       </schema-mapping>

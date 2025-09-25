@@ -1,5 +1,6 @@
 package com.evdealer.evdealermanagement.configurations;
 
+import com.evdealer.evdealermanagement.dto.account.custom.CustomAccountDetails;
 import com.evdealer.evdealermanagement.service.implement.AccountDetailsService;
 import com.evdealer.evdealermanagement.service.implement.JwtService;
 import jakarta.servlet.FilterChain;
@@ -37,7 +38,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String username = jwtService.extractUsername(jwt);
 
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+//                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+                    CustomAccountDetails userDetails = (CustomAccountDetails) userDetailsService.loadUserByUsername(username);
+
 
                     if (jwtService.validateToken(jwt, userDetails)) {
                         UsernamePasswordAuthenticationToken authenticationToken =

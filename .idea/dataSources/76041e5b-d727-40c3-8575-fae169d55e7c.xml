@@ -997,10 +997,10 @@ sys|schema||mysql.sys|localhost|TRIGGER|G</Grants>
     <schema id="288" parent="1" name="customer">
       <CollationName>utf8mb4_0900_ai_ci</CollationName>
     </schema>
-    <schema id="289" parent="1" name="eco-green">
+    <schema id="289" parent="1" name="eco_green">
       <AutoIntrospectionLevel>3</AutoIntrospectionLevel>
       <LastIntrospectionLevel>3</LastIntrospectionLevel>
-      <LastIntrospectionLocalTimestamp>2025-09-20.12:19:06</LastIntrospectionLocalTimestamp>
+      <LastIntrospectionLocalTimestamp>2025-09-25.09:06:57</LastIntrospectionLocalTimestamp>
       <CollationName>utf8mb4_0900_ai_ci</CollationName>
     </schema>
     <schema id="290" parent="1" name="ev_trading">
@@ -1096,721 +1096,788 @@ sys|schema||mysql.sys|localhost|TRIGGER|G</Grants>
       <Engine>InnoDB</Engine>
       <CollationName>utf8mb4_0900_ai_ci</CollationName>
     </table>
-    <column id="312" parent="302" name="id">
-      <AutoIncrement>1</AutoIncrement>
+    <table id="312" parent="289" name="wishlist_items">
+      <DetailsLevel>3</DetailsLevel>
+      <Engine>InnoDB</Engine>
+      <CollationName>utf8mb4_0900_ai_ci</CollationName>
+    </table>
+    <column id="313" parent="302" name="id">
+      <AutoIncrement>2</AutoIncrement>
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="313" parent="302" name="address">
+    <column id="314" parent="302" name="address">
       <Position>2</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="314" parent="302" name="avatar_url">
+    <column id="315" parent="302" name="avatar_url">
       <Position>3</Position>
       <StoredType>varchar(500)|0s</StoredType>
     </column>
-    <column id="315" parent="302" name="created_at">
+    <column id="316" parent="302" name="created_at">
       <Position>4</Position>
       <StoredType>datetime(6)|0s</StoredType>
     </column>
-    <column id="316" parent="302" name="email">
+    <column id="317" parent="302" name="email">
       <NotNull>1</NotNull>
       <Position>5</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="317" parent="302" name="email_verified">
+    <column id="318" parent="302" name="email_verified">
       <Position>6</Position>
       <StoredType>bit(1)|0s</StoredType>
     </column>
-    <column id="318" parent="302" name="full_name">
+    <column id="319" parent="302" name="full_name">
       <NotNull>1</NotNull>
       <Position>7</Position>
       <StoredType>varchar(100)|0s</StoredType>
     </column>
-    <column id="319" parent="302" name="national_id">
+    <column id="320" parent="302" name="national_id">
       <Position>8</Position>
       <StoredType>varchar(20)|0s</StoredType>
     </column>
-    <column id="320" parent="302" name="national_id_issued_date">
+    <column id="321" parent="302" name="national_id_issued_date">
       <Position>9</Position>
-      <StoredType>datetime(6)|0s</StoredType>
+      <StoredType>date|0s</StoredType>
     </column>
-    <column id="321" parent="302" name="password_hash">
+    <column id="322" parent="302" name="password_hash">
       <NotNull>1</NotNull>
       <Position>10</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="322" parent="302" name="phone">
+    <column id="323" parent="302" name="phone">
       <Position>11</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="323" parent="302" name="role">
+    <column id="324" parent="302" name="role">
       <Position>12</Position>
-      <StoredType>enum(&apos;ADMIN&apos;, &apos;MEMBER&apos;)|0e</StoredType>
+      <StoredType>enum(&apos;ADMIN&apos;, &apos;MEMBER&apos;, &apos;STAFF&apos;)|0e</StoredType>
     </column>
-    <column id="324" parent="302" name="status">
+    <column id="325" parent="302" name="status">
       <Position>13</Position>
       <StoredType>enum(&apos;ACTIVE&apos;, &apos;INACTIVE&apos;)|0e</StoredType>
     </column>
-    <column id="325" parent="302" name="tax_code">
+    <column id="326" parent="302" name="tax_code">
       <Position>14</Position>
       <StoredType>varchar(20)|0s</StoredType>
     </column>
-    <column id="326" parent="302" name="updated_at">
+    <column id="327" parent="302" name="updated_at">
       <Position>15</Position>
       <StoredType>datetime(6)|0s</StoredType>
     </column>
-    <column id="327" parent="302" name="username">
+    <column id="328" parent="302" name="username">
       <NotNull>1</NotNull>
       <Position>16</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <index id="328" parent="302" name="PRIMARY">
+    <column id="329" parent="302" name="date_of_birth">
+      <Position>17</Position>
+      <StoredType>date|0s</StoredType>
+    </column>
+    <index id="330" parent="302" name="PRIMARY">
       <ColNames>id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="329" parent="302" name="UKn7ihswpy07ci568w34q0oi8he">
+    <index id="331" parent="302" name="UKn7ihswpy07ci568w34q0oi8he">
       <ColNames>email</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="330" parent="302" name="UKa77e77lhuwh7wdrxlnsk7vyqg">
+    <index id="332" parent="302" name="UKa77e77lhuwh7wdrxlnsk7vyqg">
       <ColNames>national_id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="331" parent="302" name="UK58adth2jw22sbeb5kxjm0h2j0">
+    <index id="333" parent="302" name="UK58adth2jw22sbeb5kxjm0h2j0">
       <ColNames>tax_code</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="332" parent="302" name="UKk8h1bgqoplx0rkngj01pm1rgp">
+    <index id="334" parent="302" name="UKk8h1bgqoplx0rkngj01pm1rgp">
       <ColNames>username</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <key id="333" parent="302" name="PRIMARY">
+    <key id="335" parent="302" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <key id="334" parent="302" name="UKn7ihswpy07ci568w34q0oi8he">
+    <key id="336" parent="302" name="UKn7ihswpy07ci568w34q0oi8he">
       <UnderlyingIndexName>UKn7ihswpy07ci568w34q0oi8he</UnderlyingIndexName>
     </key>
-    <key id="335" parent="302" name="UKa77e77lhuwh7wdrxlnsk7vyqg">
+    <key id="337" parent="302" name="UKa77e77lhuwh7wdrxlnsk7vyqg">
       <UnderlyingIndexName>UKa77e77lhuwh7wdrxlnsk7vyqg</UnderlyingIndexName>
     </key>
-    <key id="336" parent="302" name="UK58adth2jw22sbeb5kxjm0h2j0">
+    <key id="338" parent="302" name="UK58adth2jw22sbeb5kxjm0h2j0">
       <UnderlyingIndexName>UK58adth2jw22sbeb5kxjm0h2j0</UnderlyingIndexName>
     </key>
-    <key id="337" parent="302" name="UKk8h1bgqoplx0rkngj01pm1rgp">
+    <key id="339" parent="302" name="UKk8h1bgqoplx0rkngj01pm1rgp">
       <UnderlyingIndexName>UKk8h1bgqoplx0rkngj01pm1rgp</UnderlyingIndexName>
     </key>
-    <column id="338" parent="303" name="id">
+    <column id="340" parent="303" name="id">
       <AutoIncrement>1</AutoIncrement>
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>smallint|0s</StoredType>
     </column>
-    <column id="339" parent="303" name="country">
+    <column id="341" parent="303" name="country">
       <Position>2</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="340" parent="303" name="created_at">
+    <column id="342" parent="303" name="created_at">
       <Position>3</Position>
       <StoredType>datetime(6)|0s</StoredType>
     </column>
-    <column id="341" parent="303" name="logo_url">
+    <column id="343" parent="303" name="logo_url">
       <Position>4</Position>
       <StoredType>varchar(500)|0s</StoredType>
     </column>
-    <column id="342" parent="303" name="name">
+    <column id="344" parent="303" name="name">
       <NotNull>1</NotNull>
       <Position>5</Position>
       <StoredType>varchar(100)|0s</StoredType>
     </column>
-    <column id="343" parent="303" name="status">
+    <column id="345" parent="303" name="status">
       <Position>6</Position>
       <StoredType>enum(&apos;ACTIVE&apos;, &apos;INACTIVE&apos;)|0e</StoredType>
     </column>
-    <index id="344" parent="303" name="PRIMARY">
+    <index id="346" parent="303" name="PRIMARY">
       <ColNames>id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="345" parent="303" name="UKbmsifox8ao7k5xyio6fun2jon">
+    <index id="347" parent="303" name="UKbmsifox8ao7k5xyio6fun2jon">
       <ColNames>name</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <key id="346" parent="303" name="PRIMARY">
+    <key id="348" parent="303" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <key id="347" parent="303" name="UKbmsifox8ao7k5xyio6fun2jon">
+    <key id="349" parent="303" name="UKbmsifox8ao7k5xyio6fun2jon">
       <UnderlyingIndexName>UKbmsifox8ao7k5xyio6fun2jon</UnderlyingIndexName>
     </key>
-    <column id="348" parent="304" name="product_id">
+    <column id="350" parent="304" name="product_id">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="349" parent="304" name="capacity_ah">
+    <column id="351" parent="304" name="capacity_ah">
       <Position>2</Position>
       <StoredType>double|0s</StoredType>
     </column>
-    <column id="350" parent="304" name="cycle_count">
+    <column id="352" parent="304" name="cycle_count">
       <Position>3</Position>
       <StoredType>int|0s</StoredType>
     </column>
-    <column id="351" parent="304" name="energy_wh">
+    <column id="353" parent="304" name="energy_wh">
       <Position>4</Position>
       <StoredType>double|0s</StoredType>
     </column>
-    <column id="352" parent="304" name="health_percent">
+    <column id="354" parent="304" name="health_percent">
       <Position>5</Position>
       <StoredType>smallint|0s</StoredType>
     </column>
-    <column id="353" parent="304" name="height_mm">
+    <column id="355" parent="304" name="height_mm">
       <Position>6</Position>
       <StoredType>double|0s</StoredType>
     </column>
-    <column id="354" parent="304" name="length_mm">
+    <column id="356" parent="304" name="length_mm">
       <Position>7</Position>
       <StoredType>double|0s</StoredType>
     </column>
-    <column id="355" parent="304" name="manufacturing_date">
+    <column id="357" parent="304" name="manufacturing_date">
       <Position>8</Position>
       <StoredType>date|0s</StoredType>
     </column>
-    <column id="356" parent="304" name="max_charge_current_a">
+    <column id="358" parent="304" name="max_charge_current_a">
       <Position>9</Position>
       <StoredType>double|0s</StoredType>
     </column>
-    <column id="357" parent="304" name="max_discharge_current_a">
+    <column id="359" parent="304" name="max_discharge_current_a">
       <Position>10</Position>
       <StoredType>double|0s</StoredType>
     </column>
-    <column id="358" parent="304" name="model">
+    <column id="360" parent="304" name="model">
       <Position>11</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="359" parent="304" name="voltage_v">
+    <column id="361" parent="304" name="voltage_v">
       <Position>12</Position>
       <StoredType>double|0s</StoredType>
     </column>
-    <column id="360" parent="304" name="weight_kg">
+    <column id="362" parent="304" name="weight_kg">
       <Position>13</Position>
       <StoredType>double|0s</StoredType>
     </column>
-    <column id="361" parent="304" name="width_mm">
+    <column id="363" parent="304" name="width_mm">
       <Position>14</Position>
       <StoredType>double|0s</StoredType>
     </column>
-    <column id="362" parent="304" name="battery_type_id">
+    <column id="364" parent="304" name="battery_type_id">
       <NotNull>1</NotNull>
       <Position>15</Position>
       <StoredType>tinyint unsigned|0s</StoredType>
     </column>
-    <column id="363" parent="304" name="brand_id">
+    <column id="365" parent="304" name="brand_id">
       <Position>16</Position>
       <StoredType>smallint|0s</StoredType>
     </column>
-    <foreign-key id="364" parent="304" name="FKnyfxjncegymmegt5tqc1rsh1t">
+    <foreign-key id="366" parent="304" name="FKnyfxjncegymmegt5tqc1rsh1t">
       <ColNames>product_id</ColNames>
       <RefColNames>id</RefColNames>
       <RefTableName>products</RefTableName>
     </foreign-key>
-    <foreign-key id="365" parent="304" name="FKq8op87urodixiem5e1p8an2jg">
+    <foreign-key id="367" parent="304" name="FKq8op87urodixiem5e1p8an2jg">
       <ColNames>battery_type_id</ColNames>
       <RefColNames>id</RefColNames>
       <RefTableName>battery_types</RefTableName>
     </foreign-key>
-    <foreign-key id="366" parent="304" name="FKict57q1eliv9fe1kw011sq9tg">
+    <foreign-key id="368" parent="304" name="FKict57q1eliv9fe1kw011sq9tg">
       <ColNames>brand_id</ColNames>
       <RefColNames>id</RefColNames>
       <RefTableName>battery_brands</RefTableName>
     </foreign-key>
-    <index id="367" parent="304" name="PRIMARY">
+    <index id="369" parent="304" name="PRIMARY">
       <ColNames>product_id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="368" parent="304" name="FKq8op87urodixiem5e1p8an2jg">
+    <index id="370" parent="304" name="FKq8op87urodixiem5e1p8an2jg">
       <ColNames>battery_type_id</ColNames>
       <Type>btree</Type>
     </index>
-    <index id="369" parent="304" name="FKict57q1eliv9fe1kw011sq9tg">
+    <index id="371" parent="304" name="FKict57q1eliv9fe1kw011sq9tg">
       <ColNames>brand_id</ColNames>
       <Type>btree</Type>
     </index>
-    <key id="370" parent="304" name="PRIMARY">
+    <key id="372" parent="304" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <column id="371" parent="305" name="id">
+    <column id="373" parent="305" name="id">
       <AutoIncrement>1</AutoIncrement>
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>tinyint unsigned|0s</StoredType>
     </column>
-    <column id="372" parent="305" name="created_at">
+    <column id="374" parent="305" name="created_at">
       <Position>2</Position>
       <StoredType>datetime(6)|0s</StoredType>
     </column>
-    <column id="373" parent="305" name="name">
+    <column id="375" parent="305" name="name">
       <NotNull>1</NotNull>
       <Position>3</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <column id="374" parent="305" name="status">
+    <column id="376" parent="305" name="status">
       <Position>4</Position>
       <StoredType>enum(&apos;ACTIVE&apos;, &apos;INACTIVE&apos;)|0e</StoredType>
     </column>
-    <column id="375" parent="305" name="typical_lifespan_cycles">
+    <column id="377" parent="305" name="typical_lifespan_cycles">
       <Position>5</Position>
       <StoredType>int|0s</StoredType>
     </column>
-    <column id="376" parent="305" name="typical_voltage_v">
+    <column id="378" parent="305" name="typical_voltage_v">
       <Position>6</Position>
       <StoredType>double|0s</StoredType>
     </column>
-    <index id="377" parent="305" name="PRIMARY">
+    <index id="379" parent="305" name="PRIMARY">
       <ColNames>id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="378" parent="305" name="UKlq6ckb1llh3mjs0hebw0u200t">
+    <index id="380" parent="305" name="UKlq6ckb1llh3mjs0hebw0u200t">
       <ColNames>name</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <key id="379" parent="305" name="PRIMARY">
+    <key id="381" parent="305" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <key id="380" parent="305" name="UKlq6ckb1llh3mjs0hebw0u200t">
+    <key id="382" parent="305" name="UKlq6ckb1llh3mjs0hebw0u200t">
       <UnderlyingIndexName>UKlq6ckb1llh3mjs0hebw0u200t</UnderlyingIndexName>
     </key>
-    <column id="381" parent="306" name="id">
+    <column id="383" parent="306" name="id">
       <AutoIncrement>1</AutoIncrement>
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="382" parent="306" name="alt_text">
+    <column id="384" parent="306" name="alt_text">
       <Position>2</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="383" parent="306" name="created_at">
+    <column id="385" parent="306" name="created_at">
       <Position>3</Position>
       <StoredType>datetime(6)|0s</StoredType>
     </column>
-    <column id="384" parent="306" name="image_url">
+    <column id="386" parent="306" name="image_url">
       <NotNull>1</NotNull>
       <Position>4</Position>
       <StoredType>varchar(500)|0s</StoredType>
     </column>
-    <column id="385" parent="306" name="is_primary">
+    <column id="387" parent="306" name="is_primary">
       <Position>5</Position>
       <StoredType>bit(1)|0s</StoredType>
     </column>
-    <column id="386" parent="306" name="sort_order">
+    <column id="388" parent="306" name="sort_order">
       <Position>6</Position>
       <StoredType>smallint|0s</StoredType>
     </column>
-    <column id="387" parent="306" name="product_id">
+    <column id="389" parent="306" name="product_id">
       <NotNull>1</NotNull>
       <Position>7</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <foreign-key id="388" parent="306" name="FKqnq71xsohugpqwf3c9gxmsuy">
+    <foreign-key id="390" parent="306" name="FKqnq71xsohugpqwf3c9gxmsuy">
       <ColNames>product_id</ColNames>
       <RefColNames>id</RefColNames>
       <RefTableName>products</RefTableName>
     </foreign-key>
-    <index id="389" parent="306" name="PRIMARY">
+    <index id="391" parent="306" name="PRIMARY">
       <ColNames>id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="390" parent="306" name="FKqnq71xsohugpqwf3c9gxmsuy">
+    <index id="392" parent="306" name="FKqnq71xsohugpqwf3c9gxmsuy">
       <ColNames>product_id</ColNames>
       <Type>btree</Type>
     </index>
-    <key id="391" parent="306" name="PRIMARY">
+    <key id="393" parent="306" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <column id="392" parent="307" name="id">
+    <column id="394" parent="307" name="id">
       <AutoIncrement>1</AutoIncrement>
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="393" parent="307" name="address_detail">
+    <column id="395" parent="307" name="address_detail">
       <Position>2</Position>
       <StoredType>text|0s</StoredType>
     </column>
-    <column id="394" parent="307" name="auction_end_time">
+    <column id="396" parent="307" name="auction_end_time">
       <Position>3</Position>
       <StoredType>datetime(6)|0s</StoredType>
     </column>
-    <column id="395" parent="307" name="city">
+    <column id="397" parent="307" name="city">
       <Position>4</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="396" parent="307" name="condition_type">
+    <column id="398" parent="307" name="condition_type">
       <Position>5</Position>
       <StoredType>enum(&apos;NEW&apos;, &apos;USED&apos;)|0e</StoredType>
     </column>
-    <column id="397" parent="307" name="created_at">
+    <column id="399" parent="307" name="created_at">
       <Position>6</Position>
       <StoredType>datetime(6)|0s</StoredType>
     </column>
-    <column id="398" parent="307" name="description">
+    <column id="400" parent="307" name="description">
       <Position>7</Position>
       <StoredType>text|0s</StoredType>
     </column>
-    <column id="399" parent="307" name="district">
+    <column id="401" parent="307" name="district">
       <Position>8</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="400" parent="307" name="expires_at">
+    <column id="402" parent="307" name="expires_at">
       <Position>9</Position>
       <StoredType>datetime(6)|0s</StoredType>
     </column>
-    <column id="401" parent="307" name="is_negotiable">
+    <column id="403" parent="307" name="is_negotiable">
       <Position>10</Position>
       <StoredType>bit(1)|0s</StoredType>
     </column>
-    <column id="402" parent="307" name="posting_fee">
+    <column id="404" parent="307" name="posting_fee">
       <Position>11</Position>
       <StoredType>decimal(38,2 digit)|0s</StoredType>
     </column>
-    <column id="403" parent="307" name="price">
+    <column id="405" parent="307" name="price">
       <Position>12</Position>
       <StoredType>decimal(38,2 digit)|0s</StoredType>
     </column>
-    <column id="404" parent="307" name="sale_type">
+    <column id="406" parent="307" name="reject_reason">
       <Position>13</Position>
+      <StoredType>varchar(255)|0s</StoredType>
+    </column>
+    <column id="407" parent="307" name="sale_type">
+      <Position>14</Position>
       <StoredType>enum(&apos;AUCTION&apos;, &apos;FIXED_PRICE&apos;, &apos;NEGOTIATION&apos;)|0e</StoredType>
     </column>
-    <column id="405" parent="307" name="seller_phone">
-      <Position>14</Position>
+    <column id="408" parent="307" name="seller_phone">
+      <Position>15</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="406" parent="307" name="status">
-      <Position>15</Position>
+    <column id="409" parent="307" name="status">
+      <Position>16</Position>
       <StoredType>enum(&apos;ACTIVE&apos;, &apos;DRAFT&apos;, &apos;EXPIRED&apos;, &apos;PENDING&apos;, &apos;REJECTED&apos;, &apos;SOLD&apos;)|0e</StoredType>
     </column>
-    <column id="407" parent="307" name="title">
-      <Position>16</Position>
+    <column id="410" parent="307" name="title">
+      <Position>17</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="408" parent="307" name="type">
-      <Position>17</Position>
+    <column id="411" parent="307" name="type">
+      <Position>18</Position>
       <StoredType>enum(&apos;BATTERY&apos;, &apos;VEHICLE&apos;)|0e</StoredType>
     </column>
-    <column id="409" parent="307" name="updated_at">
-      <Position>18</Position>
+    <column id="412" parent="307" name="updated_at">
+      <Position>19</Position>
       <StoredType>datetime(6)|0s</StoredType>
     </column>
-    <column id="410" parent="307" name="ward">
-      <Position>19</Position>
+    <column id="413" parent="307" name="ward">
+      <Position>20</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="411" parent="307" name="approved_by">
-      <Position>20</Position>
-      <StoredType>bigint|0s</StoredType>
-    </column>
-    <column id="412" parent="307" name="seller_id">
-      <NotNull>1</NotNull>
+    <column id="414" parent="307" name="approved_by">
       <Position>21</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <foreign-key id="413" parent="307" name="FKqtn3d3m95dtsr0ajqrj2w1asv">
+    <column id="415" parent="307" name="seller_id">
+      <NotNull>1</NotNull>
+      <Position>22</Position>
+      <StoredType>bigint|0s</StoredType>
+    </column>
+    <foreign-key id="416" parent="307" name="FKqtn3d3m95dtsr0ajqrj2w1asv">
       <ColNames>approved_by</ColNames>
       <RefColNames>id</RefColNames>
       <RefTableName>accounts</RefTableName>
     </foreign-key>
-    <foreign-key id="414" parent="307" name="FKli6ubqj3tqhtnuf9l33tpex1n">
+    <foreign-key id="417" parent="307" name="FKli6ubqj3tqhtnuf9l33tpex1n">
       <ColNames>seller_id</ColNames>
       <RefColNames>id</RefColNames>
       <RefTableName>accounts</RefTableName>
     </foreign-key>
-    <index id="415" parent="307" name="PRIMARY">
+    <index id="418" parent="307" name="PRIMARY">
       <ColNames>id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="416" parent="307" name="FKqtn3d3m95dtsr0ajqrj2w1asv">
+    <index id="419" parent="307" name="FKqtn3d3m95dtsr0ajqrj2w1asv">
       <ColNames>approved_by</ColNames>
       <Type>btree</Type>
     </index>
-    <index id="417" parent="307" name="FKli6ubqj3tqhtnuf9l33tpex1n">
+    <index id="420" parent="307" name="FKli6ubqj3tqhtnuf9l33tpex1n">
       <ColNames>seller_id</ColNames>
       <Type>btree</Type>
     </index>
-    <key id="418" parent="307" name="PRIMARY">
+    <key id="421" parent="307" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <column id="419" parent="308" name="id">
+    <column id="422" parent="308" name="id">
       <AutoIncrement>1</AutoIncrement>
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="420" parent="308" name="compatibility_level">
+    <column id="423" parent="308" name="compatibility_level">
       <Position>2</Position>
       <StoredType>enum(&apos;GOOD&apos;, &apos;PARTIAL&apos;, &apos;PERFECT&apos;)|0e</StoredType>
     </column>
-    <column id="421" parent="308" name="created_at">
+    <column id="424" parent="308" name="created_at">
       <Position>3</Position>
       <StoredType>datetime(6)|0s</StoredType>
     </column>
-    <column id="422" parent="308" name="battery_product_id">
+    <column id="425" parent="308" name="battery_product_id">
       <NotNull>1</NotNull>
       <Position>4</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="423" parent="308" name="vehicle_product_id">
+    <column id="426" parent="308" name="vehicle_product_id">
       <NotNull>1</NotNull>
       <Position>5</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <foreign-key id="424" parent="308" name="FKpo7wiqofr7j8i2jbmsx5t4fdn">
+    <foreign-key id="427" parent="308" name="FKpo7wiqofr7j8i2jbmsx5t4fdn">
       <ColNames>battery_product_id</ColNames>
       <RefColNames>id</RefColNames>
       <RefTableName>products</RefTableName>
     </foreign-key>
-    <foreign-key id="425" parent="308" name="FKc7d5fv3upt4fytparon2xnxwt">
+    <foreign-key id="428" parent="308" name="FKc7d5fv3upt4fytparon2xnxwt">
       <ColNames>vehicle_product_id</ColNames>
       <RefColNames>id</RefColNames>
       <RefTableName>products</RefTableName>
     </foreign-key>
-    <index id="426" parent="308" name="PRIMARY">
+    <index id="429" parent="308" name="PRIMARY">
       <ColNames>id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="427" parent="308" name="FKpo7wiqofr7j8i2jbmsx5t4fdn">
+    <index id="430" parent="308" name="FKpo7wiqofr7j8i2jbmsx5t4fdn">
       <ColNames>battery_product_id</ColNames>
       <Type>btree</Type>
     </index>
-    <index id="428" parent="308" name="FKc7d5fv3upt4fytparon2xnxwt">
+    <index id="431" parent="308" name="FKc7d5fv3upt4fytparon2xnxwt">
       <ColNames>vehicle_product_id</ColNames>
       <Type>btree</Type>
     </index>
-    <key id="429" parent="308" name="PRIMARY">
+    <key id="432" parent="308" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <column id="430" parent="309" name="id">
+    <column id="433" parent="309" name="id">
       <AutoIncrement>1</AutoIncrement>
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>smallint|0s</StoredType>
     </column>
-    <column id="431" parent="309" name="country">
+    <column id="434" parent="309" name="country">
       <Position>2</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="432" parent="309" name="created_at">
+    <column id="435" parent="309" name="created_at">
       <Position>3</Position>
       <StoredType>datetime(6)|0s</StoredType>
     </column>
-    <column id="433" parent="309" name="logo_url">
+    <column id="436" parent="309" name="logo_url">
       <Position>4</Position>
       <StoredType>varchar(500)|0s</StoredType>
     </column>
-    <column id="434" parent="309" name="name">
+    <column id="437" parent="309" name="name">
       <NotNull>1</NotNull>
       <Position>5</Position>
       <StoredType>varchar(100)|0s</StoredType>
     </column>
-    <column id="435" parent="309" name="status">
+    <column id="438" parent="309" name="status">
       <Position>6</Position>
       <StoredType>enum(&apos;ACTIVE&apos;, &apos;INACTIVE&apos;)|0e</StoredType>
     </column>
-    <index id="436" parent="309" name="PRIMARY">
+    <index id="439" parent="309" name="PRIMARY">
       <ColNames>id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="437" parent="309" name="UK68rb2my2c20nl27sclkn9apob">
+    <index id="440" parent="309" name="UK68rb2my2c20nl27sclkn9apob">
       <ColNames>name</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <key id="438" parent="309" name="PRIMARY">
+    <key id="441" parent="309" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <key id="439" parent="309" name="UK68rb2my2c20nl27sclkn9apob">
+    <key id="442" parent="309" name="UK68rb2my2c20nl27sclkn9apob">
       <UnderlyingIndexName>UK68rb2my2c20nl27sclkn9apob</UnderlyingIndexName>
     </key>
-    <column id="440" parent="310" name="id">
+    <column id="443" parent="310" name="id">
       <AutoIncrement>1</AutoIncrement>
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>tinyint|0s</StoredType>
     </column>
-    <column id="441" parent="310" name="created_at">
+    <column id="444" parent="310" name="created_at">
       <Position>2</Position>
       <StoredType>datetime(6)|0s</StoredType>
     </column>
-    <column id="442" parent="310" name="description">
+    <column id="445" parent="310" name="description">
       <Position>3</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="443" parent="310" name="name">
+    <column id="446" parent="310" name="name">
       <NotNull>1</NotNull>
       <Position>4</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <column id="444" parent="310" name="status">
+    <column id="447" parent="310" name="status">
       <Position>5</Position>
       <StoredType>enum(&apos;ACTIVE&apos;, &apos;INACTIVE&apos;)|0e</StoredType>
     </column>
-    <index id="445" parent="310" name="PRIMARY">
+    <index id="448" parent="310" name="PRIMARY">
       <ColNames>id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="446" parent="310" name="UKbjkbp9k0wqcuuuohueja4y06m">
+    <index id="449" parent="310" name="UKbjkbp9k0wqcuuuohueja4y06m">
       <ColNames>name</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <key id="447" parent="310" name="PRIMARY">
+    <key id="450" parent="310" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <key id="448" parent="310" name="UKbjkbp9k0wqcuuuohueja4y06m">
+    <key id="451" parent="310" name="UKbjkbp9k0wqcuuuohueja4y06m">
       <UnderlyingIndexName>UKbjkbp9k0wqcuuuohueja4y06m</UnderlyingIndexName>
     </key>
-    <column id="449" parent="311" name="product_id">
+    <column id="452" parent="311" name="product_id">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="450" parent="311" name="battery_health_percent">
+    <column id="453" parent="311" name="battery_health_percent">
       <Position>2</Position>
       <StoredType>smallint|0s</StoredType>
     </column>
-    <column id="451" parent="311" name="built_in_battery_capacity_ah">
+    <column id="454" parent="311" name="built_in_battery_capacity_ah">
       <Position>3</Position>
       <StoredType>double|0s</StoredType>
     </column>
-    <column id="452" parent="311" name="built_in_battery_voltage_v">
+    <column id="455" parent="311" name="built_in_battery_voltage_v">
       <Position>4</Position>
       <StoredType>double|0s</StoredType>
     </column>
-    <column id="453" parent="311" name="charging_time_hours">
+    <column id="456" parent="311" name="charging_time_hours">
       <Position>5</Position>
       <StoredType>double|0s</StoredType>
     </column>
-    <column id="454" parent="311" name="color">
+    <column id="457" parent="311" name="color">
       <Position>6</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="455" parent="311" name="has_insurance">
+    <column id="458" parent="311" name="has_insurance">
       <Position>7</Position>
       <StoredType>bit(1)|0s</StoredType>
     </column>
-    <column id="456" parent="311" name="has_registration">
+    <column id="459" parent="311" name="has_registration">
       <Position>8</Position>
       <StoredType>bit(1)|0s</StoredType>
     </column>
-    <column id="457" parent="311" name="max_speed_kmh">
+    <column id="460" parent="311" name="max_speed_kmh">
       <Position>9</Position>
       <StoredType>smallint|0s</StoredType>
     </column>
-    <column id="458" parent="311" name="mileage_km">
+    <column id="461" parent="311" name="mileage_km">
       <Position>10</Position>
       <StoredType>int|0s</StoredType>
     </column>
-    <column id="459" parent="311" name="model">
+    <column id="462" parent="311" name="model">
       <Position>11</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="460" parent="311" name="motor_power_w">
+    <column id="463" parent="311" name="motor_power_w">
       <Position>12</Position>
       <StoredType>int|0s</StoredType>
     </column>
-    <column id="461" parent="311" name="range_km">
+    <column id="464" parent="311" name="range_km">
       <Position>13</Position>
       <StoredType>smallint|0s</StoredType>
     </column>
-    <column id="462" parent="311" name="removable_battery">
+    <column id="465" parent="311" name="removable_battery">
       <Position>14</Position>
       <StoredType>bit(1)|0s</StoredType>
     </column>
-    <column id="463" parent="311" name="warranty_months">
+    <column id="466" parent="311" name="warranty_months">
       <Position>15</Position>
       <StoredType>tinyint|0s</StoredType>
     </column>
-    <column id="464" parent="311" name="weight_kg">
+    <column id="467" parent="311" name="weight_kg">
       <Position>16</Position>
       <StoredType>double|0s</StoredType>
     </column>
-    <column id="465" parent="311" name="year">
+    <column id="468" parent="311" name="year">
       <Position>17</Position>
       <StoredType>smallint|0s</StoredType>
     </column>
-    <column id="466" parent="311" name="brand_id">
+    <column id="469" parent="311" name="brand_id">
       <Position>18</Position>
       <StoredType>smallint|0s</StoredType>
     </column>
-    <column id="467" parent="311" name="category_id">
+    <column id="470" parent="311" name="category_id">
       <NotNull>1</NotNull>
       <Position>19</Position>
       <StoredType>tinyint|0s</StoredType>
     </column>
-    <foreign-key id="468" parent="311" name="FKnnwdvxpxf6d7p4hqbg9mrqtky">
+    <foreign-key id="471" parent="311" name="FKnnwdvxpxf6d7p4hqbg9mrqtky">
       <ColNames>product_id</ColNames>
       <RefColNames>id</RefColNames>
       <RefTableName>products</RefTableName>
     </foreign-key>
-    <foreign-key id="469" parent="311" name="FK2hay62ivbn8ow7epfo34usep9">
+    <foreign-key id="472" parent="311" name="FK2hay62ivbn8ow7epfo34usep9">
       <ColNames>brand_id</ColNames>
       <RefColNames>id</RefColNames>
       <RefTableName>vehicle_brands</RefTableName>
     </foreign-key>
-    <foreign-key id="470" parent="311" name="FKsxml9bpul7mt3bcerbd31ekc2">
+    <foreign-key id="473" parent="311" name="FKsxml9bpul7mt3bcerbd31ekc2">
       <ColNames>category_id</ColNames>
       <RefColNames>id</RefColNames>
       <RefTableName>vehicle_categories</RefTableName>
     </foreign-key>
-    <index id="471" parent="311" name="PRIMARY">
+    <index id="474" parent="311" name="PRIMARY">
       <ColNames>product_id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="472" parent="311" name="FK2hay62ivbn8ow7epfo34usep9">
+    <index id="475" parent="311" name="FK2hay62ivbn8ow7epfo34usep9">
       <ColNames>brand_id</ColNames>
       <Type>btree</Type>
     </index>
-    <index id="473" parent="311" name="FKsxml9bpul7mt3bcerbd31ekc2">
+    <index id="476" parent="311" name="FKsxml9bpul7mt3bcerbd31ekc2">
       <ColNames>category_id</ColNames>
       <Type>btree</Type>
     </index>
-    <key id="474" parent="311" name="PRIMARY">
+    <key id="477" parent="311" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
+    </key>
+    <column id="478" parent="312" name="id">
+      <AutoIncrement>1</AutoIncrement>
+      <NotNull>1</NotNull>
+      <Position>1</Position>
+      <StoredType>bigint|0s</StoredType>
+    </column>
+    <column id="479" parent="312" name="created_at">
+      <DefaultExpression>CURRENT_TIMESTAMP</DefaultExpression>
+      <Position>2</Position>
+      <StoredType>timestamp|0s</StoredType>
+    </column>
+    <column id="480" parent="312" name="account_id">
+      <NotNull>1</NotNull>
+      <Position>3</Position>
+      <StoredType>bigint|0s</StoredType>
+    </column>
+    <column id="481" parent="312" name="product_id">
+      <NotNull>1</NotNull>
+      <Position>4</Position>
+      <StoredType>bigint|0s</StoredType>
+    </column>
+    <foreign-key id="482" parent="312" name="FKa932sj2ly6gie4id4bfpqkbfl">
+      <ColNames>account_id</ColNames>
+      <RefColNames>id</RefColNames>
+      <RefTableName>accounts</RefTableName>
+    </foreign-key>
+    <foreign-key id="483" parent="312" name="FKqxj7lncd242b59fb78rqegyxj">
+      <ColNames>product_id</ColNames>
+      <RefColNames>id</RefColNames>
+      <RefTableName>products</RefTableName>
+    </foreign-key>
+    <index id="484" parent="312" name="PRIMARY">
+      <ColNames>id</ColNames>
+      <Type>btree</Type>
+      <Unique>1</Unique>
+    </index>
+    <index id="485" parent="312" name="uk_account_product">
+      <ColNames>account_id
+product_id</ColNames>
+      <Type>btree</Type>
+      <Unique>1</Unique>
+    </index>
+    <index id="486" parent="312" name="FKqxj7lncd242b59fb78rqegyxj">
+      <ColNames>product_id</ColNames>
+      <Type>btree</Type>
+    </index>
+    <key id="487" parent="312" name="PRIMARY">
+      <NameSurrogate>1</NameSurrogate>
+      <Primary>1</Primary>
+      <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
+    </key>
+    <key id="488" parent="312" name="uk_account_product">
+      <UnderlyingIndexName>uk_account_product</UnderlyingIndexName>
     </key>
   </database-model>
 </dataSource>
