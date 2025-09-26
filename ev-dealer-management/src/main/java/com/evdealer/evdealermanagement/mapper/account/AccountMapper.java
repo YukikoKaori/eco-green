@@ -87,6 +87,7 @@ public final class AccountMapper {
                 .status(account.getStatus())
                 .emailVerified(account.getEmailVerified())
                 .createdAt(account.getCreatedAt())
+                .dateOfBirth(account.getDateOfBirth())
                 .updatedAt(account.getUpdatedAt())
                 .taxCode(account.getTaxCode())
                 .build();
