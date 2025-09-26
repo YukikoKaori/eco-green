@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import "@/styles/Navbar.css";
+import UserMenu from "@/components/user/UserMenu";
 
 const mainNav = [
   { label: "EcoGreen", to: "/" },
@@ -35,32 +36,27 @@ export default function Navbar() {
         }`}
       style={
         isScrolled
-          ? {
-            // khi cuộn: nền màu
-            backgroundColor: "#1cbfe8",
-          }
+          ? { backgroundColor: "#246f67" }
           : {
-            // khi chưa cuộn: nền ảnh + cố định
             backgroundImage: "url('/images/navbar-bg.png')",
             backgroundSize: "cover",
             backgroundRepeat: "no-repeat",
-            backgroundAttachment: "fixed",
           }
       }
     >
       {/* Top bar */}
       <div className="w-full h-16 flex items-center gap-4 px-3 sm:px-4">
-        {/* Mobile menu */}
+        {/* Mobile menu (giữ nguyên) */}
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-white md:hidden">
+            <Button variant="ghost" size="icon" className="text-black md:hidden">
               <Menu className="w-5 h-5" />
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-72">
             <nav className="mt-6 grid gap-3">
               {mainNav.map((it) => (
-                <NavLink key={it.to} to={it.to} className="px-2 py-2 rounded hover:bg-accent">
+                <NavLink key={it.to} to={it.to} className="text-black px-2 py-2 rounded hover:bg-accent">
                   {it.label}
                 </NavLink>
               ))}
@@ -68,14 +64,36 @@ export default function Navbar() {
           </SheetContent>
         </Sheet>
 
-        {/* Logo */}
+        {/* Góc trái: icon DANH MỤC + Logo */}
         <div className="flex items-center gap-2">
+          {/* Icon danh mục: chỉ hiện md+ để tránh trùng nút mobile */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="hidden md:inline-flex bg-white/90 text-teal-700"
+                aria-label="Danh mục"
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-[180px]">
+              <DropdownMenuItem asChild>
+                <Link to="/xe-dien" className="w-full">Xe điện</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/pin-dien" className="w-full">Pin điện</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Link to="/" className="text-white text-xl font-extrabold tracking-wide drop-shadow">
             ECOGREEN
           </Link>
         </div>
 
-        {/* Middle: menu hoặc search */}
+        {/* GIỮA: menu hoặc search */}
         <div className="hidden md:flex flex-1 justify-center">
           {!isScrolled ? (
             <nav className="flex items-center gap-6 pl-12">
@@ -92,17 +110,18 @@ export default function Navbar() {
           ) : (
             <form
               onSubmit={(e) => e.preventDefault()}
-              className="flex items-center gap-2 bg-white rounded-lg px-3 py-1.5 shadow w-full max-w-md"
+              className="flex items-center gap-2 bg-white rounded-xl px-3 shadow w-full max-w-xl"
             >
-              <Search className="w-4 h-4 text-gray-500" />
+              <Search className="w-5 h-5 text-gray-500" />
               <Input
                 placeholder="Tìm sản phẩm..."
-                className="flex-1 border-none shadow-none focus-visible:ring-0 text-sm"
+                className="flex-1 h-10 border-none shadow-none focus-visible:ring-0 text-sm"
               />
-              <Button type="submit" className="bg-black hover:bg-gray-800 text-white h-8 px-3">
-                Tìm
+              <Button type="submit" className="!h-8 !px-2 !bg-[#246f67] !hover:bg-gray-800 !text-white">
+                Tìm kiếm
               </Button>
             </form>
+
           )}
         </div>
 
@@ -120,25 +139,8 @@ export default function Navbar() {
             <PlusCircle className="w-4 h-4" />
             <span>Đăng tin</span>
           </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary" size="icon" className="ml-1">
-                <User className="w-5 h-5 text-teal-700" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link to="/account/profile" className="w-full">Tài khoản của tôi</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/saved" className="w-full">Tin đã lưu</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <button type="button" className="w-full text-left">Đăng xuất</button>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          
+          <UserMenu user={null} />
         </div>
       </div>
 
@@ -146,24 +148,30 @@ export default function Navbar() {
       {!isScrolled && (
         <>
           <div className="w-full flex justify-center py-2">
-            <span className="text-yellow-500 text-xl font-extrabold drop-shadow">
-              Đăng tin dễ – Chốt đơn nhanh!
+            {/* đổi màu + size chữ slogan */}
+            <span className="text-black-300 text-3xl md:text-3xl font-extrabold mt-2 tracking-wide drop-shadow">
+              "Đăng tin dễ – Chốt đơn nhanh!"
             </span>
           </div>
 
           <div className="mx-auto max-w-4xl px-4 py-3 flex justify-center">
             <form
               onSubmit={(e) => e.preventDefault()}
-              className="flex w-full max-w-2xl items-center gap-2 bg-white rounded-xl px-3 py-2.5 mt-1.5 shadow"
+              className="flex w-full max-w-3xl items-center gap-2 bg-white rounded-xl px-5 py-3 mt-11 shadow"
             >
               <Search className="w-5 h-5 text-gray-500" />
               <Input
                 placeholder="Tìm sản phẩm..."
                 className="flex-1 border-none shadow-none focus-visible:ring-0 text-sm"
               />
-              <Button type="submit" className="bg-black hover:bg-gray-800 text-black px-4 py-1.5 rounded-lg">
+              <Button
+                type="submit"
+                variant="default"
+                className="!h-10 !px-4 !bg-[#246f67] !text-white hover:!bg-gray-800"
+              >
                 Tìm kiếm
               </Button>
+
             </form>
           </div>
         </>

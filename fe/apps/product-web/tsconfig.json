@@ -3,7 +3,9 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": { "@/*": ["./src/*"] },
-    "types": ["vite/client"]
+    "types": ["vite/client", "react", "react-dom"],
+    "jsx": "react-jsx",               
+    "lib": ["esnext", "dom"]           
   },
   "include": ["src", "index.html"]
 }

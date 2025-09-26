@@ -1,0 +1,120 @@
+/* ===== Wrapper ===== */
+.container {
+  border-radius: 16px;
+  border: 1px solid #e5e7eb; 
+  background: #fff;
+}
+
+.container :is(button, [role="button"], a[role="button"]) {
+  transition: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+.container :is(button, [role="button"], a[role="button"]):hover,
+.container :is(button, [role="button"], a[role="button"]):active,
+.container :is(button, [role="button"], a[role="button"]):focus,
+.container :is(button, [role="button"], a[role="button"]):focus-visible {
+  transition: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transform: none !important;
+}
+
+/* ===== Tabs: text-only + separator line ===== */
+.tabsBar {
+  padding: 1rem 1.5rem 0.5rem;
+  border-bottom: 1px solid #e5e7eb; /* đường kẻ xám ngăn tab & grid */
+}
+@media (min-width: 768px) {
+  .tabsBar { padding: 1.25rem 1.5rem 0.75rem; }
+}
+
+.tabsWrapper {
+  display: inline-flex;
+  gap: 1.25rem; 
+  align-items: center;
+}
+
+.tabButton {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: #4b5563;   
+  cursor: pointer;
+  line-height: 1.9; 
+  transition: none;
+  outline: none;
+}
+.tabButton:hover { color: #374151; }          
+.tabButtonActive {
+  color: #0f766e;                              
+  font-weight: 600;       
+}
+.contentContainer { padding: 0 1.5rem 1.5rem; }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 640px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 768px) { .grid { gap: 1.25rem; } }
+@media (min-width: 1024px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+
+.cardWrapper { height: 100%; }
+.card {
+  height: 100%;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  overflow: hidden;
+}
+
+.cardReset * {
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-shadow: 0 0 #0000 !important;
+  box-shadow: none !important;
+  transition: none !important;
+}
+.cardReset > * {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+.cardReset [class*="shadow"] { box-shadow: none !important; }
+.cardReset [class*="ring"]   { box-shadow: none !important; outline: none !important; }
+.cardReset [class*="rounded"]{ border-radius: 0 !important; }
+.cardReset [class*="border"] { border: 0 !important; }
+.cardReset img,
+.cardReset picture,
+.cardReset video {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0 !important;
+}
+
+/* ===== CTA ===== */
+.ctaContainer {
+  display: flex;
+  justify-content: center;
+  padding-top: 1rem;
+}
+.ctaButton {
+  border-radius: 9999px;
+  background: #0f766e; 
+  color: #fff;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: none;     
+}
+.ctaButton:hover { background: #0f766e; }     

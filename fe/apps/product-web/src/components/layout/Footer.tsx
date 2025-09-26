@@ -48,7 +48,7 @@ export default function Footer() {
         <p className="font-semibold text-teal-700">
           EcoGreen không bán xe trực tiếp, quý khách mua xe vui lòng liên hệ trực tiếp người đăng tin.
         </p>
-        <p className="mt-2">Copyright © 2022-2025 Otodien.vn</p>
+        <p className="mt-2">Copyright © 2022-2025 Ecogreen.vn</p>
       </div>
     </footer>
   );
