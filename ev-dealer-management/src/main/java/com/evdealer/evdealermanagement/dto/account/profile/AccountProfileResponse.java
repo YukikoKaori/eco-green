@@ -1,8 +1,8 @@
 package com.evdealer.evdealermanagement.dto.account.profile;
 
 import com.evdealer.evdealermanagement.entity.account.Account;
+import jakarta.persistence.PreUpdate;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -12,17 +12,23 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class AccountProfileResponse {
-    Long id;
-    String username;
-    String email;
-    String fullName;
-    String phone;
-    String address;
-    String avatarUrl;
-    Account.Status status;
-    Boolean emailVerified;
-    LocalDateTime createdAt;
-    LocalDate dateOfBirth;
+    private Long id;
+    private String username;
+    private String email;
+    private String fullName;
+    private String phone;
+    private String address;
+    private String avatarUrl;
+    private Account.Status status;
+    private Boolean emailVerified;
+    private LocalDateTime createdAt;
+    private LocalDate dateOfBirth;
+    private LocalDateTime updatedAt;
+    private String taxCode;
+
+    @PreUpdate
+    public void handleBeforeUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

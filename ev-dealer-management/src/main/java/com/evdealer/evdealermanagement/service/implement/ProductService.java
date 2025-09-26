@@ -68,8 +68,7 @@ public class ProductService implements IProductService {
 
             List<Long> allProductIds = Stream.concat(
                     vehicleProductIds.stream(),
-                    batteryProductIds.stream()
-            ).distinct().toList();
+                    batteryProductIds.stream()).distinct().toList();
 
             if (allProductIds.isEmpty()) {
                 log.debug("No products found with name: {}", name);
@@ -108,8 +107,6 @@ public class ProductService implements IProductService {
         }
     }
 
-
-
     @Override
     public List<ProductDetail> getProductByBrand(String brand) {
         if (brand == null || brand.trim().isEmpty()) {
@@ -125,8 +122,7 @@ public class ProductService implements IProductService {
 
             List<Long> allProductIds = Stream.concat(
                     vehicleProductIds.stream(),
-                    batteryProductIds.stream()
-            ).distinct().toList();
+                    batteryProductIds.stream()).distinct().toList();
 
             if (allProductIds.isEmpty()) {
                 log.debug("No products found for brand: {}", brand);

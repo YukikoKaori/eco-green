@@ -1,5 +1,11 @@
 package com.evdealer.evdealermanagement.exceptions;
 
+public class UnauthorizedException extends RuntimeException {
+    public UnauthorizedException(String message) {
+        super(message);
+    }
 
-public class UnauthorizedException {
+    public UnauthorizedException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
