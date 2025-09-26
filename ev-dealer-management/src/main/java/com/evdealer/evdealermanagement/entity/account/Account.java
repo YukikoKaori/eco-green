@@ -3,6 +3,7 @@ package com.evdealer.evdealermanagement.entity.account;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.apache.catalina.security.SecurityUtil;
@@ -45,6 +46,9 @@ public class Account {
     @Column(name = "tax_code", unique = true, length = 20)
     private String taxCode;
 
+    @Column (name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
     private String address;
 
     @Column(name = "avatar_url", length = 500)
@@ -73,7 +77,7 @@ public class Account {
     }
 
     public enum Role {
-        MEMBER, ADMIN
+        MEMBER, ADMIN, STAFF
     }
 
     public enum Status {

@@ -1,14 +1,12 @@
 package com.evdealer.evdealermanagement.dto.account.profile;
 
 import com.evdealer.evdealermanagement.entity.account.Account;
-
 import jakarta.persistence.PreUpdate;
 import lombok.*;
 
-import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import org.apache.catalina.security.SecurityUtil;
 
 @Data
 @AllArgsConstructor
@@ -25,7 +23,7 @@ public class AccountProfileResponse {
     private Account.Status status;
     private Boolean emailVerified;
     private LocalDateTime createdAt;
-
+    private LocalDate dateOfBirth;
     private LocalDateTime updatedAt;
     private String taxCode;
 
