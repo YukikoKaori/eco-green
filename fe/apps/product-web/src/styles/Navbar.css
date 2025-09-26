@@ -1,0 +1,21 @@
+/* Navbar.css */
+.navbar-expanded{
+  background-image: url('/images/navbar-bg.png');
+  background-repeat: no-repeat;
+
+  /* mặc định trên mobile */
+  background-size: 140% auto;      /* phóng to */
+  background-position: center;
+
+  /* tablet */
+  @media (min-width: 768px){
+    background-size: 125% auto;
+    background-position: center;
+  }
+
+  /* desktop */
+  @media (min-width: 1280px){
+    background-size: cover;
+    background-position: center -140px;
+  }
+}
