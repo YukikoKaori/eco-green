@@ -13,6 +13,7 @@ public enum ErrorCode {
     UNAUTHORIZED(401, "Invalid or expired token"),
     FORBIDDEN(403, "You do not have permission to access this resource"),
     USER_NOT_FOUND(404, "User not found"),
+    PRODUCT_NOT_FOUND(404, "Product not found"),
     RESOURCE_NOT_FOUND(4041, "Requested resource not found"),
     INTERNAL_ERROR(500, "Internal server error"),
     SERVICE_UNAVAILABLE(503, "Service temporarily unavailable"),
