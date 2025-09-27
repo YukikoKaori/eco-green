@@ -1,8 +1,6 @@
 package com.evdealer.evdealermanagement.controller.account;
 
-import com.evdealer.evdealermanagement.dto.account.login.ApiResponse;
 import com.evdealer.evdealermanagement.dto.account.profile.AccountProfileResponse;
-import com.evdealer.evdealermanagement.exceptions.ErrorCode;
 import com.evdealer.evdealermanagement.service.implement.ProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;

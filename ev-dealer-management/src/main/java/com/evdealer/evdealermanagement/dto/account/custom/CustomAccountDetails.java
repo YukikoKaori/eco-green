@@ -1,15 +1,14 @@
 package com.evdealer.evdealermanagement.dto.account.custom;
 
 import com.evdealer.evdealermanagement.entity.account.Account;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
 
 public class CustomAccountDetails implements UserDetails {
-
 
     private final Account account;
 
@@ -19,11 +18,15 @@ public class CustomAccountDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(() -> "ROLE_" + account.getRole().name());
+        return List.of(new SimpleGrantedAuthority("ROLE_" + account.getRole().name()));
     }
 
     public Long getId() {
         return account.getId();
+    }
+
+    public Account getAccount() { // Thêm phương thức getAccount
+        return account;
     }
 
     @Override
@@ -53,6 +56,6 @@ public class CustomAccountDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return Boolean.TRUE.equals(account.getEmailVerified()) && Account.Status.ACTIVE.equals(account.getStatus());
     }
 }

@@ -26,11 +26,12 @@ public class AccountDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User Not Found"));
 
         return new CustomAccountDetails(account);
+    }
 
-//        return User.builder()
-//                .username(account.getUsername())
-//                .password(account.getPasswordHash())
-//                .roles(String.valueOf(account.getRole()))
-//                .build();
+    public UserDetails loadUserByPhone(String phone) throws UsernameNotFoundException {
+        Account account = accountRepository.findByPhone(phone)
+                .orElseThrow(() -> new UsernameNotFoundException("User Not Found"));
+
+        return new CustomAccountDetails(account);
     }
 }

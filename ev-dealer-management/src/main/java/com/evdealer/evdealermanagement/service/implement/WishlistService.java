@@ -35,6 +35,7 @@ public class WishlistService implements IWishlistService {
     public void addWishlistItem(Long accountId, Long productId) {
 
         if(!productRepository.existsById(productId)){
+
             throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
         }
 

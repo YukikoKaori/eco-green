@@ -1,6 +1,5 @@
 package com.evdealer.evdealermanagement.exceptions;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -12,7 +11,7 @@ public class AppException extends RuntimeException{
 
     private ErrorCode errorCode;
 
-    public AppException(ErrorCode errorCode) {
+    public AppException(ErrorCode errorCode, String s) {
         super(errorCode.getMessage());
         this.errorCode = errorCode;
     }

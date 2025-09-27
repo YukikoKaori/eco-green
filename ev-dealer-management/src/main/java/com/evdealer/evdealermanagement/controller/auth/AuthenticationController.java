@@ -2,20 +2,13 @@ package com.evdealer.evdealermanagement.controller.auth;
 
 import com.evdealer.evdealermanagement.dto.account.login.AccountLoginRequest;
 import com.evdealer.evdealermanagement.dto.account.login.AccountLoginResponse;
-import com.evdealer.evdealermanagement.dto.account.login.ApiResponse;
-import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterRequest;
-import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterResponse;
+import com.evdealer.evdealermanagement.dto.account.response.ApiResponse;
 import com.evdealer.evdealermanagement.exceptions.ErrorCode;
 import com.evdealer.evdealermanagement.service.implement.AuthService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
 @RequestMapping("/auth")
 public class AuthenticationController {

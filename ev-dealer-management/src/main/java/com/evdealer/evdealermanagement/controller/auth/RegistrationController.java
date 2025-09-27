@@ -1,6 +1,6 @@
 package com.evdealer.evdealermanagement.controller.auth;
 
-import com.evdealer.evdealermanagement.dto.account.login.ApiResponse;
+import com.evdealer.evdealermanagement.dto.account.response.ApiResponse;
 import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterRequest;
 import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterResponse;
 import com.evdealer.evdealermanagement.exceptions.ErrorCode;
