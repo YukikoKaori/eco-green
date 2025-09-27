@@ -1,8 +1,7 @@
 package com.evdealer.evdealermanagement.exceptions;
 
-import com.evdealer.evdealermanagement.dto.account.login.ApiResponse;
+import com.evdealer.evdealermanagement.dto.account.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;

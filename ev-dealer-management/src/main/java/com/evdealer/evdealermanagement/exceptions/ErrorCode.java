@@ -14,7 +14,7 @@ public enum ErrorCode {
     FORBIDDEN(403, "You do not have permission to access this resource"),
     USER_NOT_FOUND(404, "User not found"),
     RESOURCE_NOT_FOUND(4041, "Requested resource not found"),
-    INTERNAL_ERROR(500, "Internal server error"),
+    INTERNAL_ERROR(500, "Internal server error"), // Đảm bảo tồn tại
     SERVICE_UNAVAILABLE(503, "Service temporarily unavailable"),
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error"),
 
@@ -23,20 +23,23 @@ public enum ErrorCode {
     ACCOUNT_LOCKED(1002, "Your account has been locked"),
     ACCOUNT_INACTIVE(1003, "Your account is not activated"),
     TOO_MANY_ATTEMPTS(1004, "Too many failed login attempts. Please try again later"),
+    EMAIL_NOT_VERIFIED(1005, "Email not verified"),
 
     // Register errors
     USERNAME_ALREADY_EXISTS(1101, "Username is already taken"),
     EMAIL_ALREADY_EXISTS(1102, "Email is already registered"),
     WEAK_PASSWORD(1103, "Password does not meet security requirements"),
     PASSWORDS_DO_NOT_MATCH(1104, "Passwords do not match"),
+    PASSWORD_TOO_SHORT(1105, "Password must be at least 6 characters"),
+    DUPLICATE_NATIONAL_ID(1106, "National ID is already registered"),
+    DUPLICATE_TAX_CODE(1107, "Tax code is already registered"),
 
     // Validation errors
     INVALID_INPUT(1201, "Invalid input data"),
     MISSING_REQUIRED_FIELD(1202, "Missing required field"),
     INVALID_FORMAT(1203, "Invalid data format"),
     OUT_OF_RANGE(1204, "Value is out of allowed range"),
-    PASSWORD_TOO_SHORT(1105, "Password must be at least 6 characters"),
-
+    MISSING_FULL_NAME(1205, "Full name is required"),
 
     // Security / Token
     INVALID_KEY(1301, "Invalid message key"),
@@ -49,11 +52,11 @@ public enum ErrorCode {
     UNSUPPORTED_FILE_TYPE(1402, "Unsupported file type"),
     FILE_UPLOAD_FAILED(1403, "File upload failed"),
 
-    // Payment / Transaction (nếu hệ thống có)
+    // Payment / Transaction
     PAYMENT_FAILED(1501, "Payment processing failed"),
     INSUFFICIENT_FUNDS(1502, "Insufficient balance"),
     TRANSACTION_DECLINED(1503, "Transaction was declined");
 
-    private int code;
-    private String message;
+    private final int code;
+    private final String message;
 }

@@ -1,10 +1,11 @@
 package com.evdealer.evdealermanagement.service.implement;
 
 import com.evdealer.evdealermanagement.service.contract.IJwtService;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -15,57 +16,101 @@ import java.util.Date;
 @Service
 public class JwtService implements IJwtService {
 
-    private static final String SECRET_KEY = "MySuperSecretKey1234567890MySuperSecretKey";
+    private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
+
+    @Value("${jwt.secret}")
+    private String secretKey;
+
+    @Value("${jwt.expiration:10800000}") // Default to 3 hours (3 * 60 * 60 * 1000) if not set
+    private long expirationMs;
+
+    private Key signingKey;
 
     @Override
     public Key getSignKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+        if (signingKey == null) {
+            signingKey = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+        }
+        return signingKey;
     }
 
     @Override
     public String generateToken(UserDetails userDetails) {
+        if (userDetails == null || userDetails.getUsername() == null) {
+            throw new IllegalArgumentException("UserDetails or username cannot be null");
+        }
+
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 3*60*60*1000))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     @Override
-    public Claims extractAllClaims(String token) { //parse token
-        return Jwts.parserBuilder()
-                .setSigningKey(getSignKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+    public Claims extractAllClaims(String token) {
+        if (token == null) {
+            throw new IllegalArgumentException("Token cannot be null");
+        }
+
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(getSignKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (Exception e) {
+            logger.error("Failed to parse JWT token: {}", e.getMessage());
+            throw e; // Re-throw to be handled by caller
+        }
     }
 
     @Override
     public String extractUsername(String token) {
+        if (token == null) {
+            throw new IllegalArgumentException("Token cannot be null");
+        }
         return extractAllClaims(token).getSubject();
     }
 
     @Override
     public boolean isExpired(String token) {
-       Date expiration = Jwts.parserBuilder()
-               .setSigningKey(getSignKey())
-               .build()
-               .parseClaimsJws(token)
-               .getBody().getExpiration();
-       return expiration.before(new Date());
+        if (token == null) {
+            throw new IllegalArgumentException("Token cannot be null");
+        }
+
+        try {
+            Date expiration = extractAllClaims(token).getExpiration();
+            return expiration.before(new Date());
+        } catch (Exception e) {
+            logger.error("Error checking token expiration: {}", e.getMessage());
+            return true; // Assume expired if parsing fails
+        }
     }
 
     public boolean validateToken(String token, UserDetails userDetails) {
+        if (token == null || userDetails == null) {
+            logger.warn("Token or UserDetails is null during validation");
+            return false;
+        }
+
         try {
-            Jwts.parserBuilder()
-                    .setSigningKey(getSignKey())
-                    .build()
-                    .parseClaimsJws(token); // This already throws exception if expired
-            String username = extractUsername(token);
-            return username.equals(userDetails.getUsername()) && !isExpired(token); // Redundant check
-        } catch (IllegalArgumentException exception) { // Wrong exception type
-            System.out.println("Error at validate token: " + exception);
+            Claims claims = extractAllClaims(token);
+            String username = claims.getSubject();
+            boolean isTokenValid = username.equals(userDetails.getUsername()) && !isExpired(token);
+            if (!isTokenValid) {
+                logger.warn("Token validation failed for username: {}", username);
+            }
+            return isTokenValid;
+        } catch (ExpiredJwtException e) {
+            logger.warn("JWT Token has expired: {}", e.getMessage());
+            return false;
+        } catch (MalformedJwtException e) {
+            logger.warn("Invalid JWT Token: {}", e.getMessage());
+            return false;
+        } catch (Exception e) {
+            logger.error("Unexpected error validating token: {}", e.getMessage());
             return false;
         }
     }

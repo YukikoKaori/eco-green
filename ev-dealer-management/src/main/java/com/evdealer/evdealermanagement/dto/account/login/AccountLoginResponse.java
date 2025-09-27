@@ -19,7 +19,6 @@ public class AccountLoginResponse {
     private String phone;
     private String nationalId;
     private LocalDate dateOfBirth;
-    private String address;
     private Account.Role role;
     private Account.Status status;
     private String token;

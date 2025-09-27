@@ -38,7 +38,7 @@ public class Account {
     private String nationalId;
 
     @Column(name = "national_id_issued_date")
-    private LocalDate nationalIdIssuedDate; // đổi thành LocalDate
+    private LocalDate nationalIdIssuedDate;
 
     @Column(name = "tax_code", unique = true, length = 20)
     private String taxCode;
@@ -50,8 +50,17 @@ public class Account {
     @Column(length = 10)
     private Gender gender;
 
-    @Column(columnDefinition = "TEXT")
-    private String address;
+    @Column(length = 100)
+    private String city;
+
+    @Column(length = 100)
+    private String district;
+
+    @Column(length = 100)
+    private String ward;
+
+    @Column(name = "address_detail", columnDefinition = "TEXT")
+    private String addressDetail;
 
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
@@ -62,7 +71,7 @@ public class Account {
 
     @Lob
     @Column(name = "staff_permissions", columnDefinition = "JSON")
-    private String staffPermissions; // có thể đổi sang Map<String,Object>
+    private String staffPermissions;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
@@ -71,11 +80,11 @@ public class Account {
     @Column(name = "email_verified")
     private Boolean emailVerified = false;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
