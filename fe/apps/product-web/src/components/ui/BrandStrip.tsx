@@ -29,7 +29,7 @@ export default function BrandStrip({
     const cfg =
         size === "md"
             ? {
-                gap: "gap-10",
+                gap: "gap-15",
                 itemMin: "min-w-[5.5rem]",
                 circle: "h-[88px] w-[88px]",
                 img: "h-14 w-14",
@@ -38,7 +38,7 @@ export default function BrandStrip({
             }
             : {
                 // sm
-                gap: "gap-8",
+                gap: "gap-12",
                 itemMin: "min-w-[4.75rem]",
                 circle: "h-[72px] w-[72px]",
                 img: "h-10 w-10",
@@ -74,10 +74,10 @@ export default function BrandStrip({
 
     return (
         <section className={`space-y-2 ${className}`}>
-            <div className="relative rounded-xl border bg-white shadow-sm md:pl-4 pt-2.5 ">
+            <div className="relative rounded-xl border bg-white shadow-sm pt-2.5 ">
                 {/* Header + line */}
                 <h3
-                    className="text-sm md:text-base font-semibold"
+                    className="text-sm md:text-base font-semibold md:pl-3"
                     style={{ color: "#0f766e" }}
                 >
                     {title}
@@ -94,10 +94,11 @@ export default function BrandStrip({
                             <Link
                                 key={b.name}
                                 to={b.to ?? "#"}
-                                className={`${cfg.itemMin} flex flex-col items-center`}
+                                className={`${cfg.itemMin} flex flex-col items-center md:pl-9`}
                             >
                                 <div
-                                    className={`${cfg.circle} rounded-full bg-gray-100 grid place-items-center shadow ring-1 ring-black/5 overflow-hidden`}
+                                    className={`${cfg.circle} rounded-full bg-white p-2
+                                        grid place-items-center shadow ring-1 ring-black/5 overflow-hidden`}
                                 >
                                     <img
                                         src={b.src}
@@ -106,6 +107,7 @@ export default function BrandStrip({
                                         className={`${cfg.img} object-contain`}
                                     />
                                 </div>
+
                                 <span className={`mt-2 md:mt-3 font-semibold text-neutral-900 ${cfg.label}`}>
                                     {b.name}
                                 </span>

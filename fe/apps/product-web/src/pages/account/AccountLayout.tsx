@@ -19,10 +19,11 @@ export default function AccountLayout() {
   );
 
   return (
-    <main className="flex-1 mx-auto w-full max-w-7xl px-35 py-0">
+    <main className="flex-1 mx-auto w-full max-w-7xl px-35 py-0 bg-gre">
+      <h2 className="font-semibold my-5 text-3xl">Thông tin cá nhân</h2>
       <div className="grid grid-cols-1 md:grid-cols-[240px_minmax(0,1fr)] gap-4 md:gap-6">
         {/* Sidebar */}
-        <aside className="border rounded-lg p-3 md:p-4 bg-white h-max">
+        <aside className="border p-3 md:p-4 bg-white h-max">
           <h3 className="font-semibold mb-2">Thiết lập</h3>
           <nav className="space-y-1">
             {item("profile", "Thông tin cá nhân")}
@@ -32,7 +33,7 @@ export default function AccountLayout() {
         </aside>
 
         {/* Content */}
-        <div className="bg-white rounded-lg p-4 shadow-sm">
+        <div className="bg-white p-4 shadow-sm">
           <Outlet />
         </div>
       </div>

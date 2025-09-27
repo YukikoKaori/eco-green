@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
+import UserMenu from "../user/UserMenu";
 
 const mainNav = [
   { label: "EcoGreen", to: "/" },
@@ -19,7 +20,7 @@ const mainNav = [
 
 export default function Navbar() {
   return (
-    <header className="sticky top-0 z-50 bg-cyan-600">
+    <header className="sticky top-0 z-50 bg-[#246f67]">
       <div className="w-full h-16 flex items-center gap-4 px-3 sm:px-4">
         {/* Mobile menu */}
         <Sheet>
@@ -60,19 +61,18 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Ở giữa: luôn là ô tìm kiếm nhỏ */}
         <div className="hidden md:flex flex-1 justify-center">
           <form
             onSubmit={(e) => e.preventDefault()}
-            className="flex items-center gap-2 bg-white rounded-lg px-3 py-1.5 shadow w-full max-w-md"
+            className="flex items-center gap-2 bg-white rounded-xl px-3 shadow w-full max-w-xl"
           >
-            <Search className="w-4 h-4 text-gray-500" />
+            <Search className="w-5 h-5 text-gray-500" />
             <Input
               placeholder="Tìm sản phẩm..."
-              className="flex-1 border-none shadow-none focus-visible:ring-0 text-sm"
+              className="flex-1 h-10 border-none shadow-none focus-visible:ring-0 text-sm"
             />
-            <Button type="submit" className="bg-black hover:bg-gray-800 text-white h-8 px-3">
-              Tìm
+            <Button type="submit" className="!h-8 !px-2 !bg-[#246f67] !hover:bg-gray-800 !text-white">
+              Tìm kiếm
             </Button>
           </form>
         </div>
@@ -92,24 +92,7 @@ export default function Navbar() {
             <span>Đăng tin</span>
           </Button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary" size="icon" className="ml-1">
-                <User className="w-5 h-5 text-teal-700" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link to="/account" className="w-full">Tài khoản của tôi</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/saved" className="w-full">Tin đã lưu</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <button type="button" className="w-full text-left">Đăng xuất</button>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <UserMenu user={null} />
         </div>
       </div>
     </header>

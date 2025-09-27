@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Phone, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export default function AuthLogin() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [identifier, setIdentifier] = useState(""); // phone/email
+  const [phone, setPhone] = useState(""); // chỉ số điện thoại
   const [password, setPassword] = useState("");
   const nav = useNavigate();
 
@@ -16,8 +16,7 @@ export default function AuthLogin() {
     if (loading) return;
     setLoading(true);
     try {
-      // TODO: gọi API đăng nhập email/mật khẩu
-      // await api.login({ phoneOrEmail: identifier.trim(), password });
+      // TODO: gọi API đăng nhập bằng phone
       nav("/");
     } finally {
       setLoading(false);
@@ -25,7 +24,6 @@ export default function AuthLogin() {
   }
 
   function onGoogle() {
-    // Nên cấu hình qua biến môi trường để backend trả về URL OAuth (PKCE/CSRF)
     window.location.assign("/api/auth/google");
   }
   function onFacebook() {
@@ -33,65 +31,44 @@ export default function AuthLogin() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-64px)] flex items-start md:items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white shadow-sm p-5 md:p-6">
-        <h1 className="text-center text-xl md:text-2xl font-extrabold text-[#0f766e]">
+    <div
+      className="relative min-h-[calc(100vh-60px)] flex items-center justify-center px-4"
+      style={{
+        backgroundImage: "url('/images/bg-login.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      {/* Form */}
+      <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white/95 shadow-lg p-8">
+        <div className="text-center text-3xl font-bold text-[#0f766e] mb-6">
           Đăng nhập
-        </h1>
-
-        {/* Social */}
-        <div className="mt-4 grid grid-cols-1 gap-2">
-          <button
-            type="button"
-            onClick={onGoogle}
-            disabled={loading}
-            className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-full border border-gray-200 bg-white text-gray-800 aria-disabled:opacity-50"
-            aria-disabled={loading}
-          >
-            <GoogleIcon className="w-5 h-5" />
-            <span>Tiếp tục với Google</span>
-          </button>
-          <button
-            type="button"
-            onClick={onFacebook}
-            disabled={loading}
-            className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-full border border-gray-200 bg-white text-gray-800 aria-disabled:opacity-50"
-            aria-disabled={loading}
-          >
-            <FacebookIcon className="w-5 h-5" />
-            <span>Tiếp tục với Facebook</span>
-          </button>
         </div>
 
-        {/* Divider */}
-        <div className="flex items-center gap-3 my-5">
-          <div className="h-px flex-1 bg-gray-200" />
-          <span className="text-xs text-gray-500">hoặc</span>
-          <div className="h-px flex-1 bg-gray-200" />
-        </div>
-
-        {/* Form */}
-        <form onSubmit={onSubmit} className="space-y-3" noValidate>
+        <form onSubmit={onSubmit} className="space-y-4" noValidate>
+          {/* Phone */}
           <label className="block">
-            <span className="text-sm text-gray-700">Số điện thoại / Email</span>
+            <span className="text-sm font-bold text-[#0f766e]">Số điện thoại</span>
             <div className="mt-1 flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3">
-              <Mail className="w-4 h-4 text-gray-500" />
+              <Phone className="w-4 h-4 text-gray-500" />
               <Input
                 required
-                name="identifier"
-                type="text"
-                inputMode="email"
-                autoComplete="username"
-                placeholder="ban@vidu.com"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                pattern="[0-9]{9,11}"
+                autoComplete="tel"
+                placeholder="VD: 0987654321"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 className="h-10 border-0 shadow-none focus-visible:ring-0"
               />
             </div>
           </label>
 
+          {/* Password */}
           <label className="block">
-            <span className="text-sm text-gray-700">Mật khẩu</span>
+            <span className="text-sm font-bold text-[#0f766e]">Mật khẩu</span>
             <div className="mt-1 flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3">
               <Lock className="w-4 h-4 text-gray-500" />
               <Input
@@ -116,7 +93,8 @@ export default function AuthLogin() {
             </div>
           </label>
 
-          <div className="flex items-center justify-between pt-1">
+          {/* Options */}
+          <div className="flex items-center justify-between">
             <label className="inline-flex items-center gap-2 text-sm text-gray-600">
               <input type="checkbox" className="h-4 w-4 rounded border-gray-300" />
               Nhớ tài khoản
@@ -126,9 +104,10 @@ export default function AuthLogin() {
             </Link>
           </div>
 
+          {/* Submit */}
           <Button
             type="submit"
-            disabled={loading || !identifier || !password}
+            disabled={loading || !phone || !password}
             aria-busy={loading}
             className="w-full h-10 rounded-full bg-[#0f766e] hover:bg-[#0e6a64] text-white disabled:opacity-60"
           >
@@ -142,11 +121,41 @@ export default function AuthLogin() {
             </Link>
           </p>
         </form>
+
+        {/* Divider */}
+        <div className="flex items-center gap-3 my-5">
+          <div className="h-px flex-1 bg-gray-200" />
+          <span className="text-xs text-gray-500">hoặc</span>
+          <div className="h-px flex-1 bg-gray-200" />
+        </div>
+
+        {/* Social Login */}
+        <div className="grid gap-2">
+          <button
+            type="button"
+            onClick={onGoogle}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-full border border-gray-200 bg-white text-gray-800"
+          >
+            <GoogleIcon className="w-5 h-5" />
+            <span>Tiếp tục với Google</span>
+          </button>
+          <button
+            type="button"
+            onClick={onFacebook}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-full border border-gray-200 bg-white text-gray-800"
+          >
+            <FacebookIcon className="w-5 h-5" />
+            <span>Tiếp tục với Facebook</span>
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
+/* Icons giữ nguyên */
 function GoogleIcon({ className = "" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 533.5 544.3" aria-hidden>
@@ -157,6 +166,7 @@ function GoogleIcon({ className = "" }: { className?: string }) {
     </svg>
   );
 }
+
 function FacebookIcon({ className = "" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden>

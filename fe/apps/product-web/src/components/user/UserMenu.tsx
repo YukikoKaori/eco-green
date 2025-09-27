@@ -76,7 +76,7 @@ export default memo(function UserMenu({
 
       <DropdownMenuContent
         align="end"
-        className="w-[360px] p-0 rounded-2xl border border-gray-200 shadow-sm"
+        className="w-[360px] h-[600px] p-0 rounded-2xl border border-gray-200 shadow-sm"
       >
         {/* Header */}
         <div className="p-4 border-b border-gray-200">

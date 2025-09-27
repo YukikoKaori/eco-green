@@ -35,7 +35,7 @@ export default function HomePage() {
         bg-[position:center]
         md:bg-[position:center]
         lg:bg-[position:center]
-        xl:bg-[position:center_-290px]
+        xl:bg-[position:center_50px]
         "
         style={{ backgroundImage: "url('/images/home-bg.png')" }}
       />
