@@ -46,7 +46,7 @@ public class Account {
     @Column(name = "tax_code", unique = true, length = 20)
     private String taxCode;
 
-    @Column (name = "date_of_birth")
+    @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
     private String address;

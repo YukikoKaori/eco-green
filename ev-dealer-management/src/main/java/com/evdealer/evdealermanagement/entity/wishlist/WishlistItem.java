@@ -10,10 +10,13 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-
 @Entity
-@Table(name = "wishlist_items",
-        uniqueConstraints = {@UniqueConstraint(name = "uk_account_product", columnNames = {"accountId", "productId"})}) // rằng buộc user chỉ có thể thêm một lần duy nhất một product.
+@Table(name = "wishlist_items", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_account_product", columnNames = { "accountId", "productId" }) }) // rằng buộc user
+                                                                                                      // chỉ có thể thêm
+                                                                                                      // một lần duy
+                                                                                                      // nhất một
+                                                                                                      // product.
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -32,6 +35,15 @@ public class WishlistItem {
     @JoinColumn(name = "product_id", nullable = false)
     private Products product;
 
-    @Column(name = "created_at", updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP") // lấy giá trị hiện tại nếu không truyền  giá trị
+    @Column(name = "created_at", updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP") // lấy
+                                                                                                                                  // giá
+                                                                                                                                  // trị
+                                                                                                                                  // hiện
+                                                                                                                                  // tại
+                                                                                                                                  // nếu
+                                                                                                                                  // không
+                                                                                                                                  // truyền
+                                                                                                                                  // giá
+                                                                                                                                  // trị
     private LocalDateTime createdAt;
 }
