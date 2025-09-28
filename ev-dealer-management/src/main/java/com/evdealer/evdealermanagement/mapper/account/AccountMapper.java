@@ -16,7 +16,6 @@ public final class AccountMapper {
         AccountProfileResponse res = new AccountProfileResponse();
         res.setId(a.getId());
         res.setFullName(a.getFullName());
-        res.setAddress(a.getAddress());
         res.setAvatarUrl(a.getAvatarUrl());
         res.setPhone(a.getPhone());
         res.setTaxCode(a.getTaxCode());
@@ -34,11 +33,6 @@ public final class AccountMapper {
         // fullName
         if (hasText(req.getFullName())) {
             account.setFullName(trimToNull(req.getFullName()));
-        }
-
-        // address
-        if (req.getAddress() != null) {
-            account.setAddress(trimToNull(req.getAddress()));
         }
 
         // avatarUrl
@@ -82,7 +76,6 @@ public final class AccountMapper {
                 .email(account.getEmail())
                 .fullName(account.getFullName())
                 .phone(account.getPhone())
-                .address(account.getAddress())
                 .avatarUrl(account.getAvatarUrl())
                 .status(account.getStatus())
                 .emailVerified(account.getEmailVerified())
