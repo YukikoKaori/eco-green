@@ -29,17 +29,14 @@ public class WishlistService implements IWishlistService {
     private final ProductRepository productRepository;
     private final EntityManager em;
 
-
-
     @Override
     public void addWishlistItem(Long accountId, Long productId) {
 
-        if(!productRepository.existsById(productId)){
-
-            throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
+        if (!productRepository.existsById(productId)) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND, "User Detail is not of expected type");
         }
 
-        if(wishlistItemRepository.existsByAccountIdAndProductId(accountId,productId)){
+        if (wishlistItemRepository.existsByAccountIdAndProductId(accountId, productId)) {
             return;
         }
         Account accountRef = em.getReference(Account.class, accountId);
@@ -57,7 +54,7 @@ public class WishlistService implements IWishlistService {
     @Override
     public void removeWishlistItem(Long accountId, Long productId) {
 
-        wishlistItemRepository.deleteByAccountIdAndProductId(accountId,productId);
+        wishlistItemRepository.deleteByAccountIdAndProductId(accountId, productId);
 
     }
 
@@ -77,6 +74,5 @@ public class WishlistService implements IWishlistService {
                 .totalPages(page.getTotalPages())
                 .build();
     }
-
 
 }

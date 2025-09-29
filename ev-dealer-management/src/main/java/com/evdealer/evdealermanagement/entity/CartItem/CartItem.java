@@ -1,6 +1,6 @@
 package com.evdealer.evdealermanagement.entity.CartItem;
 
-import com.evdealer.evdealermanagement.entity.Cart.Cart;
+import com.evdealer.evdealermanagement.entity.cart.Cart;
 import com.evdealer.evdealermanagement.entity.product.Products;
 
 import jakarta.persistence.*;
@@ -15,6 +15,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CartItem {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "cart_item_id")
@@ -34,4 +35,5 @@ public class CartItem {
     // INT DEFAULT 1
     @Column(nullable = false, columnDefinition = "INT DEFAULT 1")
     private Integer quantity = 1;
+
 }

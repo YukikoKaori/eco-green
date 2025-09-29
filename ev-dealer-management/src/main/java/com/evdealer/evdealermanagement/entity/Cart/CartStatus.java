@@ -1,6 +1,6 @@
-package com.evdealer.evdealermanagement.entity.Cart;
+package com.evdealer.evdealermanagement.entity.cart;
 
 public enum CartStatus {
-    ACTIVE, // trùng ENUM('ACTIVE','CHECKED_OUT')
+    ACTIVE,
     CHECKED_OUT
 }
