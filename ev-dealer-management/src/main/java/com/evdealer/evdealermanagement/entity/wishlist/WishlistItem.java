@@ -12,38 +12,34 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "wishlist_items", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_account_product", columnNames = { "accountId", "productId" }) }) // rằng buộc user
-                                                                                                      // chỉ có thể thêm
-                                                                                                      // một lần duy
-                                                                                                      // nhất một
-                                                                                                      // product.
+                @UniqueConstraint(name = "uk_account_product", columnNames = { "account_id", "product_id" }) })
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class WishlistItem {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "account_id", nullable = false)
-    private Account account;
+        @ManyToOne
+        @JoinColumn(name = "account_id", nullable = false)
+        private Account account;
 
-    @ManyToOne
-    @JoinColumn(name = "product_id", nullable = false)
-    private Products product;
+        @ManyToOne
+        @JoinColumn(name = "product_id", nullable = false)
+        private Products product;
 
-    @Column(name = "created_at", updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP") // lấy
-                                                                                                                                  // giá
-                                                                                                                                  // trị
-                                                                                                                                  // hiện
-                                                                                                                                  // tại
-                                                                                                                                  // nếu
-                                                                                                                                  // không
-                                                                                                                                  // truyền
-                                                                                                                                  // giá
-                                                                                                                                  // trị
-    private LocalDateTime createdAt;
+        @Column(name = "created_at", updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP") // lấy
+                                                                                                                                      // giá
+                                                                                                                                      // trị
+                                                                                                                                      // hiện
+                                                                                                                                      // tại
+                                                                                                                                      // nếu
+                                                                                                                                      // không
+                                                                                                                                      // truyền
+                                                                                                                                      // giá
+                                                                                                                                      // trị
+        private LocalDateTime createdAt;
 }

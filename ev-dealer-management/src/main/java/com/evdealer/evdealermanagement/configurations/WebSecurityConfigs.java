@@ -32,18 +32,11 @@ public class WebSecurityConfigs {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-
-        // Chỉ định rõ origin để tránh lỗi 403 khi deploy
-        config.setAllowedOrigins(List.of(
-                "http://localhost:5173",       // FE local
-                "https://your-frontend-domain.com" // FE deploy (thay domain thật)
-        ));
-
+        config.setAllowedOrigins(List.of("http://localhost:5173")); // dev + deploy
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
-        config.setExposedHeaders(List.of("Authorization")); // để FE đọc được token trả về
+        config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
-        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
