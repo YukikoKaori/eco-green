@@ -1,4 +1,4 @@
-package com.evdealer.evdealermanagement.entity.Cart;
+package com.evdealer.evdealermanagement.entity.cart;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -21,7 +21,7 @@ public class Cart {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // BIGINT UNSIGNED AI
 
-    // Member - Cart: 1 - 1 (đặt unique để đảm bảo mỗi account chỉ có 1 cart)
+    // Member - Cart: 1 - 1
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "account_id", nullable = false, unique = true)
     private Account account;

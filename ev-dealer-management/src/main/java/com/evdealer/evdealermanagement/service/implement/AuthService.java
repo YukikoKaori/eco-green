@@ -20,8 +20,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
 
     public AuthService(JwtService jwtService,
-                       AccountRepository accountRepository,
-                       PasswordEncoder passwordEncoder) {
+            AccountRepository accountRepository,
+            PasswordEncoder passwordEncoder) {
         this.jwtService = jwtService;
         this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
@@ -68,12 +68,6 @@ public class AuthService {
     // ======================= REGISTER =======================
     public AccountRegisterResponse register(AccountRegisterRequest request) {
         // Validate
-<<<<<<< HEAD
-        if (request.getPassword() == null || request.getPassword().length() < 6) {
-            throw new AppException(ErrorCode.PASSWORD_TOO_SHORT, "Password must be at least 6 characters");
-        }
-=======
->>>>>>> 66243ee49930fd8bc4a6cfab25b7f7f7235d3e02
         if (accountRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS, "Username already exists");
         }
@@ -138,7 +132,8 @@ public class AuthService {
 
     public void deleteUserByUsername(String username) {
         Account account = accountRepository.findByUsername(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User with username " + username + " not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND,
+                        "User with username " + username + " not found"));
         accountRepository.delete(account);
     }
 
