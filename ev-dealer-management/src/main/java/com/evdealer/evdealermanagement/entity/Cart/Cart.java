@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import com.evdealer.evdealermanagement.entity.CartItem.CartItem;
 import com.evdealer.evdealermanagement.entity.account.Account;
+import com.evdealer.evdealermanagement.entity.cartItem.CartItem;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
