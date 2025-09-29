@@ -20,7 +20,7 @@
       </schema-mapping>
       <load-sources>user_and_system_sources</load-sources>
     </data-source>
-    <data-source name="MySQL" uuid="6166b931-1d3b-47c0-a4b6-b5834c022d92">
+    <data-source name="MySQL 9" uuid="d0dc6123-6b93-4a7b-a010-eb0a46a029b1">
       <database-info product="MySQL" version="9.4.0" jdbc-version="4.2" driver-name="MySQL Connector/J" driver-version="mysql-connector-j-8.2.0 (Revision: 06a1f724497fd81c6a659131fda822c9e5085b6c)" dbms="MYSQL" exact-version="9.4.0" exact-driver-version="8.2">
         <extra-name-characters>#@</extra-name-characters>
         <identifier-quote-string>`</identifier-quote-string>
@@ -33,7 +33,6 @@
           <node kind="schema" qname="@" />
         </introspection-scope>
       </schema-mapping>
-      <load-sources>user_and_system_sources</load-sources>
     </data-source>
   </component>
 </project>
