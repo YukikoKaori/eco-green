@@ -3,6 +3,8 @@ package com.evdealer.evdealermanagement.service.implement;
 import com.evdealer.evdealermanagement.dto.product.detail.ProductDetail;
 import com.evdealer.evdealermanagement.entity.product.Products;
 import com.evdealer.evdealermanagement.mapper.product.ProductMapper;
+import com.evdealer.evdealermanagement.repository.CartItemRepository;
+import com.evdealer.evdealermanagement.repository.CartRepository;
 import com.evdealer.evdealermanagement.repository.ProductRepository;
 import com.evdealer.evdealermanagement.service.contract.IProductService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,9 @@ public class ProductService implements IProductService {
     private final ProductRepository productRepository;
     private final VehicleService vehicleService;
     private final BatteryService batteryService;
+
+    private final CartRepository cartRepository;
+    private final CartItemRepository cartItemRepository;
 
     @Override
     public List<ProductDetail> getAllProducts() {
