@@ -10,21 +10,22 @@ public final class AccountMapper {
     private AccountMapper() {
     }
 
-    public static AccountProfileResponse toProfileResponse(Account a) {
-        if (a == null)
-            return null;
-        AccountProfileResponse res = new AccountProfileResponse();
-        res.setId(a.getId());
-        res.setFullName(a.getFullName());
-        res.setAvatarUrl(a.getAvatarUrl());
-        res.setPhone(a.getPhone());
-        res.setTaxCode(a.getTaxCode());
-        res.setUsername(a.getUsername());
+    // public static AccountProfileResponse toProfileResponse(Account a) {
+    // if (a == null)
+    // return null;
+    // AccountProfileResponse res = new AccountProfileResponse();
+    // res.setId(a.getId());
+    // res.setFullName(a.getFullName());
+    // res.setAddress(a.getAddress());
+    // res.setAvatarUrl(a.getAvatarUrl());
+    // res.setPhone(a.getPhone());
+    // res.setTaxCode(a.getTaxCode());
+    // res.setUsername(a.getUsername());
 
-        res.setEmail(a.getEmail());
-        res.setUpdatedAt(a.getUpdatedAt());
-        return res;
-    }
+    // res.setEmail(a.getEmail());
+    // res.setUpdatedAt(a.getUpdatedAt());
+    // return res;
+    // }
 
     public static void updateAccountFromRequest(AccountUpdateRequest req, Account account) {
         if (req == null || account == null)
@@ -33,6 +34,11 @@ public final class AccountMapper {
         // fullName
         if (hasText(req.getFullName())) {
             account.setFullName(trimToNull(req.getFullName()));
+        }
+
+        // address
+        if (req.getAddress() != null) {
+            account.setAddressDetail(trimToNull(req.getAddress()));
         }
 
         // avatarUrl
@@ -59,6 +65,7 @@ public final class AccountMapper {
         if (req.getStatus() != null) {
             account.setStatus(Account.Status.valueOf(req.getStatus().name()));
         }
+
     }
 
     private static boolean hasText(String s) {// Kiểm tra xem có phải là text ko
@@ -76,6 +83,7 @@ public final class AccountMapper {
                 .email(account.getEmail())
                 .fullName(account.getFullName())
                 .phone(account.getPhone())
+                .address(account.getAddressDetail())
                 .avatarUrl(account.getAvatarUrl())
                 .status(account.getStatus())
                 .emailVerified(account.getEmailVerified())
