@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "wishlist_items",
-        uniqueConstraints = {@UniqueConstraint(name = "uk_account_product", columnNames = {"accountId", "productId"})}) // rằng buộc user chỉ có thể thêm một lần duy nhất một product.
+        uniqueConstraints = {@UniqueConstraint(name = "uk_account_product", columnNames = {"account_id", "product_id"})})
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
