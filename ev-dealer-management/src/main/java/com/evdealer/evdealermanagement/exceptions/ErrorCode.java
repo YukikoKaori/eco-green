@@ -14,7 +14,7 @@ public enum ErrorCode {
     FORBIDDEN(403, "You do not have permission to access this resource"),
     USER_NOT_FOUND(404, "User not found"),
     RESOURCE_NOT_FOUND(4041, "Requested resource not found"),
-    INTERNAL_ERROR(500, "Internal server error"), // Đảm bảo tồn tại
+    INTERNAL_ERROR(500, "Internal server error"),
     SERVICE_UNAVAILABLE(503, "Service temporarily unavailable"),
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error"),
 
@@ -33,6 +33,8 @@ public enum ErrorCode {
     PASSWORD_TOO_SHORT(1105, "Password must be at least 6 characters"),
     DUPLICATE_NATIONAL_ID(1106, "National ID is already registered"),
     DUPLICATE_TAX_CODE(1107, "Tax code is already registered"),
+    PHONE_ALREADY_EXISTS(1108, "Phone number is already registered"),
+    INVALID_PHONE_FORMAT(1109, "Invalid phone number format"),
 
     // Validation errors
     INVALID_INPUT(1201, "Invalid input data"),
