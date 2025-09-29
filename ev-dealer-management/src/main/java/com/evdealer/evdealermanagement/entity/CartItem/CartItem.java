@@ -1,4 +1,4 @@
-package com.evdealer.evdealermanagement.entity.CartItem;
+package com.evdealer.evdealermanagement.entity.cartItem;
 
 import com.evdealer.evdealermanagement.entity.cart.Cart;
 import com.evdealer.evdealermanagement.entity.product.Products;
