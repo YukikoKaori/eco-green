@@ -26,6 +26,4 @@ public class AccountRegisterRequest {
     @NotBlank(message = "Phone number is required")
     @Pattern(regexp = REGREX.PHONE_REGEX, message = "Invalid VietNam phone number")
     private String phone;
-
-    private String email;
 }

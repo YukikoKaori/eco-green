@@ -86,7 +86,6 @@ public class AuthService {
                 .username(Utils.generateUsernameFromName(request.getFullName()))
                 .fullName(request.getFullName())
                 .phone(request.getPhone())
-                .email(request.getEmail())
                 .role(Account.Role.MEMBER)
                 .status(Account.Status.ACTIVE)
                 .passwordHash(hashedPassword)
@@ -98,7 +97,6 @@ public class AuthService {
                 .username(saved.getUsername())
                 .fullName(saved.getFullName())
                 .phone(saved.getPhone())
-                .email(saved.getEmail())
                 .role(saved.getRole())
                 .status(saved.getStatus())
                 .build();
