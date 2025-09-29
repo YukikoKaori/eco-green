@@ -8,10 +8,12 @@ import com.evdealer.evdealermanagement.entity.account.Account;
 import com.evdealer.evdealermanagement.exceptions.AppException;
 import com.evdealer.evdealermanagement.exceptions.ErrorCode;
 import com.evdealer.evdealermanagement.repository.AccountRepository;
+import com.evdealer.evdealermanagement.utils.Utils;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.regex.Pattern;
 
@@ -71,37 +73,20 @@ public class AuthService {
         }
     }
 
+    @Transactional
     public AccountRegisterResponse register(AccountRegisterRequest request) {
-        if (request.getUsername() == null || request.getUsername().isBlank()) {
-            throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD, "UserDetails is not of expected type");
-        }
 
-        if (request.getEmail() == null || request.getEmail().isBlank()) {
-            throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD, "UserDetails is not of expected type");
-        }
-
-        if (request.getPassword() == null || request.getPassword().length() < 6) {
-            throw new AppException(ErrorCode.PASSWORD_TOO_SHORT, "UserDetails is not of expected type");
-        }
-
-//        if (!isValidEmail(request.getEmail())) {
-//            throw new AppException(ErrorCode.INVALID_FORMAT, "UserDetails is not of expected type");
-//        }
-
-        if (accountRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS, "UserDetails is not of expected type");
-        }
-
-        if (accountRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS, "UserDetails is not of expected type");
+        if(accountRepository.findByPhone(request.getPhone()).isPresent()){
+            throw new AppException(ErrorCode.DUPLICATE_PHONE, "UserDetails is not of expected type");
         }
 
         String hashedPassword = passwordEncoder.encode(request.getPassword());
 
         Account account = Account.builder()
-                .email(request.getEmail())
+                .username(Utils.generateUsernameFromName(request.getFullName()))
                 .fullName(request.getFullName())
-                .username(request.getUsername())
+                .phone(request.getPhone())
+                .email(request.getEmail())
                 .role(Account.Role.MEMBER)
                 .status(Account.Status.ACTIVE)
                 .passwordHash(hashedPassword)
@@ -110,9 +95,10 @@ public class AuthService {
         Account saved = accountRepository.save(account);
 
         return AccountRegisterResponse.builder()
-                .email(saved.getEmail())
-                .fullName(saved.getFullName())
                 .username(saved.getUsername())
+                .fullName(saved.getFullName())
+                .phone(saved.getPhone())
+                .email(saved.getEmail())
                 .role(saved.getRole())
                 .status(saved.getStatus())
                 .build();

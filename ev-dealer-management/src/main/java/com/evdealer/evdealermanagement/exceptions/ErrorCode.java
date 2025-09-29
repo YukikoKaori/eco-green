@@ -33,6 +33,7 @@ public enum ErrorCode {
     PASSWORD_TOO_SHORT(1105, "Password must be at least 6 characters"),
     DUPLICATE_NATIONAL_ID(1106, "National ID is already registered"),
     DUPLICATE_TAX_CODE(1107, "Tax code is already registered"),
+    DUPLICATE_PHONE(1108, "Phone number is already registered"),
 
     // Validation errors
     INVALID_INPUT(1201, "Invalid input data"),
