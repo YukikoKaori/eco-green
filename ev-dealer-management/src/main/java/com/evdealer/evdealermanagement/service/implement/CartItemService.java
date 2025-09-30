@@ -74,4 +74,25 @@ public class CartItemService implements ICartItemService {
         return CartItemMapper.mapToCartItemResponse(item, cart, product);
     }
 
+    @Override
+    @Transactional
+    public void removeItemByCartItemId(Long accountId, Long cartItemId) {
+        CartItem item = cartItemRepository
+                .findByIdAndCart_Account_IdAndCart_Status(cartItemId, accountId, CartStatus.ACTIVE)
+                .orElseThrow(() -> new IllegalArgumentException("Cart item not found"));
+        cartItemRepository.delete(item);
+    }
+
+    @Override
+    @Transactional
+    public void removeItemByProductId(Long accountId, Long productId) {
+        // Cách 1: xóa trực tiếp theo derived query (trả về số row xóa)
+        long deleted = cartItemRepository
+                .deleteByCart_Account_IdAndCart_StatusAndProduct_Id(accountId, CartStatus.ACTIVE, productId);
+        if (deleted == 0) {
+            throw new IllegalArgumentException("Cart item not found");
+        }
+        // (Hoặc Cách 2: find rồi delete; kết quả như method trên)
+    }
+
 }

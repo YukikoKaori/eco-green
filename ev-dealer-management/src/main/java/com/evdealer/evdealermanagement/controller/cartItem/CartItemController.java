@@ -10,6 +10,7 @@ import com.evdealer.evdealermanagement.service.implement.UserContextService;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,6 +31,22 @@ public class CartItemController {
                                 .orElseThrow(() -> new RuntimeException("User not authenticated"));
                 CartItemResponse result = cartItemService.addToCart(accountId, productId, request.getQuantity());
                 return ResponseEntity.ok(result);
+        }
+
+        @DeleteMapping("/items/{cartItemId}")
+        public ResponseEntity<Void> removeByCartItemId(@PathVariable Long cartItemId) {
+                Long accountId = userContextService.getCurrentUserId()
+                                .orElseThrow(() -> new RuntimeException("User not authenticated"));
+                cartItemService.removeItemByCartItemId(accountId, cartItemId);
+                return ResponseEntity.noContent().build();
+        }
+
+        @DeleteMapping("/{productId}")
+        public ResponseEntity<Void> removeByProductId(@PathVariable Long productId) {
+                Long accountId = userContextService.getCurrentUserId()
+                                .orElseThrow(() -> new RuntimeException("User not authenticated"));
+                cartItemService.removeItemByProductId(accountId, productId);
+                return ResponseEntity.noContent().build();
         }
 
 }
