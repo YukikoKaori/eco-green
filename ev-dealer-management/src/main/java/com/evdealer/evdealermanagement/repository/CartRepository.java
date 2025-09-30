@@ -11,4 +11,5 @@ import com.evdealer.evdealermanagement.entity.cart.CartStatus;
 @Repository
 public interface CartRepository extends JpaRepository<Cart, Long> {
     Optional<Cart> findByAccount_IdAndStatus(Long accountId, CartStatus status);
+    Optional<Cart> findByAccountId(Long accountId);
 }
