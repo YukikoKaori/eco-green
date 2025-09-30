@@ -6,18 +6,12 @@ import com.evdealer.evdealermanagement.entity.cart.Cart;
 import com.evdealer.evdealermanagement.entity.cartItem.CartItem;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class CartMapper {
-    public static CartResponse toCartResponse(Cart cart) {
-        if (cart == null) {
-            return null;
-        }
-
-        // Map items -> CartItemResponse
-        List<CartItemResponse> itemResponses = cart.getItems().stream()
+    public static CartResponse toCartResponse(Cart cart, List<CartItem> cartItems) {
+        var itemResponses = cartItems.stream()
                 .map(CartMapper::toCartItemResponse)
-                .collect(Collectors.toList());
+                .toList();
 
         // Tính toán
         int itemCount = itemResponses.size();
@@ -37,10 +31,6 @@ public class CartMapper {
     }
 
     private static CartItemResponse toCartItemResponse(CartItem item) {
-        if (item == null) {
-            return null;
-        }
-
         return CartItemResponse.builder()
                 .cartItemId(item.getId())
                 .cartId(item.getCart().getId())
