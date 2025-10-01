@@ -6,8 +6,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -19,7 +21,7 @@ public class BatteryService {
     /**
      * Lấy danh sách Battery Product IDs theo tên sản phẩm
      */
-    public List<Long> getBatteryIdByName(String name) {
+    public List<String> getBatteryIdByName(String name) {
         if (name == null || name.trim().isEmpty()) {
             log.warn("Battery name is null or empty");
             return List.of();
@@ -27,7 +29,7 @@ public class BatteryService {
 
         try {
             log.debug("Getting battery IDs by name: {}", name);
-            return batteryDetailRepository.findBatteryProductIdsByName(name);
+            return batteryDetailRepository.findProductIdsByProductTitle(name);
         } catch (Exception e) {
             log.error("Error getting battery IDs by name: {}", name, e);
             return List.of();
@@ -37,7 +39,7 @@ public class BatteryService {
     /**
      * Lấy danh sách Battery Product IDs theo tên hãng
      */
-    public List<Long> getBatteryIdByBrand(String brand) {
+    public List<String> getBatteryIdByBrand(String brand) {
         if (brand == null || brand.trim().isEmpty()) {
             log.warn("Battery brand is null or empty");
             return List.of();
@@ -45,7 +47,7 @@ public class BatteryService {
 
         try {
             log.debug("Getting battery IDs by brand: {}", brand);
-            return batteryDetailRepository.findBatteryProductIdsByBrand(brand);
+            return batteryDetailRepository.findProductIdsByBrandName(brand);
         } catch (Exception e) {
             log.error("Error getting battery IDs by brand: {}", brand, e);
             return List.of();
@@ -63,7 +65,7 @@ public class BatteryService {
 
         try {
             log.debug("Getting battery details by product name: {}", name);
-            return batteryDetailRepository.findBatteryDetailsByProductName(name);
+            return batteryDetailRepository.findByProductTitleLikeIgnoreCase(name);
         } catch (Exception e) {
             log.error("Error getting battery details by product name: {}", name, e);
             return List.of();
@@ -73,15 +75,19 @@ public class BatteryService {
     /**
      * Lấy BatteryDetails theo ID
      */
-    public Optional<BatteryDetails> getBatteryDetailsById(Long id) {
-        if (id == null || id <= 0) {
+    public Optional<BatteryDetails> getBatteryDetailsById(String id) {
+        if (id == null || id.trim().isEmpty()) {
             log.warn("Invalid battery ID: {}", id);
             return Optional.empty();
         }
 
         try {
+            UUID.fromString(id); // Validate UUID format
             log.debug("Getting battery details by ID: {}", id);
             return batteryDetailRepository.findById(id);
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid UUID format for battery ID: {}", id);
+            return Optional.empty();
         } catch (Exception e) {
             log.error("Error getting battery details by ID: {}", id, e);
             return Optional.empty();
@@ -102,37 +108,19 @@ public class BatteryService {
     }
 
     /**
-     * Lấy pin theo model
+     * Lấy pin theo battery type
      */
-    public List<BatteryDetails> getBatteryDetailsByModel(String model) {
-        if (model == null || model.trim().isEmpty()) {
-            log.warn("Battery model is null or empty");
+    public List<BatteryDetails> getBatteryDetailsByType(String type) {
+        if (type == null || type.trim().isEmpty()) {
+            log.warn("Battery type is null or empty");
             return List.of();
         }
 
         try {
-            log.debug("Getting batteries by model: {}", model);
-            return batteryDetailRepository.findBatteryDetailsByModel(model);
+            log.debug("Getting batteries by type: {}", type);
+            return batteryDetailRepository.findByBatteryTypeNameLikeIgnoreCase(type);
         } catch (Exception e) {
-            log.error("Error getting batteries by model: {}", model, e);
-            return List.of();
-        }
-    }
-
-    /**
-     * Lấy pin theo voltage range
-     */
-    public List<BatteryDetails> getBatteriesByVoltageRange(Double minVoltage, Double maxVoltage) {
-        if (minVoltage == null || maxVoltage == null || minVoltage < 0 || maxVoltage < minVoltage) {
-            log.warn("Invalid voltage range: {} - {}", minVoltage, maxVoltage);
-            return List.of();
-        }
-
-        try {
-            log.debug("Getting batteries by voltage range: {} - {}", minVoltage, maxVoltage);
-            return batteryDetailRepository.findBatteriesByVoltageRange(minVoltage, maxVoltage);
-        } catch (Exception e) {
-            log.error("Error getting batteries by voltage range: {} - {}", minVoltage, maxVoltage, e);
+            log.error("Error getting batteries by type: {}", type, e);
             return List.of();
         }
     }
@@ -148,7 +136,7 @@ public class BatteryService {
 
         try {
             log.debug("Getting batteries by capacity range: {} - {}", minCapacity, maxCapacity);
-            return batteryDetailRepository.findBatteriesByCapacityRange(minCapacity, maxCapacity);
+            return batteryDetailRepository.findByCapacityKwhBetween(BigDecimal.valueOf(minCapacity), BigDecimal.valueOf(maxCapacity));
         } catch (Exception e) {
             log.error("Error getting batteries by capacity range: {} - {}", minCapacity, maxCapacity, e);
             return List.of();
@@ -166,7 +154,7 @@ public class BatteryService {
 
         try {
             log.debug("Getting batteries by brands: {}", brandNames);
-            return batteryDetailRepository.findBatteriesByBrands(brandNames);
+            return batteryDetailRepository.findByBrandNameIn(brandNames);
         } catch (Exception e) {
             log.error("Error getting batteries by brands: {}", brandNames, e);
             return List.of();

@@ -1,8 +1,8 @@
 package com.evdealer.evdealermanagement.entity.battery;
 
+import com.evdealer.evdealermanagement.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "battery_types")
@@ -10,28 +10,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class BatteryTypes {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(columnDefinition = "TINYINT UNSIGNED")
-    private Integer id;
-
-    @Column(nullable = false, unique = true, length = 50)
+public class BatteryTypes extends BaseEntity {
+    @Column(nullable = false, unique = true, length = 100)
     private String name;
-
-    @Column(name = "typical_voltage_v")
-    private Double typicalVoltageV;
-
-    @Column(name = "typical_lifespan_cycles")
-    private Integer typicalLifespanCycles;
-
-    @Enumerated(EnumType.STRING)
-    private Status status;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    public enum Status { ACTIVE, INACTIVE }
 }

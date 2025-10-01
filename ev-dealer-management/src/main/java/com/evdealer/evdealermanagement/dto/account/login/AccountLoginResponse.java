@@ -20,11 +20,6 @@ public class AccountLoginResponse {
     private String phone;
     private LocalDate dateOfBirth;
     private Account.Gender gender;
-    private String avatarUrl;
-    private String city;
-    private String district;
-    private String ward;
-    private String addressDetail;
     private Account.Role role;
     private Account.Status status;
     private LocalDateTime createdAt;

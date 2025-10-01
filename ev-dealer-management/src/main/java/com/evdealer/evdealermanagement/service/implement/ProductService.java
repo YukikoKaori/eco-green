@@ -1,10 +1,8 @@
 package com.evdealer.evdealermanagement.service.implement;
 
 import com.evdealer.evdealermanagement.dto.product.detail.ProductDetail;
-import com.evdealer.evdealermanagement.entity.product.Products;
+import com.evdealer.evdealermanagement.entity.product.Product;
 import com.evdealer.evdealermanagement.mapper.product.ProductMapper;
-import com.evdealer.evdealermanagement.repository.CartItemRepository;
-import com.evdealer.evdealermanagement.repository.CartRepository;
 import com.evdealer.evdealermanagement.repository.ProductRepository;
 import com.evdealer.evdealermanagement.service.contract.IProductService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -23,9 +22,6 @@ public class ProductService implements IProductService {
     private final ProductRepository productRepository;
     private final VehicleService vehicleService;
     private final BatteryService batteryService;
-
-    private final CartRepository cartRepository;
-    private final CartItemRepository cartItemRepository;
 
     @Override
     public List<ProductDetail> getAllProducts() {
@@ -41,19 +37,38 @@ public class ProductService implements IProductService {
         }
     }
 
-    @Override
-    public Optional<ProductDetail> getProductById(Long id) {
-        if (id == null || id <= 0) {
+    public Optional<ProductDetail> getProductById(String id) {
+        if (id == null || id.trim().isEmpty()) {
             log.warn("Invalid product ID: {}", id);
             return Optional.empty();
         }
 
         try {
+            UUID.fromString(id); // Validate UUID format
             log.debug("Fetching product by ID: {}", id);
             return productRepository.findById(id)
                     .map(ProductMapper::toDetailDto);
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid UUID format for product ID: {}", id);
+            return Optional.empty();
         } catch (Exception e) {
             log.error("Error fetching product by ID: {}", id, e);
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<ProductDetail> getProductById(Long id) {
+        if (id == null) {
+            log.warn("Invalid product ID: null");
+            return Optional.empty();
+        }
+        try {
+            log.debug("Fetching product by Long ID: {}", id);
+            return productRepository.findById(String.valueOf(id))
+                    .map(ProductMapper::toDetailDto);
+        } catch (Exception e) {
+            log.error("Error fetching product by Long ID: {}", id, e);
             return Optional.empty();
         }
     }
@@ -68,10 +83,13 @@ public class ProductService implements IProductService {
         try {
             log.debug("Searching products by name: {}", name);
 
-            List<Long> vehicleProductIds = vehicleService.getVehicleIdByName(name);
-            List<Long> batteryProductIds = batteryService.getBatteryIdByName(name);
+            List<String> vehicleProductIds = vehicleService.getVehicleIdByName(name)
+                    .stream()
+                    .map(String::valueOf)
+                    .toList();
+            List<String> batteryProductIds = batteryService.getBatteryIdByName(name);
 
-            List<Long> allProductIds = Stream.concat(
+            List<String> allProductIds = Stream.concat(
                     vehicleProductIds.stream(),
                     batteryProductIds.stream()).distinct().toList();
 
@@ -100,15 +118,18 @@ public class ProductService implements IProductService {
 
         try {
             log.debug("Fetching products by type: {}", type);
-            Products.ProductType enumType = Products.ProductType.valueOf(type.toUpperCase());
+            Product.ProductType enumType = Product.ProductType.valueOf(type.toUpperCase());
             return productRepository.findByType(enumType)
                     .stream()
                     .map(ProductMapper::toDetailDto)
                     .toList();
 
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid product type: {}", type);
+            return List.of();
         } catch (Exception e) {
             log.error("Error fetching products by type: {}", type, e);
-            throw new RuntimeException("Failed to fetch products by type: " + type, e);
+            return List.of();
         }
     }
 
@@ -122,10 +143,13 @@ public class ProductService implements IProductService {
         try {
             log.debug("Fetching products by brand: {}", brand);
 
-            List<Long> vehicleProductIds = vehicleService.getVehicleIdByBrand(brand);
-            List<Long> batteryProductIds = batteryService.getBatteryIdByBrand(brand);
+            List<String> vehicleProductIds = vehicleService.getVehicleIdByBrand(brand)
+                    .stream()
+                    .map(String::valueOf)
+                    .toList();
+            List<String> batteryProductIds = batteryService.getBatteryIdByBrand(brand);
 
-            List<Long> allProductIds = Stream.concat(
+            List<String> allProductIds = Stream.concat(
                     vehicleProductIds.stream(),
                     batteryProductIds.stream()).distinct().toList();
 
@@ -136,12 +160,12 @@ public class ProductService implements IProductService {
 
             return productRepository.findAllById(allProductIds)
                     .stream()
-                    .map(ProductDetail::fromEntity)
+                    .map(ProductMapper::toDetailDto)
                     .toList();
 
         } catch (Exception e) {
             log.error("Error fetching products by brand: {}", brand, e);
-            throw new RuntimeException("Failed to fetch products by brand: " + brand, e);
+            return List.of();
         }
     }
 }

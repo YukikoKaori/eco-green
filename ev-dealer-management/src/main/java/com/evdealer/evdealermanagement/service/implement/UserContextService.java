@@ -28,7 +28,7 @@ public class UserContextService implements IUserContextService {
     }
 
     @Override
-    public Optional<Long> getCurrentUserId() {
+    public Optional<String> getCurrentUserId() {
         return getCurrentUsername()
                 .flatMap(u -> accountRepository.findByUsername(u).map(Account::getId));
     }
