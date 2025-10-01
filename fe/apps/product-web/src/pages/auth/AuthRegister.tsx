@@ -55,7 +55,7 @@ export default function AuthRegister() {
                 required
                 name="name"
                 type="text"
-                placeholder="Nguyễn Văn A"
+                placeholder="Nhập đầy đủ họ và tên"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="h-10 border-0 shadow-none focus-visible:ring-0"
@@ -72,7 +72,7 @@ export default function AuthRegister() {
                 name="phone"
                 type="tel"
                 inputMode="tel"
-                placeholder="090..."
+                placeholder="Nhập số điện thoại"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="h-10 border-0 shadow-none focus-visible:ring-0"
@@ -96,7 +96,7 @@ export default function AuthRegister() {
               <button
                 type="button"
                 onClick={() => setShowPw((v) => !v)}
-                className="ml-auto text-gray-500"
+                className="!ml-auto !1text-gray-500 !bg-white"
                 aria-label={showPw ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
               >
                 {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -108,12 +108,12 @@ export default function AuthRegister() {
             type="submit"
             disabled={loading || !name || !phone || !password}
             aria-busy={loading}
-            className="w-full h-10 rounded-full bg-[#0f766e] hover:bg-[#0e6a64] text-white disabled:opacity-60"
+            className="!w-full !h-10 !rounded-full !bg-[#0f766e] !hover:bg-[#0e6a64] !text-white !disabled:opacity-60"
           >
             {loading ? "Đang tạo..." : "Tạo tài khoản"}
           </Button>
 
-          <p className="text-center text-sm text-gray-600">
+          <p className="text-center text-sm text-gray-600 mb-3">
             Đã có tài khoản?{" "}
             <Link to="/login" className="text-[#0f766e] font-semibold">
               Đăng nhập
@@ -130,7 +130,7 @@ export default function AuthRegister() {
           <button
             onClick={onGoogle}
             type="button"
-            className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-full border border-gray-200 bg-white text-gray-800"
+            className="!inline-flex !items-center !justify-center !gap-2 !w-full !h-10 !rounded-full !border !border-gray-200 !bg-white !text-gray-800"
           >
             <GoogleIcon className="w-5 h-5" />
             <span>Đăng ký với Google</span>
@@ -138,7 +138,7 @@ export default function AuthRegister() {
           <button
             onClick={onFacebook}
             type="button"
-            className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-full border border-gray-200 bg-white text-gray-800"
+            className="!inline-flex !items-center !justify-center !gap-2 !w-full !h-10 !rounded-full !border !border-gray-200 !bg-white !text-gray-800"
           >
             <FacebookIcon className="w-5 h-5" />
             <span>Đăng ký với Facebook</span>

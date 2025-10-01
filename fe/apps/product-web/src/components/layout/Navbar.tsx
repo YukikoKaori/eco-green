@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { Menu, Heart, User, PlusCircle, Search } from "lucide-react";
+import { Menu, Heart, PlusCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,6 +12,7 @@ import {
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import "@/styles/Navbar.css";
 import UserMenu from "@/components/user/UserMenu";
+import { useAuth } from "@/contexts/AuthContext"; // 👈 lấy user từ context
 
 const mainNav = [
   { label: "EcoGreen", to: "/" },
@@ -22,6 +23,7 @@ const mainNav = [
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const { user } = useAuth(); // 👈 user từ AuthProvider
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -32,31 +34,38 @@ export default function Navbar() {
 
   return (
     <header
-      className={`navbar sticky top-0 z-50 transition-all duration-300 ${isScrolled ? "navbar-shrink" : "navbar-expanded"
-        }`}
+      className={`navbar sticky top-0 z-50 transition-all duration-300 ${
+        isScrolled ? "navbar-shrink" : "navbar-expanded"
+      }`}
       style={
         isScrolled
-          ? { backgroundColor: "#246f67" }
+          ? {
+              background: "linear-gradient(90deg, #246f67 0%, #01c5a7ff 50%)",
+            }
           : {
-            backgroundImage: "url('/images/navbar-bg.png')",
-            backgroundSize: "cover",
-            backgroundRepeat: "no-repeat",
-          }
+              backgroundImage: "url('/images/navbar-bg.png')",
+              backgroundSize: "cover",
+              backgroundRepeat: "no-repeat",
+            }
       }
     >
       {/* Top bar */}
-      <div className="w-full h-16 flex items-center gap-4 px-3 sm:px-4">
-        {/* Mobile menu (giữ nguyên) */}
+      <div className="!w-full !h-16 !flex items-center !gap-4 !px-3 !sm:px-4">
+        {/* Drawer Menu (mobile) */}
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="text-black md:hidden">
-              <Menu className="w-5 h-5" />
+              <Menu className="!w-5 h-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72">
+          <SheetContent side="right" className="w-72">
             <nav className="mt-6 grid gap-3">
               {mainNav.map((it) => (
-                <NavLink key={it.to} to={it.to} className="text-black px-2 py-2 rounded hover:bg-accent">
+                <NavLink
+                  key={it.to}
+                  to={it.to}
+                  className="text-black !px-2 !py-2 !rounded !hover:bg-accent"
+                >
                   {it.label}
                 </NavLink>
               ))}
@@ -64,15 +73,13 @@ export default function Navbar() {
           </SheetContent>
         </Sheet>
 
-        {/* Góc trái: icon DANH MỤC + Logo */}
+        {/* Logo + Danh mục */}
         <div className="flex items-center gap-2">
-          {/* Icon danh mục: chỉ hiện md+ để tránh trùng nút mobile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                variant="secondary"
                 size="icon"
-                className="hidden md:inline-flex bg-white/90 text-teal-700"
+                className="hidden md:inline-flex !bg-white/90 text-teal-700"
                 aria-label="Danh mục"
               >
                 <Menu className="w-5 h-5" />
@@ -80,28 +87,45 @@ export default function Navbar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="min-w-[180px]">
               <DropdownMenuItem asChild>
-                <Link to="/xe-dien" className="w-full">Xe điện</Link>
+                <Link to="/xe-dien" className="w-full">
+                  Xe điện
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/pin-dien" className="w-full">Pin điện</Link>
+                <Link to="/pin-dien" className="w-full">
+                  Pin điện
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Link to="/" className="text-white text-xl font-extrabold tracking-wide drop-shadow">
-            ECOGREEN
+          <Link to="/" className="inline-flex items-center">
+            <span className="inline-flex items-center bg-white border border-gray-200 rounded-md p-0.95 shadow-sm">
+              <img
+                src="/images/logo-name.png"
+                alt="EcoGreen"
+                className="w-[80px] md:w-[80px] h-auto block object-contain"
+              />
+            </span>
+            <span className="sr-only">ECOGREEN</span>
           </Link>
         </div>
 
-        {/* GIỮA: menu hoặc search */}
+        {/* Navigation (desktop) */}
         <div className="hidden md:flex flex-1 justify-center">
           {!isScrolled ? (
-            <nav className="flex items-center gap-6 pl-12">
+            <nav className="flex items-center gap-6 pl-35">
               {mainNav.map((it) => (
                 <NavLink
                   key={it.to}
                   to={it.to}
-                  className="relative font-medium text-white hover:text-yellow-300 transition-colors"
+                  className={({ isActive }) =>
+                    `relative font-medium ml-5 transition-colors ${
+                      isActive
+                        ? "text-[#124f47] font-bold"
+                        : "text-[#246f67] opacity-70 hover:text-yellow-300"
+                    }`
+                  }
                 >
                   {it.label}
                 </NavLink>
@@ -117,39 +141,58 @@ export default function Navbar() {
                 placeholder="Tìm sản phẩm..."
                 className="flex-1 h-10 border-none shadow-none focus-visible:ring-0 text-sm"
               />
-              <Button type="submit" className="!h-8 !px-2 !bg-[#246f67] !hover:bg-gray-800 !text-white">
+              <Button
+                type="submit"
+                className="h-8 px-3 text-sm font-medium text-white 
+                bg-gradient-to-r from-[#246f67] to-[#2ba195] 
+                hover:from-[#1e5c55] hover:to-[#238678]"
+              >
                 Tìm kiếm
               </Button>
             </form>
-
           )}
         </div>
 
         {/* Actions */}
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="secondary" size="icon" className="hidden sm:flex">
+          {/* Favorite */}
+          <Button size="icon" className="hidden sm:flex !bg-white">
             <Heart className="w-4 h-4 text-teal-700" />
           </Button>
 
-          <Button variant="secondary" className="hidden md:flex">
-            Đăng nhập
-          </Button>
+          {/* Nếu login thì hiện "Quản lý tin", nếu chưa login thì "Đăng nhập" */}
+          {user ? (
+            <Button
+              asChild
+              className="hidden md:flex !text-[#246f67] !bg-white"
+            >
+              <Link to="/">Quản lý tin</Link>
+            </Button>
+          ) : (
+            <Button
+              asChild
+              className="hidden md:flex !text-[#246f67] !bg-white"
+            >
+              <Link to="/login">Đăng nhập</Link>
+            </Button>
+          )}
 
-          <Button className="bg-teal-900 hover:bg-teal-800 flex items-center gap-2 text-black">
+          {/* Đăng tin */}
+          <Button className="!bg-[#246f67] !text-sm hover:bg-teal-800 flex items-center gap-2 text-white">
             <PlusCircle className="w-4 h-4" />
             <span>Đăng tin</span>
           </Button>
-          
-          <UserMenu user={null} />
+
+          {/* User Menu (luôn hiển thị, truyền user từ context) */}
+          <UserMenu />
         </div>
       </div>
 
-      {/* Slogan + Search (chỉ khi chưa scroll) */}
+      {/* Banner dưới nếu chưa scroll */}
       {!isScrolled && (
         <>
           <div className="w-full flex justify-center py-2">
-            {/* đổi màu + size chữ slogan */}
-            <span className="text-black-300 text-3xl md:text-3xl font-extrabold mt-2 tracking-wide drop-shadow">
+            <span className="text-[#246f67] text-3xl md:text-4xl font-extrabold mt-1.5 tracking-wide drop-shadow">
               "Đăng tin dễ – Chốt đơn nhanh!"
             </span>
           </div>
@@ -166,12 +209,10 @@ export default function Navbar() {
               />
               <Button
                 type="submit"
-                variant="default"
                 className="!h-10 !px-4 !bg-[#246f67] !text-white hover:!bg-gray-800"
               >
                 Tìm kiếm
               </Button>
-
             </form>
           </div>
         </>

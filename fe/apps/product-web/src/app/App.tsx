@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import LayoutCompact from "@/components/layout/LayoutCompact";
 
@@ -13,27 +13,27 @@ import AuthRegister from "@/pages/auth/AuthRegister";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<HomePage />} />
+    <Routes>
+      {/* Layout chính */}
+      <Route element={<Layout />}>
+        <Route path="/" element={<HomePage />} />
+      </Route>
+
+      {/* Layout gọn */}
+      <Route element={<LayoutCompact />}>
+        <Route path="/account" element={<AccountLayout />}>
+          <Route index element={<Navigate to="profile" replace />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="account" element={<AccountPage />} />
+          <Route path="social" element={<SocialPage />} />
         </Route>
 
-        <Route element={<LayoutCompact />}>
-          <Route path="/account" element={<AccountLayout />}>
-            <Route index element={<Navigate to="profile" replace />} />
-            <Route path="profile" element={<ProfilePage />} />
-            <Route path="account" element={<AccountPage />} />
-            <Route path="social" element={<SocialPage />} />
-          </Route>
+        <Route path="/login" element={<AuthLogin />} />
+        <Route path="/register" element={<AuthRegister />} />
+      </Route>
 
-          <Route path="/login" element={<AuthLogin />} />
-          <Route path="/register" element={<AuthRegister />} />
-        </Route>
-
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
-
+      {/* fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }

@@ -55,35 +55,14 @@ export default function AccountPage() {
 
   return (
     <div className="space-y-8">
-      <h2 className="text-xl font-semibold border-b pb-2">Tài khoản</h2>
+       <h2 className="text-xl font-semibold border-b pb-2 text-[#246f67]">Thay đổi mật khẩu</h2>
 
-      {/*email*/}
-      <section className="space-y-3">
-        <Label>Email</Label>
-        <form onSubmit={onChangeEmail} className="flex flex-col sm:flex-row gap-2">
-          <Input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            type="email"
-            placeholder="you@example.com"
-            className="sm:max-w-md"
-            required
-          />
-          <Button type="submit" disabled={loadingEmail} className="sm:self-start">
-            {loadingEmail ? "Đang lưu..." : "Cập nhật"}
-          </Button>
-        </form>
-        <p className="text-xs text-muted-foreground">
-          Dùng email này để nhận thông báo và đăng nhập.
-        </p>
-      </section>
-
-      {/*password*/}
-      <section className="space-y-3">
-        <h3 className="font-semibold">Đổi mật khẩu</h3>
+      {/* password */}
+      <section className="space-y-3 bg-white rounded-lg shadow p-4 border">
+        <h3 className="font-semibold text-[#246f67]">Đổi mật khẩu</h3>
         <form onSubmit={onChangePwd} className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col space-y-2">
               <Label>Mật khẩu hiện tại</Label>
               <Input
                 type="password"
@@ -93,7 +72,8 @@ export default function AccountPage() {
                 required
               />
             </div>
-            <div>
+
+            <div className="flex flex-col space-y-2">
               <Label>Mật khẩu mới</Label>
               <Input
                 type="password"
@@ -103,7 +83,8 @@ export default function AccountPage() {
                 required
               />
             </div>
-            <div>
+
+            <div className="flex flex-col space-y-2">
               <Label>Nhập lại mật khẩu mới</Label>
               <Input
                 type="password"
@@ -114,17 +95,23 @@ export default function AccountPage() {
               />
             </div>
           </div>
+          <span className="text-xs text-gray-500">
+            Gợi ý: dùng chữ hoa, số và ký tự đặc biệt.
+          </span>
 
           <div className="flex items-center gap-3 pt-1">
-            <Button type="submit" disabled={loadingPwd}>
+            <Button
+              type="submit"
+              disabled={loadingPwd}
+              className="bg-gradient-to-r from-[#246f67] to-[#2ba195] !text-sm text-white hover:from-[#1e5c55] hover:to-[#238678]"
+            >
               {loadingPwd ? "Đang đổi..." : "Đổi mật khẩu"}
             </Button>
-            <span className="text-xs text-muted-foreground">
-              Gợi ý: dùng chữ hoa, số và ký tự đặc biệt.
-            </span>
           </div>
         </form>
       </section>
+
+
 
     </div>
   );

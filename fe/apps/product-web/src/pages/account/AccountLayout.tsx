@@ -19,8 +19,8 @@ export default function AccountLayout() {
   );
 
   return (
-    <main className="flex-1 mx-auto w-full max-w-7xl px-35 py-0 bg-gre">
-      <h2 className="font-semibold my-5 text-3xl">Thông tin cá nhân</h2>
+    <main className="flex-1 mx-auto w-full max-w-7xl px-35 pb-20 pt- bg-gre">
+      <h2 className="font-semibold my-5 text-3xl text-[#246f67]">Thông tin cá nhân</h2>
       <div className="grid grid-cols-1 md:grid-cols-[240px_minmax(0,1fr)] gap-4 md:gap-6">
         {/* Sidebar */}
         <aside className="border p-3 md:p-4 bg-white h-max">

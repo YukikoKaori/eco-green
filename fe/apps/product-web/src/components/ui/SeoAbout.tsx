@@ -42,7 +42,7 @@ export default function SeoAbout() {
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="px-4 py-1.5 rounded-full border text-sm text-teal-700 hover:bg-accent"
+            className="!px-4 !py-1.5 !rounded-xl !border-black !text-sm !text-teal-700 !hover:bg-accent !bg-white"
           >
             {expanded ? "Thu gọn" : "Mở rộng"}
           </button>

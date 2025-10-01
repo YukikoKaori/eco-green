@@ -1,13 +1,28 @@
 import { JSX, memo } from "react";
 import { Link } from "react-router-dom";
 import {
-  Bookmark, Search as SearchIcon, Clock, Star, History, Store, Settings,
-  HelpCircle, MessageSquare, LogOut, User, ChevronRight, Edit3
+  Bookmark,
+  Search as SearchIcon,
+  Clock,
+  Star,
+  History,
+  Store,
+  Settings,
+  HelpCircle,
+  MessageSquare,
+  LogOut,
+  User,
+  ChevronRight,
+  Edit3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Item = { to: string; label: string; icon: JSX.Element; danger?: boolean };
 type Section = { title: string; items: Item[] };
@@ -16,26 +31,26 @@ const SECTIONS: Section[] = [
   {
     title: "Tiện ích",
     items: [
-      { to: "/saved",         label: "Tin đăng đã lưu",   icon: <Bookmark className="w-4 h-4" /> },
-      { to: "/search/saved",  label: "Tìm kiếm đã lưu",   icon: <SearchIcon className="w-4 h-4" /> },
-      { to: "/history/views", label: "Lịch sử xem tin",   icon: <Clock className="w-4 h-4" /> },
-      { to: "/ratings",       label: "Đánh giá từ tôi",   icon: <Star className="w-4 h-4" /> },
+      { to: "/saved", label: "Tin đăng đã lưu", icon: <Bookmark className="w-4 h-4" /> },
+      { to: "/search/saved", label: "Tìm kiếm đã lưu", icon: <SearchIcon className="w-4 h-4" /> },
+      { to: "/history/views", label: "Lịch sử xem tin", icon: <Clock className="w-4 h-4" /> },
+      { to: "/ratings", label: "Đánh giá từ tôi", icon: <Star className="w-4 h-4" /> },
     ],
   },
   {
     title: "Dịch vụ trả phí",
     items: [
-      { to: "/orders", label: "Lịch sử giao dịch",     icon: <History className="w-4 h-4" /> },
-      { to: "/store",  label: "Cửa hàng/Chuyên trang", icon: <Store className="w-4 h-4" /> },
+      { to: "/orders", label: "Lịch sử giao dịch", icon: <History className="w-4 h-4" /> },
+      { to: "/store", label: "Cửa hàng/Chuyên trang", icon: <Store className="w-4 h-4" /> },
     ],
   },
   {
     title: "Khác",
     items: [
       { to: "/account/profile", label: "Cài đặt tài khoản", icon: <Settings className="w-4 h-4" /> },
-      { to: "/help",             label: "Trợ giúp",          icon: <HelpCircle className="w-4 h-4" /> },
-      { to: "/feedback",         label: "Đóng góp ý kiến",   icon: <MessageSquare className="w-4 h-4" /> },
-      { to: "/logout",           label: "Đăng xuất",         icon: <LogOut className="w-4 h-4 text-rose-600" />, danger: true },
+      { to: "/help", label: "Trợ giúp", icon: <HelpCircle className="w-4 h-4" /> },
+      { to: "/feedback", label: "Đóng góp ý kiến", icon: <MessageSquare className="w-4 h-4" /> },
+      // Đăng xuất để riêng
     ],
   },
 ];
@@ -59,17 +74,14 @@ function RowLink({ to, icon, label, danger }: Item) {
   );
 }
 
-export default memo(function UserMenu({
-  user,
-}: {
-  user?: { name?: string; email?: string; avatarUrl?: string } | null;
-}) {
+export default memo(function UserMenu() {
+  const { user, logout } = useAuth();
   const isLoggedIn = !!user;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="secondary" size="icon" className="ml-1">
+        <Button size="icon" className="ml-1 !bg-white">
           <User className="w-5 h-5 text-teal-700" />
         </Button>
       </DropdownMenuTrigger>
@@ -82,34 +94,30 @@ export default memo(function UserMenu({
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <div className="w-14 h-14 rounded-full bg-gray-200 overflow-hidden grid place-content-center text-gray-500">
-              {user?.avatarUrl ? (
-                <img src={user.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
-              ) : (
-                <User className="w-7 h-7" />
-              )}
+              <User className="w-7 h-7" />
             </div>
             <div className="flex-1">
               <div className="text-sm font-semibold text-gray-900">
-                {user?.name || "Khách"}
+                {user?.fullName || user?.username || "Khách"}
               </div>
               <div className="text-xs text-gray-500">
-                {user?.email || "Đăng nhập để dùng đầy đủ tiện ích"}
+                {user?.email || user?.phone || "Đăng nhập để dùng đầy đủ tiện ích"}
               </div>
             </div>
-            {isLoggedIn ? (
-              <Link to="/account/profile" className="inline-flex items-center gap-1 text-sm text-teal-700">
+            {isLoggedIn && (
+              <Link
+                to="/account/profile"
+                className="inline-flex items-center gap-1 text-sm text-teal-700"
+              >
                 <Edit3 className="w-4 h-4" /> Sửa
               </Link>
-            ) : null}
+            )}
           </div>
 
-          {/* chua login */}
           {!isLoggedIn && (
             <div className="mt-4 rounded-2xl border border-gray-200 bg-white px-4 py-3">
-              <div className="text-[#0f766e] font-semibold text-sm">
-                Mua thì hời, bán thì lời!
-              </div>
-              <div className="text-gray-500 text-xs mb-3">Đăng nhập tại khoản nha!</div>
+              <div className="text-[#0f766e] font-semibold text-sm">Mua thì hời, bán thì lời!</div>
+              <div className="text-gray-500 text-xs mb-3">Đăng nhập tài khoản nha!</div>
               <div className="flex items-center gap-3">
                 <Link
                   to="/register"
@@ -139,6 +147,21 @@ export default memo(function UserMenu({
             </div>
           </div>
         ))}
+
+        {/* Logout */}
+        {isLoggedIn && (
+          <div className="px-4 pb-4">
+            <DropdownMenuItem className="p-0" onClick={logout}>
+              <button className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-rose-600">
+                <span className="flex items-center gap-3">
+                  <LogOut className="w-4 h-4 text-rose-600" />
+                  Đăng xuất
+                </span>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </button>
+            </DropdownMenuItem>
+          </div>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
