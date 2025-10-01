@@ -4,7 +4,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.evdealer.evdealermanagement.dto.cartItem.CartItemRequest;
 import com.evdealer.evdealermanagement.dto.cartItem.CartItemResponse;
-import com.evdealer.evdealermanagement.service.implement.CartItemService;
 import com.evdealer.evdealermanagement.service.implement.UserContextService;
 
 import lombok.RequiredArgsConstructor;
