@@ -36,7 +36,7 @@ public class AuthenticationController {
     @DeleteMapping("/delete/id/{id}")
     @ResponseBody
     public ApiResponse<Void> deleteById(@PathVariable Long id) {
-        authService.deleteUserById(id);
+        authService.deleteUserById(String.valueOf(id));
         return new ApiResponse<>(ErrorCode.SUCCESS.getCode(),
                 "User with id " + id + " deleted successfully", null);
     }

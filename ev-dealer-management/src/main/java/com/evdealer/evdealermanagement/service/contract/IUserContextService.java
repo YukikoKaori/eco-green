@@ -5,5 +5,5 @@ import java.util.Optional;
 public interface IUserContextService {
     Optional<String> getCurrentUsername(); // từ SecurityContext
 
-    Optional<Long> getCurrentUserId(); // map username -> account.id
+    Optional<String> getCurrentUserId(); // map username -> account.id
 }

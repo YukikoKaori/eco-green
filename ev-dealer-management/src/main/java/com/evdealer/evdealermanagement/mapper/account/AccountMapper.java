@@ -36,24 +36,9 @@ public final class AccountMapper {
             account.setFullName(trimToNull(req.getFullName()));
         }
 
-        // address
-        if (req.getAddress() != null) {
-            account.setAddressDetail(trimToNull(req.getAddress()));
-        }
-
-        // avatarUrl
-        if (req.getAvatarUrl() != null) {
-            account.setAvatarUrl(trimToNull(req.getAvatarUrl()));
-        }
-
         // phone
         if (req.getPhone() != null) {
             account.setPhone(trimToNull(req.getPhone()));
-        }
-
-        // taxCode
-        if (req.getTaxCode() != null) {
-            account.setTaxCode(trimToNull(req.getTaxCode()));
         }
 
         // username
@@ -78,19 +63,13 @@ public final class AccountMapper {
 
     public static AccountProfileResponse mapToAccountProfileResponse(Account account) {
         return AccountProfileResponse.builder()
-                .id(account.getId())
+                .id(account.getId() == null ? null : Long.valueOf(account.getId()))
                 .username(account.getUsername())
                 .email(account.getEmail())
                 .fullName(account.getFullName())
                 .phone(account.getPhone())
-                .address(account.getAddressDetail())
-                .avatarUrl(account.getAvatarUrl())
                 .status(account.getStatus())
-                .emailVerified(account.getEmailVerified())
-                .createdAt(account.getCreatedAt())
                 .dateOfBirth(account.getDateOfBirth())
-                .updatedAt(account.getUpdatedAt())
-                .taxCode(account.getTaxCode())
                 .build();
     }
 }

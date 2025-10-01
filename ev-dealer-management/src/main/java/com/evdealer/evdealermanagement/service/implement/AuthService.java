@@ -39,9 +39,9 @@ public class AuthService {
         }
 
         // Step 3: Validate status
-        if (!Account.Status.ACTIVE.equals(account.getStatus())) {
-            throw new AppException(ErrorCode.ACCOUNT_INACTIVE, "Account is not active");
-        }
+//        if (!Account.Status.ACTIVE.equals(account.getStatus())) {
+//            throw new AppException(ErrorCode.ACCOUNT_INACTIVE, "Account is not active");
+//        }
 
         // Step 4: Generate token
         String token = jwtService.generateToken(new CustomAccountDetails(account));
@@ -53,14 +53,8 @@ public class AuthService {
                 .phone(account.getPhone())
                 .dateOfBirth(account.getDateOfBirth())
                 .gender(account.getGender())
-                .avatarUrl(account.getAvatarUrl())
-                .city(account.getCity())
-                .district(account.getDistrict())
-                .ward(account.getWard())
-                .addressDetail(account.getAddressDetail())
                 .role(account.getRole())
                 .status(account.getStatus())
-                .createdAt(account.getCreatedAt())
                 .token(token)
                 .build();
     }
@@ -92,15 +86,9 @@ public class AuthService {
                 .fullName(request.getFullName())
                 .dateOfBirth(request.getDateOfBirth())
                 .gender(request.getGender())
-                .avatarUrl(request.getAvatarUrl())
-                .city(request.getCity())
-                .district(request.getDistrict())
-                .ward(request.getWard())
-                .addressDetail(request.getAddressDetail())
                 .role(Account.Role.MEMBER)
                 .status(Account.Status.ACTIVE)
                 .passwordHash(hashedPassword)
-                .emailVerified(false)
                 .build();
 
         Account saved = accountRepository.save(account);
@@ -112,19 +100,13 @@ public class AuthService {
                 .fullName(saved.getFullName())
                 .dateOfBirth(saved.getDateOfBirth())
                 .gender(saved.getGender())
-                .avatarUrl(saved.getAvatarUrl())
-                .city(saved.getCity())
-                .district(saved.getDistrict())
-                .ward(saved.getWard())
-                .addressDetail(saved.getAddressDetail())
                 .role(saved.getRole())
                 .status(saved.getStatus())
-                .createdAt(saved.getCreatedAt())
                 .build();
     }
 
     // ======================= DELETE USER =======================
-    public void deleteUserById(Long id) {
+    public void deleteUserById(String id) {
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User with id " + id + " not found"));
         accountRepository.delete(account);

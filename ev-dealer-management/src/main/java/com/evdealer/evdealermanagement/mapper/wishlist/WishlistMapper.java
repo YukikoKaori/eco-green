@@ -1,38 +1,33 @@
 package com.evdealer.evdealermanagement.mapper.wishlist;
 
 import com.evdealer.evdealermanagement.dto.wishlist.WishlistItemResponse;
+import com.evdealer.evdealermanagement.entity.product.Product;
 import com.evdealer.evdealermanagement.entity.product.ProductImages;
-import com.evdealer.evdealermanagement.entity.product.Products;
 import com.evdealer.evdealermanagement.entity.wishlist.WishlistItem;
-
 
 public class WishlistMapper {
 
     public static WishlistItemResponse mapToWishlistItemResponse(WishlistItem wishlistItem) {
-        Products product = wishlistItem.getProduct();
+        Product product = wishlistItem.getProduct();
         return WishlistItemResponse.builder()
-                .productId(product.getId())
                 .productName(product.getTitle())
-                .productThumbnail(getThumbnailUrl(product))
-                .createAt(wishlistItem.getCreatedAt())
+                .thumbnailUrl(getThumbnailUrl(product))
                 .build();
     }
 
-
-
-    //hàm support lấy ảnh từ ProductImages thông qua Products table
-    private static String getThumbnailUrl(Products product) {
-        return product.getProductImages().stream()
+    private static String getThumbnailUrl(Product product) {
+        if (product == null || product.getImages() == null) {
+            return null;
+        }
+        return product.getImages().stream()
                 .filter(ProductImages::getIsPrimary)
                 .map(ProductImages::getImageUrl)
                 .findFirst()
                 .orElse(
-                        product.getProductImages().stream()
+                        product.getImages().stream()
                                 .map(ProductImages::getImageUrl)
                                 .findFirst()
                                 .orElse(null)
                 );
     }
-
-
 }
