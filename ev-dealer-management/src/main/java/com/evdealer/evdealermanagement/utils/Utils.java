@@ -13,4 +13,24 @@ public class Utils {
         Pattern pattern = Pattern.compile(emailRegex);
         return email != null && pattern.matcher(email).matches();
     }
+
+    public static String generateUsername(String phone, String fullName) {
+        if (phone == null || fullName == null || phone.length() < 4) {
+            throw new IllegalArgumentException("Invalid input");
+        }
+
+        // Lấy chữ cái đầu mỗi từ trong họ tên
+        String[] parts = fullName.trim().split("\\s+");
+        StringBuilder initials = new StringBuilder();
+        for (String p : parts) {
+            initials.append(Character.toUpperCase(p.charAt(0)));
+        }
+
+        // Lấy 4 số cuối điện thoại
+        String lastDigits = phone.substring(phone.length() - 4);
+
+        // Ghép lại
+        return (initials.toString() + lastDigits).toLowerCase();
+    }
+
 }

@@ -21,7 +21,7 @@ public class AuthenticationController {
     @PostMapping("/login")
     @ResponseBody
     public ApiResponse<AccountLoginResponse> login(@RequestBody AccountLoginRequest request) {
-        AccountLoginResponse response = authService.login(request.getUsername(), request.getPassword());
+        AccountLoginResponse response = authService.login(request.getPhone(), request.getPassword());
         return new ApiResponse<>(ErrorCode.SUCCESS.getCode(), ErrorCode.SUCCESS.getMessage(), response);
     }
 

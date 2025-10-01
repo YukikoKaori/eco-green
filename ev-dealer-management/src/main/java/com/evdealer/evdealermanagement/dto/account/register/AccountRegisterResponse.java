@@ -23,4 +23,6 @@ public class AccountRegisterResponse {
     private Account.Status status;
     private Account.Role role;
     private LocalDateTime createdAt;
+    private LocalDateTime updateAt;
+    private String address;
 }

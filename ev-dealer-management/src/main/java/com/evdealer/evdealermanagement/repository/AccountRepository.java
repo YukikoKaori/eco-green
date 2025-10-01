@@ -2,6 +2,7 @@ package com.evdealer.evdealermanagement.repository;
 
 import com.evdealer.evdealermanagement.entity.account.Account;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.Optional;
 
@@ -15,4 +16,7 @@ public interface AccountRepository extends JpaRepository<Account, String> {
     boolean existsByPhoneAndIdNot(String phone, String id);       // Changed Long to String
 
     Optional<Account> findByEmail(String email);
+
+    @Query("SELECT a.username FROM Account a WHERE a.phone = :phone")
+    String findUsernameByPhone(String phone);
 }
