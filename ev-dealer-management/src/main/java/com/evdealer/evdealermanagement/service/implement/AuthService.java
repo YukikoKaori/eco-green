@@ -28,7 +28,9 @@ public class AuthService {
     }
 
     // ======================= LOGIN =======================
-    public AccountLoginResponse login(String username, String password) {
+    public AccountLoginResponse login(String phone, String password) {
+
+        String username = accountRepository.findUsernameByPhone(phone);
         // Step 1: Find account by username
         Account account = accountRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS, "Username does not exist"));
@@ -47,7 +49,6 @@ public class AuthService {
         String token = jwtService.generateToken(new CustomAccountDetails(account));
 
         return AccountLoginResponse.builder()
-                .username(account.getUsername())
                 .email(account.getEmail())
                 .fullName(account.getFullName())
                 .phone(account.getPhone())
@@ -55,6 +56,9 @@ public class AuthService {
                 .gender(account.getGender())
                 .role(account.getRole())
                 .status(account.getStatus())
+                .createdAt(account.getCreatedAt())
+                .updateAt(account.getUpdatedAt())
+                .address(account.getAddress())
                 .token(token)
                 .build();
     }
@@ -62,9 +66,6 @@ public class AuthService {
     // ======================= REGISTER =======================
     public AccountRegisterResponse register(AccountRegisterRequest request) {
         // Validate
-        if (accountRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS, "Username already exists");
-        }
         if (accountRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS, "Email already exists");
         }
@@ -78,9 +79,12 @@ public class AuthService {
         // Hash password
         String hashedPassword = passwordEncoder.encode(request.getPassword());
 
+        //Generate username
+        String username = Utils.generateUsername(request.getPhone(), request.getFullName());
+
         // Create account
         Account account = Account.builder()
-                .username(request.getUsername())
+                .username(username)
                 .email(request.getEmail())
                 .phone(request.getPhone())
                 .fullName(request.getFullName())

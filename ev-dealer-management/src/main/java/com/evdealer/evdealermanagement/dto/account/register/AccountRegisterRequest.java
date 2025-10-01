@@ -11,13 +11,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class AccountRegisterRequest {
-    private String username;
+//    private String username;
     @NotBlank(message = "Full name is required")
     @Size(min = 4, max = 50, message = "Full name must be less than 50 characters")
     private String fullName;
@@ -32,9 +33,7 @@ public class AccountRegisterRequest {
     private String email;
     private LocalDate dateOfBirth;
     private Account.Gender gender;
-    private String avatarUrl;
-    private String city;
-    private String district;
-    private String ward;
-    private String addressDetail;
+    private String address;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

@@ -3,8 +3,12 @@ package com.evdealer.evdealermanagement.entity.account;
 import com.evdealer.evdealermanagement.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.w3c.dom.Text;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "accounts")
@@ -33,6 +37,23 @@ public class Account extends BaseEntity {
     // === ngày sinh ===
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
+
+    @Column(name = "address", columnDefinition = "TEXT")
+    private String address;
+
+    @Column(name = "national_id", length = 20, unique = true)
+    private String nationalId;
+
+    @Column(name = "tax_code", length = 20, unique = true)
+    private String taxCode;
+
+    @Column(name = "created_at", updatable = false)
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     // === giới tính (MALE, FEMALE, OTHER) ===
     @Enumerated(EnumType.STRING)
