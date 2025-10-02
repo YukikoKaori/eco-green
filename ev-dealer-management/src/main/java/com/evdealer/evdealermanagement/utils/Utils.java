@@ -33,4 +33,10 @@ public class Utils {
         return (initials.toString() + lastDigits).toLowerCase();
     }
 
+    public boolean validatePhoneNumber(String phone) {
+        if (phone == null || phone.isEmpty()) {
+            return false;
+        }
+        return Pattern.matches(REGREX.PHONE_REGEX, phone);
+    }
 }

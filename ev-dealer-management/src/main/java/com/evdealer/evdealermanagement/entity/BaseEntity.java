@@ -3,8 +3,7 @@ package com.evdealer.evdealermanagement.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.annotations.GenericGenerator;
 
 @Getter
 @Setter
@@ -14,8 +13,11 @@ import org.hibernate.annotations.UuidGenerator;
 @SuperBuilder
 public abstract class BaseEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @UuidGenerator
-    @Column(length = 36, nullable = false, updatable = false)
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(
+            name = "UUID",
+            strategy = "org.hibernate.id.UUIDGenerator"
+    )
+    @Column(name = "id", columnDefinition = "CHAR(36)", nullable = false, updatable = false)
     private String id;
 }
