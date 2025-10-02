@@ -3,10 +3,10 @@ export type Listing = {
   title: string;
   price: number;
   thumbnail?: string;
-  brand?: string;       // VinFast, BYD...
+  brand?: string;       
   location?: string;
-  distance?: string;    // 100km, 160km...
-  postedAt?: string;    // ISO string
+  distance?: string;    
+  postedAt?: string;
   sellerName?: string;
   type: "vehicle" | "battery";
 };

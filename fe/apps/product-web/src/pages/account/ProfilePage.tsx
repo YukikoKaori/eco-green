@@ -6,7 +6,6 @@ import {
   Select, SelectTrigger, SelectContent, SelectItem, SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Eye, EyeOff } from "lucide-react";
 
 type Profile = {
   name: string;
@@ -50,8 +49,8 @@ export default function ProfilePage() {
 
   // ===== Validate phone / idNumber =====
   const [errors, setErrors] = useState<{ phone?: string; idNumber?: string }>({});
-  const phoneRe = /^(\+84|0)(3|5|7|8|9)\d{8}$/; // VN mobile
-  const idRe = /^(?:\d{9}|\d{12}|[A-Z0-9]{8,9})$/i; // CMND 9, CCCD 12, Passport 8-9
+  const phoneRe = /^(\+84|0)(3|5|7|8|9)\d{8}$/; 
+  const idRe = /^(?:\d{9}|\d{12}|[A-Z0-9]{8,9})$/i; 
 
   const validatePhone = (v: string) =>
     !v ? undefined : phoneRe.test(v) ? undefined : "Số điện thoại không hợp lệ (VD: 0981234567 hoặc +84981234567)";
@@ -66,7 +65,6 @@ export default function ProfilePage() {
     alert("Đã lưu thay đổi (demo).");
   };
 
-  // ===== Đổi mật khẩu (inline, không dùng Dialog) =====
   const [cur, setCur] = useState("");
   const [n1, setN1] = useState("");
   const [n2, setN2] = useState("");
@@ -80,7 +78,6 @@ export default function ProfilePage() {
     if (n1.length < 8) return alert("Mật khẩu mới tối thiểu 8 ký tự.");
     if (n1 !== n2) return alert("Mật khẩu xác nhận không khớp.");
     setPwdLoading(true);
-    // TODO: gọi API đổi mật khẩu
     setTimeout(() => {
       setPwdLoading(false);
       setCur(""); setN1(""); setN2("");

@@ -98,7 +98,7 @@ export default function Navbar() {
             <span>Đăng tin</span>
           </Button>
 
-          <UserMenu user={null} />
+          <UserMenu />
         </div>
       </div>
     </header>

@@ -19,10 +19,7 @@ export interface LoginResponse {
   result: LoginResult;
 }
 
-// CHỈ gửi phone + password
 export async function loginApi(data: { phone: string; password: string }) {
-  // debug xem baseURL có đúng không
-  // console.log("loginApi baseURL =", (api.defaults as any).baseURL);
   const res = await api.post<LoginResponse>("/auth/login", data);
   return res.data;
 }

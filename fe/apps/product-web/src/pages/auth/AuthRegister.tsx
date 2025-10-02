@@ -16,8 +16,6 @@ export default function AuthRegister() {
     e.preventDefault();
     setLoading(true);
     try {
-      // TODO: gọi API tạo tài khoản
-      // await api.register({ name, phone, password });
       nav("/login");
     } finally {
       setLoading(false);

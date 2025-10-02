@@ -12,7 +12,7 @@ import {
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import "@/styles/Navbar.css";
 import UserMenu from "@/components/user/UserMenu";
-import { useAuth } from "@/contexts/AuthContext"; // 👈 lấy user từ context
+import { useAuth } from "@/contexts/AuthContext"; 
 
 const mainNav = [
   { label: "EcoGreen", to: "/" },
@@ -23,7 +23,7 @@ const mainNav = [
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const { user } = useAuth(); // 👈 user từ AuthProvider
+  const { user } = useAuth(); 
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -160,7 +160,6 @@ export default function Navbar() {
             <Heart className="w-4 h-4 text-teal-700" />
           </Button>
 
-          {/* Nếu login thì hiện "Quản lý tin", nếu chưa login thì "Đăng nhập" */}
           {user ? (
             <Button
               asChild
@@ -183,7 +182,6 @@ export default function Navbar() {
             <span>Đăng tin</span>
           </Button>
 
-          {/* User Menu (luôn hiển thị, truyền user từ context) */}
           <UserMenu />
         </div>
       </div>
