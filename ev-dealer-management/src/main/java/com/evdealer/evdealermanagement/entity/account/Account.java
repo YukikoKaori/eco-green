@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.w3c.dom.Text;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -51,6 +50,9 @@ public class Account extends BaseEntity {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
     @Column(name = "updated_at")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
@@ -69,6 +71,10 @@ public class Account extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20, nullable = false)
     private Status status = Status.PENDING;
+
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<AuthProvider> providers = new java.util.ArrayList<>();
+
 
     // =============================
     // ENUM định nghĩa theo DB

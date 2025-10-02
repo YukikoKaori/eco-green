@@ -7,7 +7,10 @@ import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterRespo
 import com.evdealer.evdealermanagement.dto.account.response.ApiResponse;
 import com.evdealer.evdealermanagement.exceptions.ErrorCode;
 import com.evdealer.evdealermanagement.service.implement.AuthService;
+import com.evdealer.evdealermanagement.service.implement.FacebookLoginService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthenticationController {
 
     private final AuthService authService;
+    private final FacebookLoginService facebookLoginService;
 
     // ======================= LOGIN =======================
     @PostMapping("/login")
@@ -48,5 +52,13 @@ public class AuthenticationController {
         authService.deleteUserByUsername(username);
         return new ApiResponse<>(ErrorCode.SUCCESS.getCode(),
                 "User with username " + username + " deleted successfully", null);
+    }
+
+    @GetMapping("/login/facebook")
+    public ApiResponse<AccountLoginResponse> loginFacebook(@AuthenticationPrincipal OAuth2User oAuth2User) {
+        AccountLoginResponse response = facebookLoginService.processFacebookLogin(oAuth2User);
+        return new ApiResponse<>(ErrorCode.SUCCESS.getCode(),
+                ErrorCode.SUCCESS.getMessage(),
+                response);
     }
 }

@@ -25,15 +25,9 @@ public class AdminProfileController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AccountProfileResponse> updateUserProfile(
-            @PathVariable Long id,
+            @PathVariable String id,
             @Valid @RequestBody AccountUpdateRequest request) {
         return ResponseEntity.ok(accountService.updateProfile(id, request));
     }
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        accountService.deleteAccount(id);
-        return ResponseEntity.noContent().build();
-    }
 }

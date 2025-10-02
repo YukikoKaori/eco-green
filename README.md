@@ -36,8 +36,8 @@ Website được xây dựng nhằm kết nối **người mua** và **người 
 ## 🛠 Công nghệ sử dụng
 
 - **Backend**: Spring Boot (Java) + Spring Security + JWT  
-- **Frontend**: React/Next.js + TailwindCSS  
-- **Cơ sở dữ liệu**: MySQL / PostgreSQL  
+- **Frontend**: React + TailwindCSS  
+- **Cơ sở dữ liệu**: MySQL 
 - **Thanh toán**: Tích hợp API ví điện tử & ngân hàng  
 - **Triển khai**: Docker, AWS/Azure/GCP  
 
@@ -50,20 +50,6 @@ Website được xây dựng nhằm kết nối **người mua** và **người 
 - [x] Tìm kiếm & lọc nâng cao  
 - [ ] Tích hợp đấu giá trực tuyến  
 - [ ] Tích hợp AI định giá thông minh  
-- [ ] Mobile App (iOS/Android)  
-
----
-
-## 🤝 Đóng góp
-
-Chúng tôi chào đón mọi ý kiến đóng góp và pull request từ cộng đồng.  
-Nếu bạn muốn đóng góp, vui lòng:
-
-1. Fork repository này
-2. Tạo một branch mới (`feature/ten-tinh-nang`)
-3. Commit thay đổi
-4. Mở Pull Request
-
 ---
 
 ## 📜 Giấy phép

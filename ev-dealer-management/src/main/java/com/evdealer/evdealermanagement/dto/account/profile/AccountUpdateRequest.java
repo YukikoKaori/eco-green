@@ -1,5 +1,8 @@
 package com.evdealer.evdealermanagement.dto.account.profile;
 
+import java.time.LocalDate;
+
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -23,17 +26,33 @@ public class AccountUpdateRequest {
     @Pattern(regexp = "^[0-9+()\\-\\s]{6,20}$", message = "Phone number format is invalid")
     private String phone;
 
+    @Email(message = "Email format is invalid")
+    private String email;
+
+    @Size(max = 50, message = "Identity number must not exceed 50 characters")
+    private String identityNumber; // CCCD/CMND/Hộ chiếu
+
+    @Size(max = 255, message = "Invoice info must not exceed 255 characters")
+    private String invoiceInfo; // Thông tin xuất hóa đơn
+
+    private Gender gender; // Enum giới tính
+
+    private LocalDate birthDate; // Ngày sinh
+
     @Size(max = 50, message = "Tax code must not exceed 50 characters")
     private String taxCode;
 
-    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
-    private String username;
+    // @Size(min = 3, max = 50, message = "Username must be between 3 and 50
+    // characters")
+    // private String username;
 
-    private Status status; // Sử dụng enum Status
-    // Enum cho Status
+    // private Status status; // Sử dụng enum Status
 
-    public enum Status {
-        ACTIVE, INACTIVE
+    // public enum Status {
+    // ACTIVE, INACTIVE
+    // }
+
+    public enum Gender {
+        MALE, FEMALE, OTHER
     }
-    // Getters and Setters
 }

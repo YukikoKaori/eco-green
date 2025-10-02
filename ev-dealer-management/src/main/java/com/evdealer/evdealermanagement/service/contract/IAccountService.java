@@ -9,10 +9,10 @@ public interface IAccountService {
     AccountProfileResponse getProfile(String username);
 
     // Cập nhật profile
-    AccountProfileResponse updateProfile(Long userId, AccountUpdateRequest request);
+    AccountProfileResponse updateProfile(String userId, AccountUpdateRequest request);
 
     // Xóa account
-    void deleteAccount(Long userId);
+    void deleteAccount(String userId);
 
     AccountProfileResponse getProfile(Long userId);
 }
