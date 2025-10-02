@@ -12,8 +12,8 @@ import lombok.*;
 public class VehicleDetails {
 
     @Id
-    @Column(name = "product_id")
-    private Long productId;
+    @Column(name = "product_id", columnDefinition = "CHAR(36)", length = 36)
+    private String productId;
 
     @OneToOne
     @MapsId

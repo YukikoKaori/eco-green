@@ -40,10 +40,10 @@ public class AuthService {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS, "Invalid password");
         }
 
-        // Step 3: Validate status
-//        if (!Account.Status.ACTIVE.equals(account.getStatus())) {
-//            throw new AppException(ErrorCode.ACCOUNT_INACTIVE, "Account is not active");
-//        }
+         //Step 3: Validate status
+        if (!Account.Status.ACTIVE.equals(account.getStatus())) {
+            throw new AppException(ErrorCode.ACCOUNT_INACTIVE, "Account is not active");
+        }
 
         // Step 4: Generate token
         String token = jwtService.generateToken(new CustomAccountDetails(account));
@@ -107,6 +107,9 @@ public class AuthService {
                 .gender(saved.getGender())
                 .role(saved.getRole())
                 .status(saved.getStatus())
+                .createdAt(saved.getCreatedAt())
+                .updateAt(account.getUpdatedAt())
+                .address(saved.getAddress())
                 .build();
     }
 
@@ -123,5 +126,7 @@ public class AuthService {
                         "User with username " + username + " not found"));
         accountRepository.delete(account);
     }
+
+
 
 }

@@ -1,6 +1,6 @@
 package com.evdealer.evdealermanagement.entity.compatibility;
 
-import com.evdealer.evdealermanagement.entity.product.Products;
+import com.evdealer.evdealermanagement.entity.product.Product;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -20,11 +20,11 @@ public class VehicleBatteryCompatibility {
 
     @ManyToOne
     @JoinColumn(name = "vehicle_product_id", nullable = false)
-    private Products vehicle;
+    private Product vehicle;
 
     @ManyToOne
     @JoinColumn(name = "battery_product_id", nullable = false)
-    private Products battery;
+    private Product battery;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "compatibility_level")
