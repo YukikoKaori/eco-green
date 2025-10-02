@@ -31,15 +31,6 @@ public class WishlistItem {
         @JoinColumn(name = "product_id", nullable = false)
         private Products product;
 
-        @Column(name = "created_at", updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP") // lấy
-                                                                                                                                      // giá
-                                                                                                                                      // trị
-                                                                                                                                      // hiện
-                                                                                                                                      // tại
-                                                                                                                                      // nếu
-                                                                                                                                      // không
-                                                                                                                                      // truyền
-                                                                                                                                      // giá
-                                                                                                                                      // trị
+        @Column(name = "created_at", updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
         private LocalDateTime createdAt;
 }
