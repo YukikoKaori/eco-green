@@ -5,13 +5,19 @@ import com.evdealer.evdealermanagement.dto.account.login.AccountLoginResponse;
 import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterRequest;
 import com.evdealer.evdealermanagement.dto.account.register.AccountRegisterResponse;
 import com.evdealer.evdealermanagement.dto.account.response.ApiResponse;
+import com.evdealer.evdealermanagement.exceptions.AppException;
 import com.evdealer.evdealermanagement.exceptions.ErrorCode;
 import com.evdealer.evdealermanagement.service.implement.AuthService;
 import com.evdealer.evdealermanagement.service.implement.FacebookLoginService;
+import com.evdealer.evdealermanagement.service.implement.JwtService;
+import com.evdealer.evdealermanagement.service.implement.RedisService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Date;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,6 +26,9 @@ public class AuthenticationController {
 
     private final AuthService authService;
     private final FacebookLoginService facebookLoginService;
+    private final JwtService jwtService;
+    private final RedisTemplate redisTemplate;
+    private final RedisService redisService;
 
     // ======================= LOGIN =======================
     @PostMapping("/login")
@@ -30,11 +39,23 @@ public class AuthenticationController {
     }
 
     // ======================= LOGOUT =======================
-    @PostMapping("/logout")
-    @ResponseBody
-    public ApiResponse<Void> logout() {
-        return new ApiResponse<>(ErrorCode.SUCCESS.getCode(), ErrorCode.SUCCESS.getMessage(), null);
-    }
+//    @PostMapping("/logout")
+//    @ResponseBody
+//    public ApiResponse<String> logout(@RequestHeader("Authorization") String authHeader) {
+//        if(authHeader != null && authHeader.startsWith("Bearer ")) {
+//            throw new AppException(ErrorCode.BAD_REQUEST, ErrorCode.BAD_REQUEST.getMessage());
+//        }
+//
+//        String token = authHeader.substring(7);
+//
+//        if(!redisService.isBlacklisted(token)) {
+//            redisService.blacklistToken(token);
+//        } else {
+//
+//        }
+//
+//        return
+//    }
 
     // ======================= DELETE USER BY ID =======================
     @DeleteMapping("/delete/id/{id}")

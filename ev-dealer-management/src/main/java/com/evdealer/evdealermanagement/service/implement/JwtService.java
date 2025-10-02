@@ -114,4 +114,12 @@ public class JwtService implements IJwtService {
             return false;
         }
     }
+
+    public long getExpirationEpochSeconds(String token) {
+        if (token == null) {
+            throw new IllegalArgumentException("Token cannot be null");
+        }
+        Date expiration = extractAllClaims(token).getExpiration();
+        return expiration.getTime() / 1000;  // Convert to epoch seconds for Redis TTL
+    }
 }
