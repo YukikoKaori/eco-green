@@ -1,8 +1,8 @@
 package com.evdealer.evdealermanagement.entity.product;
 
+import com.evdealer.evdealermanagement.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "product_images")
@@ -11,28 +11,17 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductImages {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @ManyToOne
-    @JoinColumn(name = "product_id", nullable = false)
-    private Products product;
+public class ProductImages extends BaseEntity {
 
     @Column(name = "image_url", nullable = false, length = 500)
     private String imageUrl;
 
-    @Column(name = "alt_text", length = 255)
-    private String altText;
+    @Builder.Default
+    @Column(name = "is_primary", nullable = false)
+    private Boolean isPrimary = false;
 
-    @Column(name = "sort_order")
-    private Short sortOrder;
-
-    @Column(name = "is_primary")
-    private Boolean isPrimary;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    // ✅ Nhiều image thuộc về 1 product
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 }

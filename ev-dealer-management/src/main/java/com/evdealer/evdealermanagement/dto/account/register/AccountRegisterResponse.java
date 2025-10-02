@@ -20,12 +20,9 @@ public class AccountRegisterResponse {
     private String fullName;
     private LocalDate dateOfBirth;
     private Account.Gender gender;
-    private Account.Role role;
     private Account.Status status;
+    private Account.Role role;
     private LocalDateTime createdAt;
-    private String avatarUrl;
-    private String city;
-    private String district;
-    private String ward;
-    private String addressDetail;
+    private LocalDateTime updateAt;
+    private String address;
 }

@@ -1,36 +1,37 @@
 package com.evdealer.evdealermanagement.entity.wishlist;
 
-import com.evdealer.evdealermanagement.entity.account.Account;
-import com.evdealer.evdealermanagement.entity.product.Products;
+import com.evdealer.evdealermanagement.entity.BaseEntity;
+import com.evdealer.evdealermanagement.entity.product.Product;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "wishlist_items", uniqueConstraints = {
-                @UniqueConstraint(name = "uk_account_product", columnNames = { "account_id", "product_id" }) })
-@Data
-@AllArgsConstructor
+@Table(name = "wishlist_items")
+@Getter
+@Setter
 @NoArgsConstructor
-@Builder
-public class WishlistItem {
+@AllArgsConstructor
+@SuperBuilder
+public class WishlistItem extends BaseEntity {
 
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        private Long id;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "wishlist_id", nullable = false)
+    private Wishlist wishlist;
 
-        @ManyToOne
-        @JoinColumn(name = "account_id", nullable = false)
-        private Account account;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
-        @ManyToOne
-        @JoinColumn(name = "product_id", nullable = false)
-        private Products product;
+    @Column(name = "added_at", nullable = false)
+    private LocalDateTime addedAt;
 
-        @Column(name = "created_at", updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-        private LocalDateTime createdAt;
+    @PrePersist
+    protected void onCreate() {
+        if (addedAt == null) {
+            addedAt = LocalDateTime.now();
+        }
+    }
 }

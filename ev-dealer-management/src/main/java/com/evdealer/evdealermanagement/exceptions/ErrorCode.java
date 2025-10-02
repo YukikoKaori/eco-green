@@ -58,7 +58,11 @@ public enum ErrorCode {
     // Payment / Transaction
     PAYMENT_FAILED(1501, "Payment processing failed"),
     INSUFFICIENT_FUNDS(1502, "Insufficient balance"),
-    TRANSACTION_DECLINED(1503, "Transaction was declined");
+    TRANSACTION_DECLINED(1503, "Transaction was declined"),
+
+    // Wishlist errors
+    WISHLIST_NOT_FOUND(404, "Wishlist not found"),
+    DUPLICATE_RESOURCE(409, "Resource already exists"),;
 
     private final int code;
     private final String message;

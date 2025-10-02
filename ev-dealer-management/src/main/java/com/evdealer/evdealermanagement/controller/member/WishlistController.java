@@ -23,18 +23,18 @@ public class WishlistController {
     @GetMapping
     public WishlistPageResponse<WishlistItemResponse> listWishlist(@AuthenticationPrincipal CustomAccountDetails user,
             @PageableDefault(size = 10, sort = "createAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return wishlistService.listWishlistItem(user.getId(), pageable);
+        return wishlistService.listWishlistItem(String.valueOf(user.getId()), pageable);
     }
 
     @PostMapping
     public void addWishlist(Authentication authentication, @RequestBody WishlistRequest request) {
 
         CustomAccountDetails user = (CustomAccountDetails) authentication.getPrincipal();
-        wishlistService.addWishlistItem(user.getId(), request.getProductId());
+        wishlistService.addWishlistItem(String.valueOf(user.getId()), String.valueOf(request.getProductId()));
     }
 
     @DeleteMapping("/{productId}")
     public void removeWishlist(@AuthenticationPrincipal CustomAccountDetails user, @PathVariable Long productId) {
-        wishlistService.removeWishlistItem(user.getId(), productId);
+        wishlistService.removeWishlistItem(String.valueOf(user.getId()), String.valueOf(productId));
     }
 }

@@ -7,7 +7,6 @@ import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -20,12 +19,13 @@ public class AccountProfileResponse {
     private String phone;
     private String address;
     private String avatarUrl;
-    private Account.Status status;
-    private Boolean emailVerified;
     private LocalDateTime createdAt;
     private LocalDate dateOfBirth;
     private LocalDateTime updatedAt;
     private String taxCode;
+
+    // fix: dùng enum Status từ Account chứ không phải java.io
+    private Account.Status status;
 
     @PreUpdate
     public void handleBeforeUpdate() {
