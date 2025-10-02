@@ -1,4 +1,3 @@
-# Logs
 logs
 *.log
 npm-debug.log*
@@ -10,16 +9,34 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
-*.local
-.env
+apps/*/dist
+packages/*/dist
 
-# Editor directories and files
+# Vite/TS cache
+.vite
+.vite-cache
+*.tsbuildinfo
+
+# Misc caches
+.cache
+.parcel-cache
+.eslintcache
+
+**/.env
+**/.env.local
+*.local
+
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+coverage
+cypress/screenshots
+cypress/videos
+storybook-static
