@@ -81,7 +81,7 @@ public class VehicleService {
 
         try {
             log.debug("Getting vehicle details by ID: {}", id);
-            return vehicleDetailsRepository.findById(id);
+            return vehicleDetailsRepository.findById(String.valueOf(id));
         } catch (Exception e) {
             log.error("Error getting vehicle details by ID: {}", id, e);
             return Optional.empty();

@@ -30,10 +30,4 @@ public class AdminProfileController {
         return ResponseEntity.ok(accountService.updateProfile(id, request));
     }
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteUser(@PathVariable String id) {
-        accountService.deleteAccount(id);
-        return ResponseEntity.noContent().build();
-    }
 }
