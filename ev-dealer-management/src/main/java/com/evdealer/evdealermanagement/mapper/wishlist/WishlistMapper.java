@@ -10,8 +10,10 @@ public class WishlistMapper {
     public static WishlistItemResponse mapToWishlistItemResponse(WishlistItem wishlistItem) {
         Product product = wishlistItem.getProduct();
         return WishlistItemResponse.builder()
+                .productId(product.getId())
                 .productName(product.getTitle())
                 .thumbnailUrl(getThumbnailUrl(product))
+                .addedAt(wishlistItem.getAddedAt())
                 .build();
     }
 
