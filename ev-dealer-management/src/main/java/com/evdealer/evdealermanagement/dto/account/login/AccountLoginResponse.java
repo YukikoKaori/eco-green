@@ -25,5 +25,6 @@ public class AccountLoginResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updateAt;
     private String address;
+    private String avatarUrl;
     private String token; // JWT token
 }

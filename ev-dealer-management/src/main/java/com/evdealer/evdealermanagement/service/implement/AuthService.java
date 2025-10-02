@@ -59,6 +59,7 @@ public class AuthService {
                 .createdAt(account.getCreatedAt())
                 .updateAt(account.getUpdatedAt())
                 .address(account.getAddress())
+                .avatarUrl(account.getAvatarUrl())
                 .token(token)
                 .build();
     }
