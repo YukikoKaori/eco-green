@@ -1,5 +1,0 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-export default function ListingCard({ item }) {
-    return (_jsxs(Card, { className: "hover:shadow-lg transition", children: [_jsx("div", { className: "aspect-video w-full overflow-hidden rounded-t-xl bg-muted", children: item.thumbnail ? (_jsx("img", { src: item.thumbnail, alt: item.title, className: "h-full w-full object-cover" })) : null }), _jsx(CardHeader, { className: "pb-2", children: _jsx(CardTitle, { className: "line-clamp-2 text-base", children: item.title }) }), _jsxs(CardContent, { className: "space-y-1 text-sm text-muted-foreground", children: [_jsxs("div", { className: "text-rose-600 font-semibold text-lg", children: [item.price.toLocaleString(), " \u0111"] }), _jsxs("div", { className: "flex gap-3", children: [item.distance && _jsx("span", { children: item.distance }), item.location && _jsxs("span", { children: ["\u2022 ", item.location] })] })] })] }));
-}

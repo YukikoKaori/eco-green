@@ -4,7 +4,7 @@ import tailwind from "@tailwindcss/vite";
 import path from "path";
 
 export default defineConfig({
-  base: "/eco-green/",   
+  base: "/",   
   plugins: [react(), tailwind()],
   resolve: {
     alias: { "@": path.resolve(__dirname, "./src") }

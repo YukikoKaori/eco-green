@@ -20,8 +20,7 @@
     "preview:staff": "npm run preview --workspace apps/staff-web",
 
     "lint": "eslint \"apps/**/*.{ts,tsx}\"",
-    "typecheck": "tsc -b",
-    "deploy:product": "npm run build:product && gh-pages -d apps/product-web/dist -b gh-pages"
+    "typecheck": "tsc -b"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
