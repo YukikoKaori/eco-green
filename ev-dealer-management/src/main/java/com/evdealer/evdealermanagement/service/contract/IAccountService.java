@@ -1,12 +1,18 @@
 package com.evdealer.evdealermanagement.service.contract;
 
-import com.evdealer.evdealermanagement.dto.Account.login.AccountLoginRequest;
-import com.evdealer.evdealermanagement.dto.Account.login.AccountLoginResponse;
-import com.evdealer.evdealermanagement.dto.Account.register.AccountRegisterRequest;
-import com.evdealer.evdealermanagement.dto.Account.register.AccountRegisterResponse;
+import com.evdealer.evdealermanagement.dto.account.profile.AccountProfileResponse;
+import com.evdealer.evdealermanagement.dto.account.profile.AccountUpdateRequest;
 
 public interface IAccountService {
-    AccountRegisterResponse memberRegister (AccountRegisterRequest request);
-    AccountLoginResponse memberLogin (AccountLoginRequest request);
-    void memberLogout(String token);
+
+    // Xem profile
+    AccountProfileResponse getProfile(String username);
+
+    // Cập nhật profile
+    AccountProfileResponse updateProfile(Long userId, AccountUpdateRequest request);
+
+    // Xóa account
+    void deleteAccount(Long userId);
+
+    AccountProfileResponse getProfile(Long userId);
 }

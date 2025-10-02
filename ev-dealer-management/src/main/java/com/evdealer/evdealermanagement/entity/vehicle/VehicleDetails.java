@@ -1,6 +1,6 @@
 package com.evdealer.evdealermanagement.entity.vehicle;
 
-import com.evdealer.evdealermanagement.entity.product.Products;
+import com.evdealer.evdealermanagement.entity.product.Product;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,18 +9,16 @@ import lombok.*;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class VehicleDetails {
 
     @Id
-    @Column(name = "product_id")
-    private Long productId;
+    @Column(name = "product_id", columnDefinition = "CHAR(36)", length = 36)
+    private String productId;
 
     @OneToOne
     @MapsId
     @JoinColumn(name = "product_id")
-    private Products product;
+    private Product product;
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
