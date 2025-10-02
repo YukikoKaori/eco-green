@@ -40,7 +40,7 @@ public final class AccountMapper {
         }
 
         // Tax code
-        if (hasText(req.getTaxCode())) {
+        if (req.getTaxCode() != null) {
             account.setTaxCode(trimToNull(req.getTaxCode()));
         }
 
@@ -54,15 +54,10 @@ public final class AccountMapper {
             account.setDateOfBirth(req.getBirthDate());
         }
 
-        // // Username
-        // if (hasText(req.getUsername())) {
-        // account.setUsername(trimToNull(req.getUsername()));
-        // }
-
-        // // Status
-        // if (req.getStatus() != null) {
-        // account.setStatus(Account.Status.valueOf(req.getStatus().name()));
-        // }
+        // Avatar
+        if (req.getAvatarUrl() != null) {
+            account.setAvatarUrl(req.getAvatarUrl());
+        }
 
     }
 
@@ -83,6 +78,9 @@ public final class AccountMapper {
                 .phone(account.getPhone())
                 .status(account.getStatus())
                 .dateOfBirth(account.getDateOfBirth())
+                .address(account.getAddress())
+                .taxCode(account.getTaxCode())
+                .avatarUrl(account.getAvatarUrl())
                 .build();
     }
 }

@@ -50,6 +50,9 @@ public class Account extends BaseEntity {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
     @Column(name = "updated_at")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
