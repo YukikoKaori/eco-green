@@ -25,36 +25,55 @@ public class ProfileService implements IAccountService {
     @Override
     public AccountProfileResponse getProfile(String username) {
         Account account = accountRepository.findByUsername(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "UserDetails is not of expected type"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found"));
         return AccountMapper.mapToAccountProfileResponse(account);
     }
 
+    // Consolidated updateProfile using String userId (deprecates Long overload if
+    // possible)
     @Override
-    public AccountProfileResponse updateProfile(Long userId, AccountUpdateRequest accountRequest) {
+    public AccountProfileResponse updateProfile(String userId, AccountUpdateRequest accountRequest) {
         Account existingAccount = accountRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND, "UserDetails is not of expected type"));
-        if (accountRequest.getUsername() != null &&
-                accountRepository.existsByUsernameAndIdNot(accountRequest.getUsername(), userId)) {
-            throw new IllegalArgumentException("Username already taken");
-        }
+                .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND, "User not found"));
+
         if (accountRequest.getPhone() != null &&
                 accountRepository.existsByPhoneAndIdNot(accountRequest.getPhone(), userId)) {
-            throw new IllegalArgumentException("Phone already used");
+            throw new AppException(ErrorCode.DUPLICATE_RESOURCE, "Phone already used");
         }
+
+        if (accountRequest.getEmail() != null &&
+                accountRepository.existsByEmailAndIdNot(accountRequest.getEmail(), userId)) {
+            throw new AppException(ErrorCode.DUPLICATE_RESOURCE, "Email already used");
+        }
+
         AccountMapper.updateAccountFromRequest(accountRequest, existingAccount);
         existingAccount.setUpdatedAt(LocalDateTime.now());
+
         Account saved = accountRepository.save(existingAccount);
         return AccountMapper.mapToAccountProfileResponse(saved);
     }
 
+    // If IAccountService requires Long overload, implement with conversion (but
+    // prefer updating interface)
+    // @Override
+    // public AccountProfileResponse updateProfile(Long userId, AccountUpdateRequest
+    // accountRequest) {
+    // String userIdStr = String.valueOf(userId); // Safe conversion assuming
+    // numeric Long
+    // return updateMemberProfile(userIdStr, accountRequest); // Delegate to String
+    // version
+    // }
+
     @Override
-    public void deleteAccount(Long userId) {
-        this.accountRepository.deleteById(userId);
+    public void deleteAccount(String userId) {
+        accountRepository.deleteById(userId); // Already correct
     }
 
     @Override
     public AccountProfileResponse getProfile(Long userId) {
-        return null;
+        String userIdStr = String.valueOf(userId);
+        Account account = accountRepository.findById(userIdStr)
+                .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND, "User not found"));
+        return AccountMapper.mapToAccountProfileResponse(account);
     }
-
 }

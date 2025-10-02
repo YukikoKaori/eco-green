@@ -21,7 +21,7 @@ public class AuthenticationController {
     @PostMapping("/login")
     @ResponseBody
     public ApiResponse<AccountLoginResponse> login(@RequestBody AccountLoginRequest request) {
-        AccountLoginResponse response = authService.login(request.getUsername(), request.getPassword());
+        AccountLoginResponse response = authService.login(request.getPhone(), request.getPassword());
         return new ApiResponse<>(ErrorCode.SUCCESS.getCode(), ErrorCode.SUCCESS.getMessage(), response);
     }
 
@@ -36,7 +36,7 @@ public class AuthenticationController {
     @DeleteMapping("/delete/id/{id}")
     @ResponseBody
     public ApiResponse<Void> deleteById(@PathVariable Long id) {
-        authService.deleteUserById(id);
+        authService.deleteUserById(String.valueOf(id));
         return new ApiResponse<>(ErrorCode.SUCCESS.getCode(),
                 "User with id " + id + " deleted successfully", null);
     }

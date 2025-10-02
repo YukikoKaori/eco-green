@@ -14,20 +14,16 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AccountLoginResponse {
-    private String username;
+//  private String username;
     private String email;
     private String fullName;
     private String phone;
     private LocalDate dateOfBirth;
     private Account.Gender gender;
-    private String avatarUrl;
-    private String city;
-    private String district;
-    private String ward;
-    private String addressDetail;
     private Account.Role role;
     private Account.Status status;
     private LocalDateTime createdAt;
-
+    private LocalDateTime updateAt;
+    private String address;
     private String token; // JWT token
 }

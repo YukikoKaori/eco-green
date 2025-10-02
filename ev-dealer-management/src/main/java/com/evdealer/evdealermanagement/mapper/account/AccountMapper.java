@@ -10,61 +10,59 @@ public final class AccountMapper {
     private AccountMapper() {
     }
 
-    // public static AccountProfileResponse toProfileResponse(Account a) {
-    // if (a == null)
-    // return null;
-    // AccountProfileResponse res = new AccountProfileResponse();
-    // res.setId(a.getId());
-    // res.setFullName(a.getFullName());
-    // res.setAddress(a.getAddress());
-    // res.setAvatarUrl(a.getAvatarUrl());
-    // res.setPhone(a.getPhone());
-    // res.setTaxCode(a.getTaxCode());
-    // res.setUsername(a.getUsername());
-
-    // res.setEmail(a.getEmail());
-    // res.setUpdatedAt(a.getUpdatedAt());
-    // return res;
-    // }
-
     public static void updateAccountFromRequest(AccountUpdateRequest req, Account account) {
         if (req == null || account == null)
             return;
 
-        // fullName
+        // Họ và tên
         if (hasText(req.getFullName())) {
             account.setFullName(trimToNull(req.getFullName()));
         }
 
-        // address
-        if (req.getAddress() != null) {
-            account.setAddressDetail(trimToNull(req.getAddress()));
-        }
-
-        // avatarUrl
-        if (req.getAvatarUrl() != null) {
-            account.setAvatarUrl(trimToNull(req.getAvatarUrl()));
-        }
-
-        // phone
-        if (req.getPhone() != null) {
+        // Điện thoại
+        if (hasText(req.getPhone())) {
             account.setPhone(trimToNull(req.getPhone()));
         }
 
-        // taxCode
-        if (req.getTaxCode() != null) {
+        // Địa chỉ
+        if (hasText(req.getAddress())) {
+            account.setAddress(trimToNull(req.getAddress()));
+        }
+
+        // Email
+        if (hasText(req.getEmail())) {
+            account.setEmail(trimToNull(req.getEmail()));
+        }
+
+        // CCCD/CMND/Hộ chiếu
+        if (hasText(req.getIdentityNumber())) {
+            account.setNationalId(trimToNull(req.getIdentityNumber()));
+        }
+
+        // Tax code
+        if (hasText(req.getTaxCode())) {
             account.setTaxCode(trimToNull(req.getTaxCode()));
         }
 
-        // username
-        if (req.getUsername() != null) {
-            account.setUsername(trimToNull(req.getUsername()));
+        // Giới tính
+        if (req.getGender() != null) {
+            account.setGender(Account.Gender.valueOf(req.getGender().name()));
         }
 
-        // status (enum)
-        if (req.getStatus() != null) {
-            account.setStatus(Account.Status.valueOf(req.getStatus().name()));
+        // Ngày sinh
+        if (req.getBirthDate() != null) {
+            account.setDateOfBirth(req.getBirthDate());
         }
+
+        // // Username
+        // if (hasText(req.getUsername())) {
+        // account.setUsername(trimToNull(req.getUsername()));
+        // }
+
+        // // Status
+        // if (req.getStatus() != null) {
+        // account.setStatus(Account.Status.valueOf(req.getStatus().name()));
+        // }
 
     }
 
@@ -83,14 +81,8 @@ public final class AccountMapper {
                 .email(account.getEmail())
                 .fullName(account.getFullName())
                 .phone(account.getPhone())
-                .address(account.getAddressDetail())
-                .avatarUrl(account.getAvatarUrl())
                 .status(account.getStatus())
-                .emailVerified(account.getEmailVerified())
-                .createdAt(account.getCreatedAt())
                 .dateOfBirth(account.getDateOfBirth())
-                .updatedAt(account.getUpdatedAt())
-                .taxCode(account.getTaxCode())
                 .build();
     }
 }
