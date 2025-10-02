@@ -107,6 +107,9 @@ public class AuthService {
                 .gender(saved.getGender())
                 .role(saved.getRole())
                 .status(saved.getStatus())
+                .createdAt(saved.getCreatedAt())
+                .updateAt(account.getUpdatedAt())
+                .address(saved.getAddress())
                 .build();
     }
 
