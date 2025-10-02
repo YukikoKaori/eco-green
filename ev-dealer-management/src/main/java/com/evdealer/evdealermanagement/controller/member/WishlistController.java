@@ -22,7 +22,7 @@ public class WishlistController {
 
     @GetMapping
     public WishlistPageResponse<WishlistItemResponse> listWishlist(@AuthenticationPrincipal CustomAccountDetails user,
-            @PageableDefault(size = 10, sort = "createAt", direction = Sort.Direction.DESC) Pageable pageable) {
+            @PageableDefault(size = 10, sort = "addedAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return wishlistService.listWishlistItem(String.valueOf(user.getId()), pageable);
     }
 
@@ -30,11 +30,11 @@ public class WishlistController {
     public void addWishlist(Authentication authentication, @RequestBody WishlistRequest request) {
 
         CustomAccountDetails user = (CustomAccountDetails) authentication.getPrincipal();
-        wishlistService.addWishlistItem(String.valueOf(user.getId()), String.valueOf(request.getProductId()));
+        wishlistService.addWishlistItem(user.getId(), request.getProductId());
     }
 
     @DeleteMapping("/{productId}")
-    public void removeWishlist(@AuthenticationPrincipal CustomAccountDetails user, @PathVariable Long productId) {
+    public void removeWishlist(@AuthenticationPrincipal CustomAccountDetails user, @PathVariable String productId) {
         wishlistService.removeWishlistItem(String.valueOf(user.getId()), String.valueOf(productId));
     }
 }
