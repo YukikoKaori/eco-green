@@ -9,17 +9,18 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 import { getMe, updateMe, uploadAvatar, UserProfile } from "@/api/auth";
 import { useAuth } from "@/contexts/AuthContext";
+const DEFAULT_AVATAR = "/images/avatar-default.png";
 
 type Profile = {
   name: string;
   phone: string;
   address: string;
   email: string;
-  idNumber: string;         
-  invoiceInfo: string;      
+  idNumber: string;
+  invoiceInfo: string;
   gender: "male" | "female" | "other" | "";
-  birthday: string;         
-  avatarDataUrl?: string;  
+  birthday: string;
+  avatarDataUrl?: string;
 };
 
 const toProfile = (u: UserProfile | null): Profile => {
@@ -33,7 +34,7 @@ const toProfile = (u: UserProfile | null): Profile => {
     address: u?.address ?? "",
     email: u?.email ?? "",
     idNumber: "",
-    invoiceInfo: u?.taxCode ?? "",         
+    invoiceInfo: u?.taxCode ?? "",
     gender,
     birthday: u?.dateOfBirth ? u.dateOfBirth.substring(0, 10) : "",
     avatarDataUrl: u?.avatarUrl ?? "",
@@ -44,7 +45,7 @@ export default function ProfilePage() {
   const { user, setUser } = useAuth();
 
   const [profile, setProfile] = useState<Profile | null>(user ? toProfile(user as any) : null);
-  const [loading, setLoading] = useState(!user); 
+  const [loading, setLoading] = useState(!user);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -62,7 +63,7 @@ export default function ProfilePage() {
     async function hydrate() {
       try {
         if (!user) setLoading(true);
-        const me = await getMe();                     
+        const me = await getMe();
         if (cancelled) return;
 
         setProfile(toProfile(me));
@@ -144,7 +145,7 @@ export default function ProfilePage() {
         phone: profile.phone,
         address: profile.address,
         email: profile.email,
-        dateOfBirth: profile.birthday,             
+        dateOfBirth: profile.birthday,
         avatarUrl: profile.avatarDataUrl,
         gender: profile.gender ? profile.gender.toUpperCase() : undefined,
       });
@@ -196,16 +197,20 @@ export default function ProfilePage() {
           {fetchError}
         </div>
       )}
-
-      {/* Avatar card */}
       <section className="bg-white rounded-lg border shadow p-4">
         <div className="flex items-center gap-4">
-          <Avatar className="h-20 w-20 ring-2 ring-[#2ba195]/30">
-            {profile.avatarDataUrl ? (
-              <AvatarImage src={profile.avatarDataUrl} alt="avatar" />
-            ) : (
-              <AvatarFallback>Avatar</AvatarFallback>
-            )}
+          <Avatar className="h-20 w-20 ring-2 ring-[#2ba195]/30 overflow-hidden">
+            <AvatarImage
+              src={profile.avatarDataUrl || DEFAULT_AVATAR}
+              alt="avatar"
+              className="object-cover"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = DEFAULT_AVATAR;
+              }}
+            />
+            <AvatarFallback className="text-sm bg-gray-100">
+              {(profile.name || "U").charAt(0).toUpperCase()}
+            </AvatarFallback>
           </Avatar>
 
           <div className="space-x-2">
@@ -226,7 +231,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </section>
-
       {/* Thông tin cơ bản */}
       <section className="bg-white rounded-lg border shadow p-4 space-y-4">
         <div className="grid md:grid-cols-2 gap-4">

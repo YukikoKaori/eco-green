@@ -15,10 +15,11 @@ export type AppUser = {
 };
 
 type AuthContextType = {
-  user: AppUser | null;
+  user: AppUser | null;   
   setUser: (u: AppUser | null, opts?: { remember?: "local" | "session" }) => void;
   logout: () => void;
 };
+
 
 const AuthContext = createContext<AuthContextType>({
   user: null,

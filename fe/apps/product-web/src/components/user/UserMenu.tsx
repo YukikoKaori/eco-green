@@ -1,3 +1,4 @@
+// src/components/user/UserMenu.tsx
 import { JSX, memo } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -22,6 +23,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"; // ⬅️ thêm
 import { useAuth } from "@/contexts/AuthContext";
 
 type Item = { to: string; label: string; icon: JSX.Element; danger?: boolean };
@@ -50,7 +52,6 @@ const SECTIONS: Section[] = [
       { to: "/account/profile", label: "Cài đặt tài khoản", icon: <Settings className="w-4 h-4" /> },
       { to: "/help", label: "Trợ giúp", icon: <HelpCircle className="w-4 h-4" /> },
       { to: "/feedback", label: "Đóng góp ý kiến", icon: <MessageSquare className="w-4 h-4" /> },
-      // Đăng xuất để riêng
     ],
   },
 ];
@@ -60,9 +61,8 @@ function RowLink({ to, icon, label, danger }: Item) {
     <DropdownMenuItem asChild className="p-0">
       <Link
         to={to}
-        className={`flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2 no-underline text-sm ${
-          danger ? "text-rose-600" : "text-gray-800"
-        }`}
+        className={`flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2 no-underline text-sm ${danger ? "text-rose-600" : "text-gray-800"
+          }`}
       >
         <span className="flex items-center gap-3">
           <span className="text-gray-600">{icon}</span>
@@ -78,6 +78,10 @@ export default memo(function UserMenu() {
   const { user, logout } = useAuth();
   const isLoggedIn = !!user;
 
+  const profileUrl = isLoggedIn ? `/profile/${encodeURIComponent(user!.username)}` : "/login";
+  const initials =
+    (user?.fullName?.charAt(0) || user?.username?.charAt(0) || "U").toUpperCase();
+  const DEFAULT_AVATAR = "/images/avatar-default.png";
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -93,25 +97,36 @@ export default memo(function UserMenu() {
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-full bg-gray-200 overflow-hidden grid place-content-center text-gray-500">
-              <User className="w-7 h-7" />
-            </div>
-            <div className="flex-1">
-              <div className="text-sm font-semibold text-gray-900">
-                {user?.fullName || user?.username || "Khách"}
+            <Link
+              to={profileUrl}
+              aria-label={
+                isLoggedIn
+                  ? `Xem trang của ${user!.fullName || user!.username}`
+                  : "Đăng nhập"
+              }
+              className="flex items-center gap-3 no-underline hover:opacity-90"
+            >
+              <Avatar className="w-14 h-14 ring-2 ring-[#2ba195]/20">
+                <AvatarImage
+                  src={user?.avatarUrl ?? DEFAULT_AVATAR}
+                  alt={user?.fullName || user?.username || "User"}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = DEFAULT_AVATAR; }}
+                  className="object-cover"
+                />
+                <AvatarFallback>
+                  {(user?.fullName || user?.username || "U").charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="flex-1">
+                <div className="text-sm font-semibold text-gray-900">
+                  {user?.fullName || user?.username || "Khách"}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {user?.email || user?.phone || "Đăng nhập để dùng đầy đủ tiện ích"}
+                </div>
               </div>
-              <div className="text-xs text-gray-500">
-                {user?.email || user?.phone || "Đăng nhập để dùng đầy đủ tiện ích"}
-              </div>
-            </div>
-            {isLoggedIn && (
-              <Link
-                to="/account/profile"
-                className="inline-flex items-center gap-1 text-sm text-teal-700"
-              >
-                <Edit3 className="w-4 h-4" /> Sửa
-              </Link>
-            )}
+            </Link>
           </div>
 
           {!isLoggedIn && (
