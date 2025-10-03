@@ -37,7 +37,7 @@ export default function ProfilePublic() {
       <div className="overflow-x-auto">
         <div className="flex items-start gap-6 min-w-[980px]">
           {/* LEFT */}
-          <aside className="w-[360px] shrink-0 rounded-xl border bg-white shadow-sm overflow-hidden">
+          <aside className="w-[360px] shrink-0 rounded-xl border bg-gray-50 shadow-sm overflow-hidden">
             {/* cover */}
             <div className="relative h-28 w-full bg-[url('/images/profile-cover.png')] bg-no-repeat bg-cover bg-center opacity-90" />
 
@@ -59,7 +59,7 @@ export default function ProfilePublic() {
                   </Avatar>
                   <button
                     type="button"
-                    className="absolute -bottom-1 -right-1 grid place-content-center h-7 w-7 rounded-full bg-white border shadow"
+                    className="!absolute -bottom-1 -right-1 !grid !place-content-center !h-6 !w-6 rounded-full !bg-white !border !shadow"
                     title="Đổi ảnh đại diện"
                   >
                     <Camera className="w-4 h-4 text-gray-700" />
@@ -91,13 +91,13 @@ export default function ProfilePublic() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full"
+                  className="w-full !bg-white"
                   onClick={() => nav("/account/profile")}
                 >
                   Chỉnh sửa trang cá nhân
                 </Button>
 
-                <div className="rounded-lg border p-3">
+                <div className="rounded-lg border p-3 bg-white" >
                   <div className="font-medium">Thông tin</div>
                   <ul className="mt-2 space-y-1 text-muted-foreground">
                     <li>
@@ -123,22 +123,22 @@ export default function ProfilePublic() {
           </aside>
 
           {/* RIGHT */}
-          <section className="flex-1 rounded-xl border bg-white shadow-sm">
+          <section className="flex-1 rounded-xl border bg-white shadow-sm !bg-gray-50">
             <Tabs defaultValue="active">
-              <div className="px-4 pt-4">
+              <div className="px-4 pt-4 ">
                 <div className="flex items-center justify-between">
                   <TabsList className="relative bg-transparent p-0 w-full max-w-[420px] grid grid-cols-2">
-                    <div className="absolute left-0 right-0 -bottom-[1px] h-[2px] bg-gray-100 col-span-2" />
+                    <div className="!absolute !left-0 right-0 -bottom-[1px] h-[2px] !bg-gray col-span-2" />
                     <TabsTrigger
                       value="active"
-                      className="rounded-none px-4 py-2 text-center border-b-2 border-transparent
+                      className="rounded-none !bg-white px-6 py-2 !text-center border-b-2 border-transparent
                                  data-[state=active]:border-[#0f766e] data-[state=active]:text-foreground text-sm"
                     >
                       Đang hiển thị ({active.length})
                     </TabsTrigger>
                     <TabsTrigger
                       value="sold"
-                      className="rounded-none px-4 py-2 text-center border-b-2 border-transparent
+                      className="rounded-none !bg-white px-4 py-2 text-center border-b-2 border-transparent
                                  data-[state=active]:border-[#0f766e] data-[state=active]:text-foreground text-sm"
                     >
                       Đã bán ({sold.length})

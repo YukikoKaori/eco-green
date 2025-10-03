@@ -11,7 +11,7 @@ import AuthRegister from "@/pages/auth/AuthRegister";
 import ProfilePublicPage from "@/pages/account/ProfilePublic";
 import PrivateRoute from "@/app/PrivateRoute";
 import GuestOnlyRoute from "@/app/GuestOnlyRoute";
-
+import PostNew from "@/pages/posts/PostNew";
 export default function App() {
   return (
     <Routes>
@@ -20,8 +20,15 @@ export default function App() {
       </Route>
 
       <Route element={<LayoutCompact />}>
-      
+
         <Route path="/profile/:username" element={<ProfilePublicPage />} />
+        <Route path="/post/new"
+          element={
+            <PrivateRoute>
+              <PostNew />
+            </PrivateRoute>
+          }
+        />
         <Route
           path="/account"
           element={

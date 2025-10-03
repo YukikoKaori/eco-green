@@ -12,7 +12,7 @@ import {
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import "@/styles/Navbar.css";
 import UserMenu from "@/components/user/UserMenu";
-import { useAuth } from "@/contexts/AuthContext"; 
+import { useAuth } from "@/contexts/AuthContext";
 
 const mainNav = [
   { label: "EcoGreen", to: "/" },
@@ -23,7 +23,7 @@ const mainNav = [
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const { user } = useAuth(); 
+  const { user } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -34,19 +34,18 @@ export default function Navbar() {
 
   return (
     <header
-      className={`navbar sticky top-0 z-50 transition-all duration-300 ${
-        isScrolled ? "navbar-shrink" : "navbar-expanded"
-      }`}
+      className={`navbar sticky top-0 z-50 transition-all duration-300 ${isScrolled ? "navbar-shrink" : "navbar-expanded"
+        }`}
       style={
         isScrolled
           ? {
-              background: "linear-gradient(90deg, #246f67 0%, #01c5a7ff 50%)",
-            }
+            background: "linear-gradient(90deg, #246f67 0%, #01c5a7ff 50%)",
+          }
           : {
-              backgroundImage: "url('/images/navbar-bg.png')",
-              backgroundSize: "cover",
-              backgroundRepeat: "no-repeat",
-            }
+            backgroundImage: "url('/images/navbar-bg.png')",
+            backgroundSize: "cover",
+            backgroundRepeat: "no-repeat",
+          }
       }
     >
       {/* Top bar */}
@@ -120,10 +119,9 @@ export default function Navbar() {
                   key={it.to}
                   to={it.to}
                   className={({ isActive }) =>
-                    `relative font-medium ml-5 transition-colors ${
-                      isActive
-                        ? "text-[#124f47] font-bold"
-                        : "text-[#246f67] opacity-70 hover:text-yellow-300"
+                    `relative font-medium ml-5 transition-colors ${isActive
+                      ? "text-[#124f47] font-bold"
+                      : "text-[#246f67] opacity-70 hover:text-yellow-300"
                     }`
                   }
                 >
@@ -177,9 +175,11 @@ export default function Navbar() {
           )}
 
           {/* Đăng tin */}
-          <Button className="!bg-[#246f67] !text-sm hover:bg-teal-800 flex items-center gap-2 text-white">
-            <PlusCircle className="w-4 h-4" />
-            <span>Đăng tin</span>
+          <Button asChild className="!bg-[#246f67] !text-sm hover:bg-teal-800 flex items-center gap-2 text-white">
+            <Link to="/post/new">
+              <PlusCircle className="w-4 h-4" />
+              <span>Đăng tin</span>
+            </Link>
           </Button>
 
           <UserMenu />

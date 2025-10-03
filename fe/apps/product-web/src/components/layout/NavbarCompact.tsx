@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import UserMenu from "../user/UserMenu";
-import { useAuth } from "@/contexts/AuthContext"; 
+import { useAuth } from "@/contexts/AuthContext";
 
 const mainNav = [
   { label: "EcoGreen", to: "/" },
@@ -105,10 +105,11 @@ export default function Navbar() {
               <Link to="/login">Đăng nhập</Link>
             </Button>
           )}
-
-          <Button className="!bg-[#246f67] !text-sm hover:bg-teal-800 flex items-center gap-2 text-white">
-            <PlusCircle className="w-4 h-4" />
-            <span>Đăng tin</span>
+          <Button asChild className="!bg-[#246f67] !text-sm hover:bg-teal-800 flex items-center gap-2 text-white">
+            <Link to="/post/new">
+              <PlusCircle className="w-4 h-4" />
+              <span>Đăng tin</span>
+            </Link>
           </Button>
 
           <UserMenu />
