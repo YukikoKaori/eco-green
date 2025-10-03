@@ -5,29 +5,25 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class RedisService {
 
     @Autowired
     private StringRedisTemplate redisTemplate;
+
     private final JwtService jwtService;
 
     public RedisService(JwtService jwtService) {
         this.jwtService = jwtService;
     }
 
-    // Đưa token vào blacklist
-    public void blacklistToken(String token) {
-        if(!jwtService.isExpired(token)) {
+    public void addToBlacklist(String token) {
+        long expiration = jwtService.getExpirationEpochSeconds(token);
+        long current = System.currentTimeMillis()/1000;
 
-            long expiration = jwtService.getExpirationEpochSeconds(token);
-            long current = System.currentTimeMillis();
-
-            if(expiration > current) {
-                redisTemplate.opsForValue().set(token, "blacklisted", Duration.ofSeconds(expiration - current));
-            }
+        if(expiration > current) {
+            redisTemplate.opsForValue().set(token, "blacklisted", Duration.ofSeconds(expiration - current));
         }
     }
 
