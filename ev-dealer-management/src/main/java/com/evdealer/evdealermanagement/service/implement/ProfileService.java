@@ -9,6 +9,8 @@ import com.evdealer.evdealermanagement.mapper.account.AccountMapper;
 import com.evdealer.evdealermanagement.repository.AccountRepository;
 import com.evdealer.evdealermanagement.service.contract.IAccountService;
 
+import java.time.LocalDateTime;
+
 import org.springframework.stereotype.Service;
 
 @Service
@@ -27,35 +29,44 @@ public class ProfileService implements IAccountService {
         return AccountMapper.mapToAccountProfileResponse(account);
     }
 
-    // Consolidated updateProfile using String userId (deprecates Long overload if possible)
+    // Consolidated updateProfile using String userId (deprecates Long overload if
+    // possible)
+    @Override
     public AccountProfileResponse updateProfile(String userId, AccountUpdateRequest accountRequest) {
         Account existingAccount = accountRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND, "User not found"));
 
-        if (accountRequest.getUsername() != null &&
-                accountRepository.existsByUsernameAndIdNot(accountRequest.getUsername(), userId)) {
-            throw new AppException(ErrorCode.DUPLICATE_RESOURCE, "Username already taken");
-        }
         if (accountRequest.getPhone() != null &&
                 accountRepository.existsByPhoneAndIdNot(accountRequest.getPhone(), userId)) {
             throw new AppException(ErrorCode.DUPLICATE_RESOURCE, "Phone already used");
         }
 
+        if (accountRequest.getEmail() != null &&
+                accountRepository.existsByEmailAndIdNot(accountRequest.getEmail(), userId)) {
+            throw new AppException(ErrorCode.DUPLICATE_RESOURCE, "Email already used");
+        }
+
         AccountMapper.updateAccountFromRequest(accountRequest, existingAccount);
+        existingAccount.setUpdatedAt(LocalDateTime.now());
+
         Account saved = accountRepository.save(existingAccount);
         return AccountMapper.mapToAccountProfileResponse(saved);
     }
 
-    // If IAccountService requires Long overload, implement with conversion (but prefer updating interface)
-    @Override
-    public AccountProfileResponse updateProfile(Long userId, AccountUpdateRequest accountRequest) {
-        String userIdStr = String.valueOf(userId);  // Safe conversion assuming numeric Long
-        return updateProfile(userIdStr, accountRequest);  // Delegate to String version
-    }
+    // If IAccountService requires Long overload, implement with conversion (but
+    // prefer updating interface)
+    // @Override
+    // public AccountProfileResponse updateProfile(Long userId, AccountUpdateRequest
+    // accountRequest) {
+    // String userIdStr = String.valueOf(userId); // Safe conversion assuming
+    // numeric Long
+    // return updateMemberProfile(userIdStr, accountRequest); // Delegate to String
+    // version
+    // }
 
     @Override
-    public void deleteAccount(Long userId) {
-        accountRepository.deleteById(String.valueOf(userId));  // Already correct
+    public void deleteAccount(String userId) {
+        accountRepository.deleteById(userId); // Already correct
     }
 
     @Override

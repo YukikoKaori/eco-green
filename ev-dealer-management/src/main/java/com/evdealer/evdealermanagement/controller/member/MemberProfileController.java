@@ -38,7 +38,6 @@ package com.evdealer.evdealermanagement.controller.member;
 import com.evdealer.evdealermanagement.dto.account.profile.AccountProfileResponse;
 import com.evdealer.evdealermanagement.dto.account.profile.AccountUpdateRequest;
 import com.evdealer.evdealermanagement.service.contract.IAccountService;
-import com.evdealer.evdealermanagement.service.contract.IUserContextService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -51,26 +50,12 @@ import org.springframework.web.bind.annotation.*;
 public class MemberProfileController {
 
     private final IAccountService accountService;
-    private final IUserContextService userContextService;
-
-    @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MEMBER','ADMIN')")
-    public ResponseEntity<AccountProfileResponse> getProfile(@PathVariable Long id) {
-        return ResponseEntity.ok(accountService.getProfile(id));
-    }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('MEMBER','ADMIN')")
     public ResponseEntity<AccountProfileResponse> updateProfile(
-            @PathVariable Long id,
+            @PathVariable String id,
             @Valid @RequestBody AccountUpdateRequest request) {
         return ResponseEntity.ok(accountService.updateProfile(id, request));
-    }
-
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MEMBER','ADMIN')")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        accountService.deleteAccount(id);
-        return ResponseEntity.noContent().build();
     }
 }

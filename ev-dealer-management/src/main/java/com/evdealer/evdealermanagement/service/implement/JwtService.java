@@ -62,7 +62,7 @@ public class JwtService implements IJwtService {
                     .getBody();
         } catch (Exception e) {
             logger.error("Failed to parse JWT token: {}", e.getMessage());
-            throw e; // Re-throw to be handled by caller
+            throw e;
         }
     }
 
@@ -99,19 +99,32 @@ public class JwtService implements IJwtService {
             Claims claims = extractAllClaims(token);
             String username = claims.getSubject();
             boolean isTokenValid = username.equals(userDetails.getUsername()) && !isExpired(token);
+
             if (!isTokenValid) {
-                logger.warn("Token validation failed for username: {}", username);
+                throw new MalformedJwtException("Token data validation failed.");
             }
-            return isTokenValid;
+
+            return true; // Token hợp lệ
         } catch (ExpiredJwtException e) {
             logger.warn("JWT Token has expired: {}", e.getMessage());
-            return false;
+            throw e;
         } catch (MalformedJwtException e) {
             logger.warn("Invalid JWT Token: {}", e.getMessage());
-            return false;
+            throw e;
+        } catch (SignatureException e) {
+            logger.warn("JWT Signature is invalid: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Unexpected error validating token: {}", e.getMessage());
-            return false;
+            throw new JwtException("General token error", e);
         }
+    }
+
+    public long getExpirationEpochSeconds(String token) {
+        if (token == null) {
+            throw new IllegalArgumentException("Token cannot be null");
+        }
+        Date expiration = extractAllClaims(token).getExpiration();
+        return expiration.getTime() / 1000;  // Convert to epoch seconds for Redis TTL
     }
 }
