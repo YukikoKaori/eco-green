@@ -3,11 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { User as UserIcon, Lock, Eye, EyeOff, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { registerApi } from "@/api/auth"; 
 
 export default function AuthRegister() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [name, setName] = useState("");
+  const [fullName, setfullName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const nav = useNavigate();
@@ -16,7 +17,10 @@ export default function AuthRegister() {
     e.preventDefault();
     setLoading(true);
     try {
+      await registerApi({ fullName, phone, password }); 
       nav("/login");
+    } catch (err) {
+      console.error("Register failed:", err); 
     } finally {
       setLoading(false);
     }
@@ -54,8 +58,8 @@ export default function AuthRegister() {
                 name="name"
                 type="text"
                 placeholder="Nhập đầy đủ họ và tên"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={fullName}
+                onChange={(e) => setfullName(e.target.value)}
                 className="h-10 border-0 shadow-none focus-visible:ring-0"
               />
             </div>
@@ -104,7 +108,7 @@ export default function AuthRegister() {
 
           <Button
             type="submit"
-            disabled={loading || !name || !phone || !password}
+            disabled={loading || !fullName || !phone || !password}
             aria-busy={loading}
             className="!w-full !h-10 !rounded-full !bg-[#0f766e] !hover:bg-[#0e6a64] !text-white !disabled:opacity-60"
           >
@@ -118,11 +122,13 @@ export default function AuthRegister() {
             </Link>
           </p>
         </form>
+
         <div className="flex items-center gap-3 mb-5">
           <div className="h-px flex-1 bg-gray-200" />
           <span className="text-xs text-gray-500">hoặc</span>
           <div className="h-px flex-1 bg-gray-200" />
         </div>
+
         {/* Social */}
         <div className="grid gap-2 mb-5">
           <button
@@ -142,7 +148,6 @@ export default function AuthRegister() {
             <span>Đăng ký với Facebook</span>
           </button>
         </div>
-
       </div>
     </div>
   );

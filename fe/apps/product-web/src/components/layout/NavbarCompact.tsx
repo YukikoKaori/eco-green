@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import UserMenu from "../user/UserMenu";
+import { useAuth } from "@/contexts/AuthContext"; 
 
 const mainNav = [
   { label: "EcoGreen", to: "/" },
@@ -19,6 +20,8 @@ const mainNav = [
 ];
 
 export default function Navbar() {
+  const { user } = useAuth(); // 
+
   return (
     <header
       className="sticky top-0 z-50"
@@ -54,8 +57,12 @@ export default function Navbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem>Xe điện</DropdownMenuItem>
-              <DropdownMenuItem>Pin điện</DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/xe-dien">Xe điện</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/pin-dien">Pin điện</Link>
+              </DropdownMenuItem>
               <DropdownMenuItem>Phụ kiện</DropdownMenuItem>
               <DropdownMenuItem>Dịch vụ</DropdownMenuItem>
             </DropdownMenuContent>
@@ -84,14 +91,20 @@ export default function Navbar() {
           </form>
         </div>
 
-        {/* Actions bên phải */}
         <div className="ml-auto flex items-center gap-2">
           <Button size="icon" className="hidden sm:flex !bg-white">
             <Heart className="w-4 h-4 text-teal-700" />
           </Button>
-          <Button asChild className="hidden md:flex !text-[#246f67] !bg-white">
-            <Link to="/login">Đăng nhập</Link>
-          </Button>
+
+          {user ? (
+            <Button asChild className="hidden md:flex !text-[#246f67] !bg-white">
+              <Link to="/dashboard">Quản lý tin</Link>
+            </Button>
+          ) : (
+            <Button asChild className="hidden md:flex !text-[#246f67] !bg-white">
+              <Link to="/login">Đăng nhập</Link>
+            </Button>
+          )}
 
           <Button className="!bg-[#246f67] !text-sm hover:bg-teal-800 flex items-center gap-2 text-white">
             <PlusCircle className="w-4 h-4" />

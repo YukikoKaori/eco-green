@@ -11,6 +11,9 @@ import SocialPage from "@/pages/account/SocialPage";
 import AuthLogin from "@/pages/auth/AuthLogin";
 import AuthRegister from "@/pages/auth/AuthRegister";
 
+import PrivateRoute from "@/app/PrivateRoute";
+import GuestOnlyRoute from "@/app/GuestOnlyRoute"; 
+
 export default function App() {
   return (
     <Routes>
@@ -21,15 +24,38 @@ export default function App() {
 
       {/* Layout gọn */}
       <Route element={<LayoutCompact />}>
-        <Route path="/account" element={<AccountLayout />}>
+        {/* Khu tài khoản: yêu cầu đăng nhập */}
+        <Route
+          path="/account"
+          element={
+            <PrivateRoute>
+              <AccountLayout />
+            </PrivateRoute>
+          }
+        >
           <Route index element={<Navigate to="profile" replace />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="account" element={<AccountPage />} />
           <Route path="social" element={<SocialPage />} />
         </Route>
 
-        <Route path="/login" element={<AuthLogin />} />
-        <Route path="/register" element={<AuthRegister />} />
+        {/* Auth: chỉ cho khách */}
+        <Route
+          path="/login"
+          element={
+            <GuestOnlyRoute>
+              <AuthLogin />
+            </GuestOnlyRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <GuestOnlyRoute>
+              <AuthRegister />
+            </GuestOnlyRoute>
+          }
+        />
       </Route>
 
       {/* fallback */}

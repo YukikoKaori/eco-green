@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Phone, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { loginApi, oauthUrls } from "@/api/auth"; 
+import { loginApi, oauthUrls } from "@/api/auth";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function AuthLogin() {
@@ -14,7 +14,7 @@ export default function AuthLogin() {
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const nav = useNavigate();
-  const { setUser } = useAuth(); 
+  const { setUser } = useAuth();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -32,22 +32,30 @@ export default function AuthLogin() {
     setLoading(true);
     setError(null);
     try {
-      const res = await loginApi({ phone, password }); 
-      const token = res?.result?.token;
+      const res = await loginApi({ phone, password });
+
+      const token = res.token;
       if (!token) throw new Error("Không tìm thấy token trong phản hồi.");
-
+      const raw = token.startsWith("Bearer ") ? token.slice(7) : token;
       const store = remember ? localStorage : sessionStorage;
-      store.setItem("access_token", token);
-      store.setItem("current_user", JSON.stringify(res.result));
+      store.setItem("access_token", raw);
 
-      setUser({
-        username: res.result.username,
-        fullName: res.result.fullName,
-        email: res.result.email,
-        phone: res.result.phone,
-        role: res.result.role,
-        status: res.result.status,
-      });
+      setUser(
+        {
+          username: res.username,
+          fullName: res.fullName,
+          email: res.email ?? "",              
+          phone: res.phone,
+          status: res.status,
+          gender: res.gender,                  
+          dateOfBirth: res.dateOfBirth ?? null, 
+          address: res.address ?? null,
+          avatarUrl: res.avatarUrl ?? null,
+          taxCode: res.taxCode ?? null,         
+          role: res.role,                       
+        },
+        { remember: remember ? "local" : "session" }
+      );
 
       nav("/");
     } catch (err: any) {
@@ -58,16 +66,26 @@ export default function AuthLogin() {
     }
   }
 
-  function onGoogle() { window.location.assign(oauthUrls.google); }
-  function onFacebook() { window.location.assign(oauthUrls.facebook); }
+  function onGoogle() {
+    window.location.assign(oauthUrls.google);
+  }
+  function onFacebook() {
+    window.location.assign(oauthUrls.facebook);
+  }
 
   return (
     <div
       className="relative min-h-[calc(100vh-60px)] flex items-center justify-center px-4"
-      style={{ backgroundImage: "url('/images/bg-login.png')", backgroundSize: "cover", backgroundPosition: "center" }}
+      style={{
+        backgroundImage: "url('/images/bg-login.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
     >
       <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white/95 shadow-lg p-8">
-        <div className="text-center text-3xl font-bold text-[#0f766e] mb-6">Đăng nhập</div>
+        <div className="text-center text-3xl font-bold text-[#0f766e] mb-6">
+          Đăng nhập
+        </div>
 
         {error && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -113,7 +131,7 @@ export default function AuthLogin() {
               />
               <button
                 type="button"
-                onClick={() => setShowPw(v => !v)}
+                onClick={() => setShowPw((v) => !v)}
                 className="!ml-auto !text-gray-500 !bg-white"
                 aria-label={showPw ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                 aria-pressed={showPw}
@@ -124,17 +142,19 @@ export default function AuthLogin() {
           </label>
 
           {/* Options */}
-          <div className="!flex !items-center !justify-between !bg-white">
-            <label className="!inline-flex !items-center !gap-2 !text-sm !text-gray-600">
+          <div className="flex items-center justify-between bg-white">
+            <label className="inline-flex items-center gap-2 text-sm text-gray-600">
               <input
                 type="checkbox"
                 checked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
-                className="!bg-white !h-4 w-4 !rounded !border-gray-300"
+                className="bg-white h-4 w-4 rounded border-gray-300"
               />
               Nhớ tài khoản
             </label>
-            <Link to="/forgot" className="text-sm text-[#0f766e]">Quên mật khẩu?</Link>
+            <Link to="/forgot" className="text-sm text-[#0f766e]">
+              Quên mật khẩu?
+            </Link>
           </div>
 
           {/* Submit */}
@@ -149,7 +169,9 @@ export default function AuthLogin() {
 
           <p className="text-center text-sm text-gray-600">
             Chưa có tài khoản?{" "}
-            <Link to="/register" className="text-[#0f766e] font-semibold">Đăng ký</Link>
+            <Link to="/register" className="text-[#0f766e] font-semibold">
+              Đăng ký
+            </Link>
           </p>
         </form>
 
@@ -166,7 +188,7 @@ export default function AuthLogin() {
             type="button"
             onClick={onGoogle}
             disabled={loading}
-            className="!inline-flex !items-center !justify-center !gap-2 !w-full !h-10 !rounded-full !border !border-gray-200 !bg-white !text-gray-800"
+            className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-full border border-gray-200 bg-white text-gray-800"
           >
             <GoogleIcon className="w-5 h-5" />
             <span>Tiếp tục với Google</span>
@@ -175,7 +197,7 @@ export default function AuthLogin() {
             type="button"
             onClick={onFacebook}
             disabled={loading}
-            className="!inline-flex !items-center !justify-center !gap-2 !w-full !h-10 !rounded-full !border !border-gray-200 !bg-white !text-gray-800"
+            className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-full border border-gray-200 bg-white text-gray-800"
           >
             <FacebookIcon className="w-5 h-5" />
             <span>Tiếp tục với Facebook</span>
