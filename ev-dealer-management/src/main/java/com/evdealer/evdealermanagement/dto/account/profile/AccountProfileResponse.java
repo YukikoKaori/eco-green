@@ -21,6 +21,8 @@ public class AccountProfileResponse {
     private String avatarUrl;
     private LocalDateTime createdAt;
     private LocalDate dateOfBirth;
+    private String nationalId;
+    private Account.Gender gender;
     private LocalDateTime updatedAt;
     private String taxCode;
 
