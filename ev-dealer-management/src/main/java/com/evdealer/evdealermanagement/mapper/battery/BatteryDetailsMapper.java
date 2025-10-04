@@ -5,7 +5,6 @@ import com.evdealer.evdealermanagement.entity.battery.BatteryBrands;
 import com.evdealer.evdealermanagement.entity.battery.BatteryDetails;
 import com.evdealer.evdealermanagement.entity.battery.BatteryTypes;
 
-import java.util.UUID;
 
 public class BatteryDetailsMapper {
 

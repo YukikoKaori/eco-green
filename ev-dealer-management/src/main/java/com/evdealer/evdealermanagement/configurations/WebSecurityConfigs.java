@@ -57,7 +57,7 @@ public class WebSecurityConfigs {
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setContentType("application/json");
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // <-- Lỗi 401 được trả về tại đây
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.getWriter().write("{\"error\": \"Unauthorized\"}");
                         })
                 )
