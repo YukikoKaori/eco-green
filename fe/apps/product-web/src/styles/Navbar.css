@@ -1,0 +1,19 @@
+.navbar-expanded{
+  background-image: url('/images/navbar-bg.png');
+  background-repeat: no-repeat;
+
+ 
+  background-size: 140% auto;      
+  background-position: center;
+
+
+  @media (min-width: 768px){
+    background-size: 125% auto;
+    background-position: center;
+  }
+
+  @media (min-width: 1280px){
+    background-size: cover;
+    background-position: center -35px;
+  }
+}
