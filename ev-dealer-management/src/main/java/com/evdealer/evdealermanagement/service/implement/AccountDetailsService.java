@@ -4,7 +4,6 @@ import com.evdealer.evdealermanagement.dto.account.custom.CustomAccountDetails;
 import com.evdealer.evdealermanagement.entity.account.Account;
 import com.evdealer.evdealermanagement.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -34,7 +33,6 @@ public class AccountDetailsService implements UserDetailsService {
         Account account = accountOpt.orElseThrow(() -> new UsernameNotFoundException("User Not Found"));
         return new CustomAccountDetails(account);
     }
-
 
     public UserDetails loadUserByPhone(String phone) throws UsernameNotFoundException {
         Account account = accountRepository.findByPhone(phone)
