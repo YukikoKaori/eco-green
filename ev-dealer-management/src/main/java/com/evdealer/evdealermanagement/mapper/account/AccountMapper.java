@@ -79,8 +79,12 @@ public final class AccountMapper {
                 .status(account.getStatus())
                 .dateOfBirth(account.getDateOfBirth())
                 .address(account.getAddress())
+                .nationalId(account.getNationalId())
                 .taxCode(account.getTaxCode())
                 .avatarUrl(account.getAvatarUrl())
+                .createdAt(account.getCreatedAt())
+                .updatedAt(account.getUpdatedAt())
+                .gender(account.getGender())
                 .build();
     }
 }
