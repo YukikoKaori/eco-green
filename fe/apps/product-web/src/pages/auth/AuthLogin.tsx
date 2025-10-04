@@ -3,8 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { Phone, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { loginApi, oauthUrls } from "@/api/auth";
+import { loginApi, oauthUrls, getMe } from "@/api/auth";
 import { useAuth } from "@/contexts/AuthContext";
+import api from "@/lib/axios"; // để gắn Authorization header
 
 export default function AuthLogin() {
   const [showPw, setShowPw] = useState(false);
@@ -31,35 +32,49 @@ export default function AuthLogin() {
 
     setLoading(true);
     setError(null);
+
     try {
+      // 1. Gọi login API
       const res = await loginApi({ phone, password });
 
       const token = res.token;
       if (!token) throw new Error("Không tìm thấy token trong phản hồi.");
       const raw = token.startsWith("Bearer ") ? token.slice(7) : token;
+
+      // 2. Lưu token
       const store = remember ? localStorage : sessionStorage;
       store.setItem("access_token", raw);
 
+      // 3. Gắn Authorization header cho axios
+      api.defaults.headers.common.Authorization = `Bearer ${raw}`;
+
+      // 4. Gọi getMe để lấy đủ hồ sơ
+      const me = await getMe();
+
+      // 5. Lưu user vào context
       setUser(
         {
-          username: res.username,
-          fullName: res.fullName,
-          email: res.email ?? "",              
-          phone: res.phone,
-          status: res.status,
-          gender: res.gender,                  
-          dateOfBirth: res.dateOfBirth ?? null, 
-          address: res.address ?? null,
-          avatarUrl: res.avatarUrl ?? null,
-          taxCode: res.taxCode ?? null,         
-          role: res.role,                       
+          username: me.username,
+          fullName: me.fullName,
+          email: me.email ?? "",
+          phone: me.phone,
+          status: me.status,
+          gender: me.gender,
+          dateOfBirth: me.dateOfBirth ?? null,
+          address: me.address ?? null,
+          avatarUrl: me.avatarUrl ?? null,
+          taxCode: me.taxCode ?? null,
+          nationalId: me.nationalId ?? null,
+          role: me.role,
         },
         { remember: remember ? "local" : "session" }
       );
 
+      // 6. Điều hướng về home
       nav("/");
     } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || "Đăng nhập thất bại";
+      const msg =
+        err?.response?.data?.message || err?.message || "Đăng nhập thất bại";
       setError(msg);
     } finally {
       setLoading(false);
@@ -72,6 +87,7 @@ export default function AuthLogin() {
   function onFacebook() {
     window.location.assign(oauthUrls.facebook);
   }
+
 
   return (
     <div

@@ -12,6 +12,7 @@ export type AppUser = {
   avatarUrl?: string | null;
   taxCode?: string | null;
   role?: string;
+  nationalId?:string |null;
 };
 
 type AuthContextType = {

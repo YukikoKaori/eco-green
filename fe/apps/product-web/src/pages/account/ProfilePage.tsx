@@ -16,11 +16,11 @@ type Profile = {
   phone: string;
   address: string;
   email: string;
-  idNumber: string;
-  invoiceInfo: string;
+  taxCode: string;
   gender: "male" | "female" | "other" | "";
   birthday: string;
   avatarDataUrl?: string;
+  nationalId:string;
 };
 
 const toProfile = (u: UserProfile | null): Profile => {
@@ -33,11 +33,11 @@ const toProfile = (u: UserProfile | null): Profile => {
     phone: u?.phone ?? "",
     address: u?.address ?? "",
     email: u?.email ?? "",
-    idNumber: "",
-    invoiceInfo: u?.taxCode ?? "",
+    taxCode: u?.taxCode ?? "",
     gender,
     birthday: u?.dateOfBirth ? u.dateOfBirth.substring(0, 10) : "",
     avatarDataUrl: u?.avatarUrl ?? "",
+    nationalId:u?.nationalId ?? ""
   };
 };
 
@@ -56,7 +56,9 @@ export default function ProfilePage() {
       !(user as any).gender ||
       !(user as any).dateOfBirth ||
       (user as any).address === undefined ||
-      (user as any).avatarUrl === undefined;
+      (user as any).avatarUrl === undefined ||
+      (user as any).taxCode === undefined ||
+      (user as any).nationalId === undefined;
 
     let cancelled = false;
 
@@ -80,6 +82,7 @@ export default function ProfilePage() {
             address: me.address,
             avatarUrl: me.avatarUrl,
             taxCode: me.taxCode ?? null,
+            nationalId: me.nationalId ?? null
           },
           { remember: "local" }
         );
@@ -121,7 +124,7 @@ export default function ProfilePage() {
     }
   };
 
-  const [errors, setErrors] = useState<{ phone?: string; idNumber?: string }>({});
+  const [errors, setErrors] = useState<{ phone?: string; nationalId?: string }>({});
   const phoneRe = /^(\+84|0)(3|5|7|8|9)\d{8}$/;
   const idRe = /^(?:\d{9}|\d{12}|[A-Z0-9]{8,9})$/i;
 
@@ -135,7 +138,7 @@ export default function ProfilePage() {
     e.preventDefault();
     if (!profile) return;
 
-    const next = { phone: validatePhone(profile.phone), idNumber: validateId(profile.idNumber) };
+    const next = { phone: validatePhone(profile.phone), idNumber: validateId(profile.nationalId) };
     setErrors(next);
     if (next.phone || next.idNumber) return;
 
@@ -148,6 +151,8 @@ export default function ProfilePage() {
         dateOfBirth: profile.birthday,
         avatarUrl: profile.avatarDataUrl,
         gender: profile.gender ? profile.gender.toUpperCase() : undefined,
+        taxCode:profile.taxCode,
+        nationalId:profile.nationalId
       });
       alert("Đã lưu thay đổi");
 
@@ -162,7 +167,8 @@ export default function ProfilePage() {
           dateOfBirth: profile.birthday,
           address: profile.address,
           avatarUrl: profile.avatarDataUrl,
-          taxCode: profile.invoiceInfo || null,
+          taxCode: profile.taxCode || null,
+          nationalId:profile.nationalId
         },
         { remember: "local" }
       );
@@ -289,25 +295,25 @@ export default function ProfilePage() {
           <div className="flex flex-col space-y-2">
             <Label>CCCD/CMND/Hộ chiếu</Label>
             <Input
-              value={profile.idNumber}
+              value={profile.nationalId}
               onChange={(e) => {
                 const v = e.target.value.trim();
-                setProfile((p) => (p ? { ...p, idNumber: v } : p));
-                setErrors((er) => ({ ...er, idNumber: validateId(v) }));
+                setProfile((p) => (p ? { ...p, nationalId: v } : p));
+                setErrors((er) => ({ ...er, nationalId: validateId(v) }));
               }}
-              onBlur={(e) => setErrors((er) => ({ ...er, idNumber: validateId(e.target.value.trim()) }))}
+              onBlur={(e) => setErrors((er) => ({ ...er, nationalId: validateId(e.target.value.trim()) }))}
               placeholder="VD: 0790xxxxxxx / B1234567"
-              aria-invalid={!!errors.idNumber}
-              className={errors.idNumber ? "ring-2 ring-red-400 focus-visible:ring-red-400" : ""}
+              aria-invalid={!!errors.nationalId}
+              className={errors.nationalId ? "ring-2 ring-red-400 focus-visible:ring-red-400" : ""}
             />
-            {errors.idNumber && <p className="text-xs text-red-500">{errors.idNumber}</p>}
+            {errors.nationalId && <p className="text-xs text-red-500">{errors.nationalId}</p>}
           </div>
 
           <div className="flex flex-col space-y-2">
             <Label>Thông tin xuất hóa đơn</Label>
             <Input
-              value={profile.invoiceInfo}
-              onChange={(e) => setProfile((p) => (p ? { ...p, invoiceInfo: e.target.value } : p))}
+              value={profile.taxCode}
+              onChange={(e) => setProfile((p) => (p ? { ...p, taxCode: e.target.value } : p))}
               placeholder="Tên công ty, MST, địa chỉ..."
             />
           </div>
