@@ -15,8 +15,14 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class BatteryDetails extends BaseEntity {
 
+    // (Giả sử bạn đã khắc phục lỗi cột ID thừa và BaseEntity không định nghĩa ID)
+    @Id
+    @Column(name = "product_id", columnDefinition = "CHAR(36)", length = 36)
+    private String productId;
+
     @OneToOne(fetch = FetchType.LAZY)
-    @PrimaryKeyJoinColumn
+    @MapsId
+    @JoinColumn(name = "product_id")
     private Product product;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -32,4 +38,11 @@ public class BatteryDetails extends BaseEntity {
 
     @Column(name = "health_percent")
     private Integer healthPercent;
+
+    // --- CÁC TRƯỜNG ĐÃ CẬP NHẬT TỪ GIAO DIỆN PIN ---
+    @Column(name = "voltage_v")
+    private Integer voltageV; // INT UNSIGNED trong SQL
+
+    private String origin;
+    // ---------------------------------------------
 }
