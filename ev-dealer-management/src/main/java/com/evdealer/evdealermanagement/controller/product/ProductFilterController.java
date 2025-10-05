@@ -15,7 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductFilterController {
 
-    private final com.evdealer.evdealermanagement.service.implement.ProductService productService;
+    private final ProductService productService;
 
     @GetMapping("/new")
     public ResponseEntity<List<ProductDetail>> getNewProducts() {

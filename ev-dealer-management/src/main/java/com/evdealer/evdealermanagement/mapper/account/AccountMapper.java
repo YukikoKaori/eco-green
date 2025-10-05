@@ -3,8 +3,10 @@ package com.evdealer.evdealermanagement.mapper.account;
 import com.evdealer.evdealermanagement.dto.account.profile.AccountProfileResponse;
 import com.evdealer.evdealermanagement.dto.account.profile.AccountUpdateRequest;
 import com.evdealer.evdealermanagement.entity.account.Account;
+import lombok.Data;
 import org.springframework.util.StringUtils;
 
+@Data
 public final class AccountMapper {
 
     private AccountMapper() {

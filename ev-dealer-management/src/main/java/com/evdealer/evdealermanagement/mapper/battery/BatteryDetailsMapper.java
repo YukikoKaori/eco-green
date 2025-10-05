@@ -9,12 +9,11 @@ import java.util.UUID;
 
 public class BatteryDetailsMapper {
 
-    // Entity -> DTO
     public static BatteryDetailsDto toDto(BatteryDetails entity) {
         if (entity == null) return null;
 
         return BatteryDetailsDto.builder()
-                .productId(entity.getId() != null ? entity.getId().toString() : null)
+                .productId(entity.getProductId() != null ? entity.getProductId() : null)
                 .batteryTypeId(entity.getBatteryType() != null ? entity.getBatteryType().getId() : null)
                 .batteryTypeName(entity.getBatteryType() != null ? entity.getBatteryType().getName() : null)
                 .brandId(entity.getBrand() != null ? entity.getBrand().getId() : null)
@@ -31,22 +30,19 @@ public class BatteryDetailsMapper {
         BatteryDetails entity = new BatteryDetails();
 
         if (dto.getProductId() != null) {
-            entity.setId(dto.getProductId());
+            entity.setProductId(dto.getProductId());
         }
 
-        // Chưa set product, batteryType, brand -> service sẽ handle
         entity.setCapacityKwh(dto.getCapacityKwh());
         entity.setHealthPercent(dto.getHealthPercent());
 
         return entity;
     }
 
-    // Helper để set batteryType
     public static void setBatteryType(BatteryDetails entity, BatteryTypes batteryType) {
         entity.setBatteryType(batteryType);
     }
 
-    // Helper để set brand
     public static void setBrand(BatteryDetails entity, BatteryBrands brand) {
         entity.setBrand(brand);
     }
