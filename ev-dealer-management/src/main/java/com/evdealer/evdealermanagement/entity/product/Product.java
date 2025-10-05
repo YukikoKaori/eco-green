@@ -27,20 +27,20 @@ public class Product extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private ProductType type; // VEHICLE, BATTERY
+    private ProductType type;
 
     @Column(precision = 15, scale = 2)
     private BigDecimal price;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "condition_type", length = 10, nullable = false)
-    private ConditionType conditionType; // NEW, USED
+    private ConditionType conditionType;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
-    private Status status; // DRAFT, ACTIVE, SOLD
+    private Status status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "seller_id", nullable = false)
     private Account seller;
 
