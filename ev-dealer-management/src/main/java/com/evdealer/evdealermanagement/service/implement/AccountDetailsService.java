@@ -34,7 +34,6 @@ public class AccountDetailsService implements UserDetailsService {
         return new CustomAccountDetails(account);
     }
 
-
     public UserDetails loadUserByPhone(String phone) throws UsernameNotFoundException {
         Account account = accountRepository.findByPhone(phone)
                 .orElseThrow(() -> new UsernameNotFoundException("User Not Found"));

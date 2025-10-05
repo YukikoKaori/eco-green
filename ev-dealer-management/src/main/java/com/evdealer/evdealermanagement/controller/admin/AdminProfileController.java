@@ -16,12 +16,6 @@ public class AdminProfileController {
 
     private final IAccountService accountService;
 
-    @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<AccountProfileResponse> getUserProfile(@PathVariable Long id) {
-        return ResponseEntity.ok(accountService.getProfile(id));
-    }
-
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AccountProfileResponse> updateUserProfile(

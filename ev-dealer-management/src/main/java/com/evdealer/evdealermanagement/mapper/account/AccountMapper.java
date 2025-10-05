@@ -50,8 +50,8 @@ public final class AccountMapper {
         }
 
         // Ngày sinh
-        if (req.getBirthDate() != null) {
-            account.setDateOfBirth(req.getBirthDate());
+        if (req.getDateOfBirth() != null) {
+            account.setDateOfBirth(req.getDateOfBirth());
         }
 
         // Avatar

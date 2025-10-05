@@ -32,12 +32,9 @@ public class AccountUpdateRequest {
     @Size(max = 50, message = "Identity number must not exceed 50 characters")
     private String identityNumber; // CCCD/CMND/Hộ chiếu
 
-    @Size(max = 255, message = "Invoice info must not exceed 255 characters")
-    private String invoiceInfo; // Thông tin xuất hóa đơn
-
     private Gender gender; // Enum giới tính
 
-    private LocalDate birthDate; // Ngày sinh
+    private LocalDate dateOfBirth; // Ngày sinh
 
     @Size(max = 50, message = "Tax code must not exceed 50 characters")
     private String taxCode;
