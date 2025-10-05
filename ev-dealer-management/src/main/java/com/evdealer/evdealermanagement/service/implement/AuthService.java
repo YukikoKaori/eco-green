@@ -56,6 +56,8 @@ public class AuthService {
                 .gender(account.getGender())
                 .role(account.getRole())
                 .status(account.getStatus())
+                .nationalId(account.getNationalId())
+                .taxCode(account.getTaxCode())
                 .createdAt(account.getCreatedAt())
                 .updateAt(account.getUpdatedAt())
                 .address(account.getAddress())
