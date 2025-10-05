@@ -28,7 +28,7 @@ public class ChangePasswordService {
         if (!req.getNewPassword().equals(req.getConfirmNewPassword())) {
             return PasswordResponse.builder()
                     .success(false)
-                    .message("Mật khẩu mới và xác nhận không khớp.")
+                    .message("New password and confirmation do not match.")
                     .build();
         }
 
@@ -37,10 +37,9 @@ public class ChangePasswordService {
 
         // 1) Xác thực mật khẩu hiện tại
         if (!passwordEncoder.matches(req.getCurrentPassword(), acc.getPasswordHash())) {
-            // có thể tăng fail counter / rate limit
             return PasswordResponse.builder()
                     .success(false)
-                    .message("Mật khẩu hiện tại không đúng.")
+                    .message("The current password is incorrect.")
                     .build();
         }
 
@@ -48,7 +47,7 @@ public class ChangePasswordService {
         if (passwordEncoder.matches(req.getNewPassword(), acc.getPasswordHash())) {
             return PasswordResponse.builder()
                     .success(false)
-                    .message("Mật khẩu mới không được trùng mật khẩu hiện tại.")
+                    .message("The new password cannot be the same as the current password.")
                     .build();
         }
 
@@ -58,12 +57,9 @@ public class ChangePasswordService {
         acc.setUpdatedAt(LocalDateTime.now());
         accountRepository.save(acc);
 
-        // 4) (Khuyến nghị) Vô hiệu hóa phiên cũ/refresh token để buộc đăng nhập lại
-        // tokenService.revokeAllForUser(acc.getId());
-
         return PasswordResponse.builder()
                 .success(true)
-                .message("Đổi mật khẩu thành công. Vui lòng đăng nhập lại.")
+                .message("Password changed successfully. Please login again.")
                 .build();
     }
 }
