@@ -1,6 +1,7 @@
 package com.evdealer.evdealermanagement.configurations;
 
 import com.evdealer.evdealermanagement.service.implement.AccountDetailsService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,7 +9,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,19 +21,17 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
-@EnableWebSecurity
 @RequiredArgsConstructor
 public class WebSecurityConfigs {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final AccountDetailsService userDetailsService;
-    private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
     private final PasswordEncoder passwordEncoder;
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173")); // dev + deploy - Có thể thay bằng env var cho production
+        config.setAllowedOrigins(List.of("http://localhost:5173"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
@@ -51,26 +49,29 @@ public class WebSecurityConfigs {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/vehicle/**", "/battery/**", "/product/**").permitAll()
-                        .requestMatchers("/oauth2/**").permitAll()
+                        .requestMatchers("/auth/**", "/oauth2/**", "/vehicle/**", "/battery/**", "/product/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/member/**").hasAnyRole("MEMBER", "ADMIN")
+                        .requestMatchers("/member/**", "/profile/me").hasAnyRole("MEMBER", "ADMIN")
                         .anyRequest().authenticated()
                 )
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setContentType("application/json");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // <-- Lỗi 401 được trả về tại đây
+                            response.getWriter().write("{\"error\": \"Unauthorized\"}");
+                        })
+                )
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .oauth2Login(oauth2 -> oauth2
-                        .successHandler(customOAuth2SuccessHandler)); // Sử dụng handler chung cho tất cả OAuth2 providers
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // Fix: Thêm param PasswordEncoder vào method @Bean - Spring auto-inject từ PasswordConfig
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder); // Sử dụng param thay vì method call
+        authProvider.setPasswordEncoder(passwordEncoder);
         authProvider.setHideUserNotFoundExceptions(false);
         return authProvider;
     }
