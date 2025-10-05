@@ -32,6 +32,14 @@ public class VehicleDetails {
     private Short year;
     private String color;
 
+    @Column(name = "license_plate")
+    private String licensePlate;
+
+    @Column(name = "owners_count")
+    private Byte ownersCount;
+
+    private String origin;
+
     @Column(name = "max_speed_kmh")
     private Short maxSpeedKmh;
 
