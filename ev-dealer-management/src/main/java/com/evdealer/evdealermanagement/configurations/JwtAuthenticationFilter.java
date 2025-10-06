@@ -48,47 +48,38 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = authHeader.substring(7).trim();
+        if (token.isEmpty()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         try {
-            // 1. Kiểm tra blacklist (với fallback nếu Redis không khả dụng)
+            // Redis blacklist check
             try {
                 if (redisService.isBlacklisted(token)) {
                     throw new BadCredentialsException("Token has been blacklisted");
                 }
             } catch (Exception redisEx) {
-                // Redis không khả dụng -> Log warning và tiếp tục (không chặn request)
                 logger.warn("Redis unavailable, skipping blacklist check: {}", redisEx.getMessage());
             }
 
-            // 2. Extract username từ token
             String username = jwtService.extractUsername(token);
-
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                // 3. Load user details
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-                // 4. Validate token
                 if (jwtService.validateToken(token, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                } else {
-                    throw new BadCredentialsException("Token signature or expiration invalid");
                 }
             }
-        } catch (UsernameNotFoundException e) {
-            SecurityContextHolder.clearContext();
-            throw new BadCredentialsException("User in token not found", e);
-        } catch (BadCredentialsException e) {
-            SecurityContextHolder.clearContext();
-            throw e; // Ném lại BadCredentialsException gốc
         } catch (Exception e) {
             SecurityContextHolder.clearContext();
-            logger.error("Unexpected authentication error", e);
-            throw new BadCredentialsException("Authentication failed: " + e.getMessage(), e);
+            logger.error("JWT filter error: {}", e.getMessage());
+            // Đừng throw tiếp → vì đây là filter, cho phép các API public đi qua
         }
 
         filterChain.doFilter(request, response);
+
     }
 }
