@@ -6,6 +6,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -125,5 +126,16 @@ public class VnpayConfig {
             sb.append(chars.charAt(rnd.nextInt(chars.length())));
         }
         return sb.toString();
+    }
+
+    public static boolean isValidSignature(Map<String, String> allParams) {
+        // Sao chép và loại bỏ 2 trường hash trước khi tính lại
+        Map<String, String> params = new HashMap<>(allParams);
+        String receivedHash = params.remove("vnp_SecureHash");
+        params.remove("vnp_SecureHashType");
+
+        // Tính lại hash theo đúng quy tắc hashAllFields hiện có
+        String calcHash = hashAllFields(params);
+        return receivedHash != null && receivedHash.equalsIgnoreCase(calcHash);
     }
 }
