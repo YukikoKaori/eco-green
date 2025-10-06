@@ -64,8 +64,7 @@ public class ProductService implements IProductService {
         try {
             log.debug("Searching products by name: {}", name);
 
-            // Tìm trực tiếp theo title trong Product table
-            List<Product> products = productRepository.findByTitleContainingIgnoreCase(name.trim());
+            List<Product> products = productRepository.findTitlesByTitleContainingIgnoreCase(name.trim());
 
             if (products.isEmpty()) {
                 log.debug("No products found with name: {}", name);
