@@ -49,18 +49,21 @@ public class WebSecurityConfigs {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/oauth2/**", "/vehicle/**", "/battery/**", "/product/**").permitAll()
+                        .requestMatchers("/auth/**", "/oauth2/**", "/vehicle/**", "/battery/**", "/product/**")
+                        .permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/member/**", "/profile/me").hasAnyRole("MEMBER", "ADMIN")
-                        .anyRequest().authenticated()
-                )
+                        .requestMatchers(
+                                "/api/vnpayment/return",
+                                "/api/vnpayment/ipn")
+                        .permitAll()
+                        .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setContentType("application/json");
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // <-- Lỗi 401 được trả về tại đây
                             response.getWriter().write("{\"error\": \"Unauthorized\"}");
-                        })
-                )
+                        }))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -77,7 +80,8 @@ public class WebSecurityConfigs {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 }
