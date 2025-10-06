@@ -5,7 +5,7 @@ target/
 !**/src/test/**/target/
 
 # Environment files - IMPORTANT!
-.env
+src/main/resources/.env
 src/main/resources/.env
 *.env
 
