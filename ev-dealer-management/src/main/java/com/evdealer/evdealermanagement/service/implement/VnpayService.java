@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import com.evdealer.evdealermanagement.configurations.VnpayConfig;
 import com.evdealer.evdealermanagement.dto.payment.VnpayRequest;
+import com.evdealer.evdealermanagement.utils.VnpSigner;
 
 @Service
 public class VnpayService {
@@ -64,28 +65,28 @@ public class VnpayService {
 
         List<String> fieldNames = new ArrayList<>(vnp_Params.keySet());
         Collections.sort(fieldNames);
-        StringBuilder hashData = new StringBuilder();
+
+        // ... sau khi put đủ vnp_Params ...
+        String vnp_SecureHash = VnpSigner.sign(vnp_Params, VnpayConfig.secretKey);
+
+        // Build query cho URL (có encode)
         StringBuilder query = new StringBuilder();
-        for (String fieldName : fieldNames) {
-            String fieldValue = vnp_Params.get(fieldName);
-            if ((fieldValue != null) && (fieldValue.length() > 0)) {
-                hashData.append(fieldName).append('=')
-                        .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
-                query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII.toString()))
-                        .append('=')
-                        .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
+        List<String> keys = new ArrayList<>(vnp_Params.keySet());
+        Collections.sort(keys);
+        for (int i = 0; i < keys.size(); i++) {
+            String k = keys.get(i);
+            String v = vnp_Params.get(k);
+            if (v == null || v.isEmpty())
+                continue;
+
+            query.append(URLEncoder.encode(k, StandardCharsets.US_ASCII))
+                    .append('=')
+                    .append(URLEncoder.encode(v, StandardCharsets.US_ASCII));
+            if (i < keys.size() - 1)
                 query.append('&');
-                hashData.append('&');
-            }
         }
-
-        if (query.length() > 0)
-            query.setLength(query.length() - 1);
-        if (hashData.length() > 0)
-            hashData.setLength(hashData.length() - 1);
-
-        String vnp_SecureHash = VnpayConfig.hmacSHA512(VnpayConfig.secretKey, hashData.toString());
         query.append("&vnp_SecureHash=").append(vnp_SecureHash);
+
         return VnpayConfig.vnp_PayUrl + "?" + query;
     }
 
