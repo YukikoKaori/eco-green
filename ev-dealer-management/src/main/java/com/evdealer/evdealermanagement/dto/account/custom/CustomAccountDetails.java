@@ -25,6 +25,10 @@ public class CustomAccountDetails implements UserDetails {
         return Long.valueOf(account.getId());
     }
 
+    public String getAccountId() {
+        return account.getId();
+    }
+
     public Account getAccount() { // Thêm phương thức getAccount
         return account;
     }
