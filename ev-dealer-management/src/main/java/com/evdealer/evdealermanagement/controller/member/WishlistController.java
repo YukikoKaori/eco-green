@@ -30,7 +30,7 @@ public class WishlistController {
     public void addWishlist(Authentication authentication, @RequestBody WishlistRequest request) {
 
         CustomAccountDetails user = (CustomAccountDetails) authentication.getPrincipal();
-        wishlistService.addWishlistItem(user.getId(), request.getProductId());
+        wishlistService.addWishlistItem(user.getAccountId(), request.getProductId());
     }
 
     @DeleteMapping("/{productId}")
