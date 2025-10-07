@@ -23,7 +23,9 @@ public interface AccountRepository extends JpaRepository<Account, String> {
     @Query("SELECT a.username FROM Account a WHERE a.phone = :phone")
     String findUsernameByPhone(String phone);
 
-    @EntityGraph(attributePaths = {"role"}) // nếu có quan hệ role
+    @EntityGraph(attributePaths = { "role" }) // nếu có quan hệ role
     Optional<Account> findWithDetailsByEmail(String email);
+
+    Optional<Account> findByUsernameOrPhoneOrEmail(String username, String phone, String email);
 
 }

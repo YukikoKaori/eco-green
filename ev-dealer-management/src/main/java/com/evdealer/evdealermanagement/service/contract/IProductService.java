@@ -83,4 +83,10 @@ public interface IProductService {
     default long getProductCount() {
         return getAllProducts().size();
     }
+
+    /**
+     * Retrieves all available products
+     * @return List of all product details, empty list if no products found or error occurs
+     */
+    List<ProductDetail> getNewProducts();
 }

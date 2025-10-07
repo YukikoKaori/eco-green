@@ -26,5 +26,7 @@ public class AccountLoginResponse {
     private LocalDateTime updateAt;
     private String address;
     private String avatarUrl;
+    private String nationalId;
+    private String taxCode;
     private String token; // JWT token
 }

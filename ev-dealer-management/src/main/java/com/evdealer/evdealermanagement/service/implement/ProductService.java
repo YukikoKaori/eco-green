@@ -9,9 +9,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -27,35 +30,21 @@ public class ProductService implements IProductService {
     public List<ProductDetail> getAllProducts() {
         try {
             log.debug("Fetching all products");
-            return productRepository.findAll()
+            List<ProductDetail> list = productRepository.findAll()
                     .stream()
                     .map(ProductMapper::toDetailDto)
                     .toList();
+
+            List<ProductDetail> sortedList = new ArrayList<>(list);
+            sortedList.sort(Comparator.comparing(ProductDetail::getCreatedAt));
+
+            return sortedList;
         } catch (Exception e) {
             log.error("Error fetching all products", e);
             return List.of();
         }
     }
 
-    public Optional<ProductDetail> getProductById(String id) {
-        if (id == null || id.trim().isEmpty()) {
-            log.warn("Invalid product ID: {}", id);
-            return Optional.empty();
-        }
-
-        try {
-            UUID.fromString(id); // Validate UUID format
-            log.debug("Fetching product by ID: {}", id);
-            return productRepository.findById(id)
-                    .map(ProductMapper::toDetailDto);
-        } catch (IllegalArgumentException e) {
-            log.warn("Invalid UUID format for product ID: {}", id);
-            return Optional.empty();
-        } catch (Exception e) {
-            log.error("Error fetching product by ID: {}", id, e);
-            return Optional.empty();
-        }
-    }
 
     @Override
     public Optional<ProductDetail> getProductById(Long id) {
@@ -83,23 +72,16 @@ public class ProductService implements IProductService {
         try {
             log.debug("Searching products by name: {}", name);
 
-            List<String> vehicleProductIds = vehicleService.getVehicleIdByName(name)
-                    .stream()
-                    .map(String::valueOf)
-                    .toList();
-            List<String> batteryProductIds = batteryService.getBatteryIdByName(name);
+            List<Product> products = productRepository.findTitlesByTitleContainingIgnoreCase(name.trim());
 
-            List<String> allProductIds = Stream.concat(
-                    vehicleProductIds.stream(),
-                    batteryProductIds.stream()).distinct().toList();
-
-            if (allProductIds.isEmpty()) {
+            if (products.isEmpty()) {
                 log.debug("No products found with name: {}", name);
                 return List.of();
             }
 
-            return productRepository.findAllById(allProductIds)
-                    .stream()
+            log.debug("Found {} products with name: {}", products.size(), name);
+
+            return products.stream()
                     .map(ProductMapper::toDetailDto)
                     .toList();
 
@@ -167,5 +149,16 @@ public class ProductService implements IProductService {
             log.error("Error fetching products by brand: {}", brand, e);
             return List.of();
         }
+    }
+
+    @Override
+    public List<ProductDetail> getNewProducts() {
+        LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
+
+        List<Product> products = productRepository.findTop12ByStatusOrderByCreatedAtDesc(Product.Status.ACTIVE);
+
+        return products.stream()
+                .map(ProductDetail::fromEntity)
+                .collect(Collectors.toList());
     }
 }

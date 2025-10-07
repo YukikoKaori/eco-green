@@ -19,9 +19,12 @@ public class ProductMapper {
                 .description(product.getDescription())
                 .type(product.getType() != null ? product.getType().name() : null)
                 .price(product.getPrice())
-                .status(product.getStatus() != null ? product.getStatus().name() : null)
                 .conditionType(product.getConditionType() != null ? product.getConditionType().name() : null)
+                .status(product.getStatus() != null ? product.getStatus().name() : null)
                 .createdAt(product.getCreatedAt())
+                .sellerId(product.getSeller() != null ? product.getSeller().getId() : null)
+                .sellerName(product.getSeller() != null ? product.getSeller().getFullName() : null)
+                .sellerPhone(product.getSeller() != null ? product.getSeller().getPhone() : null)
                 .build();
     }
 

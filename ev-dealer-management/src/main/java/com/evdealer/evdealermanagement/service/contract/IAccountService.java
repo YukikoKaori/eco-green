@@ -13,6 +13,4 @@ public interface IAccountService {
 
     // Xóa account
     void deleteAccount(String userId);
-
-    AccountProfileResponse getProfile(Long userId);
 }

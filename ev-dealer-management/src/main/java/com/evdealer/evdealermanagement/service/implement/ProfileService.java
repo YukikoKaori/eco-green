@@ -53,27 +53,9 @@ public class ProfileService implements IAccountService {
         return AccountMapper.mapToAccountProfileResponse(saved);
     }
 
-    // If IAccountService requires Long overload, implement with conversion (but
-    // prefer updating interface)
-    // @Override
-    // public AccountProfileResponse updateProfile(Long userId, AccountUpdateRequest
-    // accountRequest) {
-    // String userIdStr = String.valueOf(userId); // Safe conversion assuming
-    // numeric Long
-    // return updateMemberProfile(userIdStr, accountRequest); // Delegate to String
-    // version
-    // }
-
     @Override
     public void deleteAccount(String userId) {
-        accountRepository.deleteById(userId); // Already correct
+        accountRepository.deleteById(userId);
     }
 
-    @Override
-    public AccountProfileResponse getProfile(Long userId) {
-        String userIdStr = String.valueOf(userId);
-        Account account = accountRepository.findById(userIdStr)
-                .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND, "User not found"));
-        return AccountMapper.mapToAccountProfileResponse(account);
-    }
 }

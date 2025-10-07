@@ -21,11 +21,8 @@ public class CustomAccountDetails implements UserDetails {
         return List.of(new SimpleGrantedAuthority("ROLE_" + account.getRole()));
     }
 
-//    public Long getId() {
-//        return Long.valueOf(account.getId());
-//    }
-    public String getId() {
-        return account.getId();
+    public Long getId() {
+        return Long.valueOf(account.getId());
     }
 
     public Account getAccount() { // Thêm phương thức getAccount
