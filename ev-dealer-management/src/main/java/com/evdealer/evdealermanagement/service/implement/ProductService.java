@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -28,15 +30,21 @@ public class ProductService implements IProductService {
     public List<ProductDetail> getAllProducts() {
         try {
             log.debug("Fetching all products");
-            return productRepository.findAll()
+            List<ProductDetail> list = productRepository.findAll()
                     .stream()
                     .map(ProductMapper::toDetailDto)
                     .toList();
+
+            List<ProductDetail> sortedList = new ArrayList<>(list);
+            sortedList.sort(Comparator.comparing(ProductDetail::getCreatedAt));
+
+            return sortedList;
         } catch (Exception e) {
             log.error("Error fetching all products", e);
             return List.of();
         }
     }
+
 
     @Override
     public Optional<ProductDetail> getProductById(Long id) {
@@ -64,8 +72,7 @@ public class ProductService implements IProductService {
         try {
             log.debug("Searching products by name: {}", name);
 
-            // Tìm trực tiếp theo title trong Product table
-            List<Product> products = productRepository.findByTitleContainingIgnoreCase(name.trim());
+            List<Product> products = productRepository.findTitlesByTitleContainingIgnoreCase(name.trim());
 
             if (products.isEmpty()) {
                 log.debug("No products found with name: {}", name);
