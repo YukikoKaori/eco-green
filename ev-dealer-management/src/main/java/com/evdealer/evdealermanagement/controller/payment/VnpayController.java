@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.evdealer.evdealermanagement.dto.payment.VnpayRequest;
+import com.evdealer.evdealermanagement.dto.payment.VnpayResponse;
 import com.evdealer.evdealermanagement.service.implement.VnpayService;
 
 import lombok.AllArgsConstructor;
@@ -22,14 +23,16 @@ public class VnpayController {
     private final VnpayService vnpayService;
 
     @PostMapping
-    public ResponseEntity<String> createPayment(@RequestBody VnpayRequest paymentRequest) {
+    public ResponseEntity<VnpayResponse> createPayment(@RequestBody VnpayRequest paymentRequest) {
         try {
-            String paymentUrl = vnpayService.createPayment(paymentRequest);
-            return ResponseEntity.ok(paymentUrl);
+            VnpayResponse response = vnpayService.createPayment(paymentRequest);
+            return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new VnpayResponse(null, null, e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đã xảy ra lỗi khi tạo thanh toán!");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new VnpayResponse(null, null, "Đã xảy ra lỗi khi tạo thanh toán!"));
         }
     }
 
