@@ -18,11 +18,12 @@ import org.springframework.stereotype.Service;
 
 import com.evdealer.evdealermanagement.configurations.VnpayConfig;
 import com.evdealer.evdealermanagement.dto.payment.VnpayRequest;
+import com.evdealer.evdealermanagement.dto.payment.VnpayResponse;
 import com.evdealer.evdealermanagement.utils.VnpSigner;
 
 @Service
 public class VnpayService {
-    public String createPayment(VnpayRequest paymentRequest) throws UnsupportedEncodingException {
+    public VnpayResponse createPayment(VnpayRequest paymentRequest) throws UnsupportedEncodingException {
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
         String orderType = "other";
@@ -48,7 +49,7 @@ public class VnpayService {
 
         vnp_Params.put("vnp_BankCode", bankCode);
         vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
-        vnp_Params.put("vnp_OrderInfo", "Thanh toan don hang:" + vnp_TxnRef);
+        vnp_Params.put("vnp_OrderInfo", "Thanh toán đơn hàng: " + vnp_TxnRef);
         vnp_Params.put("vnp_OrderType", orderType);
         vnp_Params.put("vnp_Locale", "vn");
         vnp_Params.put("vnp_ReturnUrl", VnpayConfig.vnp_ReturnUrl);
@@ -87,7 +88,9 @@ public class VnpayService {
         }
         query.append("&vnp_SecureHash=").append(vnp_SecureHash);
 
-        return VnpayConfig.vnp_PayUrl + "?" + query;
+        String paymentUrl = VnpayConfig.vnp_PayUrl + "?" + query.toString();
+
+        return new VnpayResponse(paymentUrl, vnp_TxnRef, "Tạo thanh toán thành công");
     }
 
     public ResponseEntity<String> handlePaymentReturn(String responseCode) {
