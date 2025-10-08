@@ -59,7 +59,7 @@ public class WishlistService implements IWishlistService {
                 });
 
         // Check if item already exists
-        if (wishlistItemRepository.existsByWishlistIdAndProductId(wishlist.getId(), productId)) {
+        if (wishlistItemRepository.existsByWishlist_IdAndProduct_Id(wishlist.getId(), productId)) {
             log.debug("Wishlist item already exists for wishlist: {}, product: {}", wishlist.getId(), productId);
             return;
         }
@@ -88,7 +88,7 @@ public class WishlistService implements IWishlistService {
                 .orElseThrow(() -> new AppException(ErrorCode.WISHLIST_NOT_FOUND, "Wishlist not found for account: " + accountId));
 
         // Delete the item
-        long deletedCount = wishlistItemRepository.deleteByWishlistIdAndProductId(wishlistId, productId);
+        long deletedCount = wishlistItemRepository.deleteByWishlist_IdAndProduct_Id(wishlistId, productId);
         if (deletedCount == 0) {
             log.warn("No wishlist item found to remove for wishlist: {}, product: {}", wishlistId, productId);
         } else {
@@ -105,21 +105,8 @@ public class WishlistService implements IWishlistService {
         validateUuid(accountId, "accountId");
 
         // Fetch page of wishlist items
-        Page<WishlistItem> page = wishlistItemRepository.findByWishlist_AccountId(accountId, pageable);
-
-        // Map to response
-        List<WishlistItemResponse> items = page.getContent().stream()
-                .map(WishlistMapper::mapToWishlistItemResponse)
-                .toList();
-
-        // Build response
-        return WishlistPageResponse.<WishlistItemResponse>builder()
-                .items(items)
-                .page(page.getNumber())
-                .size(page.getSize())
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .build();
+        Page<WishlistItem> page = wishlistItemRepository.findByWishlist_Account_Id(accountId, pageable);
+        return WishlistPageResponse.fromPage(page, WishlistMapper::mapToWishlistItemResponse);
     }
 
     private void validateUuid(String id, String fieldName) {

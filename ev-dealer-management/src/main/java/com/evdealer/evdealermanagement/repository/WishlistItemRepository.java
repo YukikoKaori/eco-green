@@ -11,14 +11,14 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface WishlistItemRepository extends JpaRepository<WishlistItem, String> {
 
-    boolean existsByWishlistIdAndProductId(String wishlistId, String productId);
+    boolean existsByWishlist_IdAndProduct_Id(String wishlistId, String productId);
 
     @Modifying
-    long deleteByWishlistIdAndProductId(String wishlistId, String productId);
+    long deleteByWishlist_IdAndProduct_Id(String wishlistId, String productId);
 
     @EntityGraph(attributePaths = {"product", "product.images"})
     Page<WishlistItem> findByWishlistId(String wishlistId, Pageable pageable);
 
     @EntityGraph(attributePaths = {"product", "product.images"})
-    Page<WishlistItem> findByWishlist_AccountId(String accountId, Pageable pageable);
+    Page<WishlistItem> findByWishlist_Account_Id(String accountId, Pageable pageable);
 }

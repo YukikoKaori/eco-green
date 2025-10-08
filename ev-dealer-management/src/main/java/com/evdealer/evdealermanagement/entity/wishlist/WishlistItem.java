@@ -29,9 +29,9 @@ public class WishlistItem extends BaseEntity {
     private LocalDateTime addedAt;
 
     @PrePersist
-    protected void onCreate() {
+    protected void onCreate( ) {
         if (addedAt == null) {
-            addedAt = LocalDateTime.now();
+            addedAt= LocalDateTime.now();
         }
     }
 }

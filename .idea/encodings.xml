@@ -3,5 +3,6 @@
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$/ev-dealer-management/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/ev-dealer-management/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ev-dealer-management/src/main/resources/.env" charset="UTF-8" />
   </component>
 </project>
