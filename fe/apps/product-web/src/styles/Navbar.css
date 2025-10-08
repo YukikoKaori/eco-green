@@ -19,12 +19,9 @@
 }
 
 .navbar {
-  position: sticky;
   top: 0;
   z-index: 50;
   width: 100%;
-  transition: all 0.3s ease;
-  overflow: visible;
 }
 
 .navbar::before {
@@ -35,8 +32,6 @@
   background-size: cover;
   background-repeat: no-repeat;
   opacity: 1;
-  transition: opacity 0.4s ease;
-  will-change: opacity;
   pointer-events: none;
   z-index: -1;
 }
@@ -50,14 +45,9 @@
 }
 
 .navbar-inner {
-  height: 64px;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 0 1rem;
 }
 
-.banner {
-  background: transparent;
-  transition: opacity 0.4s ease;
-}

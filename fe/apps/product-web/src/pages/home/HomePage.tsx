@@ -27,7 +27,7 @@ export default function HomePage() {
     { name: "MG", src: "/images/mg.png", to: "/xe-dien?brand=MG" },
   ];
   return (
-    <div className="relative w-full mb-10 mt-5">
+    <div className="relative w-full mb-10 mt-8">
       <div
         aria-hidden
         className="
