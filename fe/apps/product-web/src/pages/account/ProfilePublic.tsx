@@ -106,10 +106,10 @@ export default function ProfilePublic() {
                     <li className="flex items-center gap-2">
                       <span className="font-medium text-foreground">Đã xác thực:</span>
                       <span className="inline-flex items-center gap-2 text-lg leading-none">
-                        <span title="SĐT">📱</span>
-                        <span title="Email">✉️</span>
-                        <span title="Google">🟢</span>
-                        <span title="Facebook">🔵</span>
+                        <span title="SĐT">?</span>
+                        <span title="Email">?</span>
+                        <span title="Google">?</span>
+                        <span title="Facebook">?</span>
                       </span>
                     </li>
                     <li>

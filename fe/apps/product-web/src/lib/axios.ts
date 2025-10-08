@@ -6,9 +6,8 @@ const BASE_URL = RAW.replace(/\/+$/, "");
 if (!BASE_URL || !/^https?:\/\//.test(BASE_URL)) {
   console.error("⚠️ VITE_API_URL không hợp lệ:", RAW);
 }
-
 const api = axios.create({
-  baseURL: BASE_URL || "https://ecogreenbe-production.up.railway.app",
+  baseURL: BASE_URL,
   withCredentials: false,
   timeout: 15000,
 });
@@ -54,7 +53,7 @@ api.interceptors.response.use(
         sessionStorage.removeItem("access_token");
         localStorage.removeItem("current_user");
         sessionStorage.removeItem("current_user");
-      } catch {}
+      } catch { }
 
       if (typeof window !== "undefined" && window.location.pathname !== "/login") {
         isRedirecting = true;

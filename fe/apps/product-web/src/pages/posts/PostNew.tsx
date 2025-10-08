@@ -1,3 +1,4 @@
+// src/pages/posts/PostNew.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -28,13 +29,13 @@ type FormState = {
   capacityWh?: string;
   voltage?: string;
 
-  /* Xe điện */
-  origin?: string;     
-  bodyType?: string;   
-  seats?: string;      
-  color?: string;     
-  plate?: string;     
-  owners?: string;     
+  /* Mở rộng cho xe điện */
+  origin?: string;
+  bodyType?: string;
+  seats?: string;
+  color?: string;
+  plate?: string;
+  owners?: string;
 };
 
 const MAX_IMAGES = 10;
@@ -45,12 +46,17 @@ const MAX_DESC = 1500;
 const BRANDS = ["VinFast", "Yadea", "Gogoro", "Honda", "Xiaomi", "Dat Bike", "Khác"];
 const PIN_TYPES = ["LFP (LiFePO₄)", "NMC", "NCA", "Lead Acid", "Khác"];
 
-/* Fake API */
+/** Fake API: tạo tin, trả về id để điều hướng sang trang Notice */
 async function createListing(form: FormState, images: File[]) {
+  // Ở bản thật: gọi API backend, truyền FormData
   const fd = new FormData();
   Object.entries(form).forEach(([k, v]) => v != null && fd.append(k, String(v)));
   images.forEach((f) => fd.append("images", f));
+
+  // Giả lập độ trễ
   await new Promise((r) => setTimeout(r, 600));
+
+  // Giả lập thành công + id tin
   return { ok: true, id: crypto.randomUUID() };
 }
 
@@ -58,12 +64,12 @@ export default function PostNew() {
   const { user } = useAuth();
   const nav = useNavigate();
 
-  /* ===== Images ===== */
+  // ===== Hình ảnh =====
   const [imgs, setImgs] = useState<ImgItem[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  /* ===== Form ===== */
+  // ===== Form =====
   const [form, setForm] = useState<FormState>({
     category: "xe_dien",
     brand: "",
@@ -72,16 +78,16 @@ export default function PostNew() {
     price: "",
     address: user?.address || "",
 
-    /* xe điện */
+    // xe điện
     year: "",
     odoKm: "",
 
-    /* pin điện */
+    // pin điện
     pinType: "",
     capacityWh: "",
     voltage: "",
 
-    /* thêm cho xe điện */
+    // mở rộng
     origin: "",
     bodyType: "",
     seats: "",
@@ -102,13 +108,16 @@ export default function PostNew() {
     return true;
   }, [imgs.length, form, isXeDien]);
 
+  // tự đặt ảnh đầu tiên làm bìa khi chưa chọn
   useEffect(() => {
     if (imgs.length && !imgs.some((i) => i.cover)) {
       setImgs((arr) => arr.map((it, idx) => ({ ...it, cover: idx === 0 })));
     }
   }, [imgs.length]);
 
-  function pick() { fileRef.current?.click(); }
+  function pick() {
+    fileRef.current?.click();
+  }
   function addFiles(files: FileList | null) {
     if (!files?.length) return;
     const remain = MAX_IMAGES - imgs.length;
@@ -117,31 +126,60 @@ export default function PostNew() {
     setImgs((arr) => [...arr, ...valid.map((f) => ({ file: f, url: URL.createObjectURL(f) }))]);
   }
   function onDrop(e: React.DragEvent) {
-    e.preventDefault(); e.stopPropagation(); setDragOver(false); addFiles(e.dataTransfer.files);
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    addFiles(e.dataTransfer.files);
   }
   function removeImg(i: number) {
     setImgs((arr) => {
-      const next = [...arr]; URL.revokeObjectURL(next[i]?.url); next.splice(i, 1); return next;
+      const next = [...arr];
+      URL.revokeObjectURL(next[i]?.url);
+      next.splice(i, 1);
+      return next;
     });
   }
-  function setCover(i: number) { setImgs((arr) => arr.map((it, idx) => ({ ...it, cover: idx === i }))); }
+  function setCover(i: number) {
+    setImgs((arr) => arr.map((it, idx) => ({ ...it, cover: idx === i })));
+  }
 
+  // ===== Submit =====
   const [submitting, setSubmitting] = useState(false);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit || submitting) return;
+
     setSubmitting(true);
     try {
-      const images = imgs.slice().sort((a, b) => (a.cover ? -1 : 0) - (b.cover ? -1 : 0)).map((i) => i.file);
+      // Ưu tiên file ảnh bìa lên đầu
+      const images = imgs
+        .slice()
+        .sort((a, b) => (a.cover ? -1 : 0) - (b.cover ? -1 : 0))
+        .map((i) => i.file);
+
       const res = await createListing(form, images);
-      if (res.ok) { alert("Đăng tin thành công!"); nav("/account"); }
-      else alert("Có lỗi khi đăng tin.");
-    } finally { setSubmitting(false); }
+
+      if (res.ok) {
+        // ✅ Điều hướng sang trang Notice ngay sau khi tạo tin
+        nav(`/post/notice/${res.id}`, {
+          state: {
+            firstPostFree: true,       // ví dụ flag lần đầu
+            postedDays: 60,            // ví dụ số ngày đăng
+            startAt: new Date().toISOString(),
+          },
+          replace: true,
+        });
+      } else {
+        alert("Có lỗi khi đăng tin.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
     <form onSubmit={onSubmit} className="container mx-auto max-w-6xl px-4 py-6">
-
       {/* TRÁI–PHẢI cố định; màn nhỏ kéo ngang */}
       <div className="overflow-x-auto bg-gray-100">
         <div className="min-w-[1120px] flex items-start gap-2">
@@ -157,7 +195,10 @@ export default function PostNew() {
             <div
               className={`mt-3 grid cursor-pointer place-content-center rounded-lg border-2 border-dashed p-5 text-center transition
               ${dragOver ? "border-[#0f766e] bg-teal-50" : "bg-white"}`}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver(true);
+              }}
               onDragLeave={() => setDragOver(false)}
               onDrop={onDrop}
               onClick={pick}
@@ -169,7 +210,14 @@ export default function PostNew() {
                 <div className="font-medium">Kéo thả ảnh vào đây hoặc bấm để chọn</div>
                 <div className="text-xs">Hỗ trợ JPG/PNG, tối đa 6MB/ảnh</div>
               </div>
-              <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => addFiles(e.target.files)}
+              />
             </div>
 
             {imgs.length > 0 && (
@@ -203,13 +251,14 @@ export default function PostNew() {
 
             <div className="mt-3 text-xs text-gray-600">
               Đã chọn <b>{imgs.length}</b> / {MAX_IMAGES} hình
-              {imgs.length < MIN_IMAGES && <span className="ml-2 text-red-600">• Cần tối thiểu {MIN_IMAGES} hình</span>}
+              {imgs.length < MIN_IMAGES && (
+                <span className="ml-2 text-red-600">• Cần tối thiểu {MIN_IMAGES} hình</span>
+              )}
             </div>
           </section>
 
           {/* RIGHT: form */}
           <section className="isolate flex-1 bg-white p-4 ">
-
             {/* Nhóm 1: Danh mục & Hãng */}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">
@@ -255,9 +304,7 @@ export default function PostNew() {
                       placeholder="VD: 2022"
                       inputMode="numeric"
                       value={form.year}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, year: e.target.value.replace(/\D/g, "") }))
-                      }
+                      onChange={(e) => setForm((f) => ({ ...f, year: e.target.value.replace(/\D/g, "") }))}
                     />
                   </div>
                   <div className="flex flex-col gap-1">
@@ -266,9 +313,7 @@ export default function PostNew() {
                       placeholder="VD: 3500"
                       inputMode="numeric"
                       value={form.odoKm}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, odoKm: e.target.value.replace(/\D/g, "") }))
-                      }
+                      onChange={(e) => setForm((f) => ({ ...f, odoKm: e.target.value.replace(/\D/g, "") }))}
                     />
                   </div>
                 </>
@@ -276,10 +321,7 @@ export default function PostNew() {
                 <>
                   <div className="flex flex-col gap-1">
                     <Label>Loại pin</Label>
-                    <Select
-                      value={form.pinType}
-                      onValueChange={(v) => setForm((f) => ({ ...f, pinType: v }))}
-                    >
+                    <Select value={form.pinType} onValueChange={(v) => setForm((f) => ({ ...f, pinType: v }))}>
                       <SelectTrigger className="relative z-10">
                         <SelectValue placeholder="Chọn loại pin" />
                       </SelectTrigger>
@@ -304,10 +346,7 @@ export default function PostNew() {
               )}
             </div>
 
-            {/* Nhóm 3: 
-              - Xe điện: 2 cột × 3 hàng (Xuất xứ | Kiểu dáng, Số chỗ | Màu sắc, Biển số | Số đời chủ)
-              - Pin điện: Điện áp (V)
-            */}
+            {/* Nhóm 3 */}
             {isXeDien ? (
               <div className="mt-4 grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
@@ -374,7 +413,7 @@ export default function PostNew() {
               </div>
             )}
 
-            {/* Giá (áp dụng cho cả 2 danh mục) */}
+            {/* Giá */}
             <div className="mt-4 grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">
                 <Label>Giá (Triệu đồng)</Label>
@@ -382,9 +421,7 @@ export default function PostNew() {
                   placeholder="VD: 15"
                   inputMode="numeric"
                   value={form.price}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, price: e.target.value.replace(/[^\d.]/g, "") }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, price: e.target.value.replace(/[^\d.]/g, "") }))}
                 />
               </div>
             </div>
@@ -441,7 +478,11 @@ export default function PostNew() {
               <Button type="button" variant="outline" onClick={() => alert("Đã lưu nháp (demo)")}>
                 Lưu nháp
               </Button>
-              <Button type="submit" disabled={!canSubmit || submitting} className="!bg-[#0f766e] !hover:bg-[#0e6a64]">
+              <Button
+                type="submit"
+                disabled={!canSubmit || submitting}
+                className="!bg-[#0f766e] !hover:bg-[#0e6a64]"
+              >
                 {submitting ? "Đang đăng..." : "Đăng tin"}
               </Button>
             </div>

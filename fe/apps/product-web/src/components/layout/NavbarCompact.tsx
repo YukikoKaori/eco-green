@@ -98,8 +98,9 @@ export default function Navbar() {
 
           {user ? (
             <Button asChild className="hidden md:flex !text-[#246f67] !bg-white">
-              <Link to="/dashboard">Quản lý tin</Link>
+              <Link to="/post/manage">Quản lý tin</Link>
             </Button>
+
           ) : (
             <Button asChild className="hidden md:flex !text-[#246f67] !bg-white">
               <Link to="/login">Đăng nhập</Link>

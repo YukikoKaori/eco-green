@@ -17,3 +17,47 @@
     background-position: center -35px;
   }
 }
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  transition: all 0.3s ease;
+  overflow: visible;
+}
+
+.navbar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("/images/navbar-bg.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 1;
+  transition: opacity 0.4s ease;
+  will-change: opacity;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.navbar-shrink {
+  background: linear-gradient(90deg, #246f67 0%, #01c5a7ff 50%);
+}
+
+.navbar-shrink::before {
+  opacity: 0;
+}
+
+.navbar-inner {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 1rem;
+}
+
+.banner {
+  background: transparent;
+  transition: opacity 0.4s ease;
+}

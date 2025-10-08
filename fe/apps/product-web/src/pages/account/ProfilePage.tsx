@@ -20,7 +20,7 @@ type Profile = {
   gender: "male" | "female" | "other" | "";
   birthday: string;
   avatarDataUrl?: string;
-  nationalId:string;
+  nationalId: string;
 };
 
 const toProfile = (u: UserProfile | null): Profile => {
@@ -37,7 +37,7 @@ const toProfile = (u: UserProfile | null): Profile => {
     gender,
     birthday: u?.dateOfBirth ? u.dateOfBirth.substring(0, 10) : "",
     avatarDataUrl: u?.avatarUrl ?? "",
-    nationalId:u?.nationalId ?? ""
+    nationalId: u?.nationalId ?? ""
   };
 };
 
@@ -151,8 +151,8 @@ export default function ProfilePage() {
         dateOfBirth: profile.birthday,
         avatarUrl: profile.avatarDataUrl,
         gender: profile.gender ? profile.gender.toUpperCase() : undefined,
-        taxCode:profile.taxCode,
-        nationalId:profile.nationalId
+        taxCode: profile.taxCode,
+        nationalId: profile.nationalId
       });
       alert("Đã lưu thay đổi");
 
@@ -168,7 +168,7 @@ export default function ProfilePage() {
           address: profile.address,
           avatarUrl: profile.avatarDataUrl,
           taxCode: profile.taxCode || null,
-          nationalId:profile.nationalId
+          nationalId: profile.nationalId
         },
         { remember: "local" }
       );
@@ -240,30 +240,30 @@ export default function ProfilePage() {
       {/* Thông tin cơ bản */}
       <section className="bg-white rounded-lg border shadow p-4 space-y-4">
         <div className="grid md:grid-cols-2 gap-4">
+          {/* Họ và tên – khóa cứng */}
           <div className="flex flex-col space-y-2">
-            <Label>Họ và tên</Label>
+            <Label>
+              Họ và tên <span className="text-red-500">*</span>
+            </Label>
             <Input
               value={profile.name}
-              onChange={(e) => setProfile((p) => (p ? { ...p, name: e.target.value } : p))}
-              placeholder="Nhập họ tên"
-              required
+              readOnly
+              aria-readonly="true"
+              className="cursor-not-allowed bg-neutral-50 text-neutral-700"
             />
           </div>
+
+          {/* Điện thoại – khóa cứng */}
           <div className="flex flex-col space-y-2">
-            <Label>Điện thoại</Label>
+            <Label>
+              Điện thoại <span className="text-red-500">*</span>
+            </Label>
             <Input
               value={profile.phone}
-              onChange={(e) => {
-                const v = e.target.value.trim();
-                setProfile((p) => (p ? { ...p, phone: v } : p));
-                setErrors((er) => ({ ...er, phone: validatePhone(v) }));
-              }}
-              onBlur={(e) => setErrors((er) => ({ ...er, phone: validatePhone(e.target.value.trim()) }))}
-              placeholder="VD: 0981234567"
-              aria-invalid={!!errors.phone}
-              className={errors.phone ? "ring-2 ring-red-400 focus-visible:ring-red-400" : ""}
+              readOnly
+              aria-readonly="true"
+              className="cursor-not-allowed bg-neutral-50 text-neutral-700"
             />
-            {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
           </div>
         </div>
 

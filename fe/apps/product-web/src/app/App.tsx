@@ -12,6 +12,8 @@ import ProfilePublicPage from "@/pages/account/ProfilePublic";
 import PrivateRoute from "@/app/PrivateRoute";
 import GuestOnlyRoute from "@/app/GuestOnlyRoute";
 import PostNew from "@/pages/posts/PostNew";
+import PostManage from "@/pages/posts/PostManage";
+import PostNotice from "@/pages/posts/PostNotice";
 export default function App() {
   return (
     <Routes>
@@ -20,7 +22,9 @@ export default function App() {
       </Route>
 
       <Route element={<LayoutCompact />}>
-
+        <Route path="/post/notice/:id" element={
+          <PrivateRoute><PostNotice /></PrivateRoute>
+        } />
         <Route path="/profile/:username" element={<ProfilePublicPage />} />
         <Route path="/post/new"
           element={
@@ -29,6 +33,15 @@ export default function App() {
             </PrivateRoute>
           }
         />
+        <Route
+          path="/post/manage"
+          element={
+            <PrivateRoute>
+              <PostManage />
+            </PrivateRoute>
+          }
+        />
+
         <Route
           path="/account"
           element={

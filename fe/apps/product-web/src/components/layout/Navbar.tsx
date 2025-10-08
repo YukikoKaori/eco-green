@@ -26,9 +26,27 @@ export default function Navbar() {
   const { user } = useAuth();
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 50);
+    const THRESHOLD = 60; 
+    const HYST = 12;      
+    let ticking = false;
+
+    const handleScroll = () => {
+      const y = window.scrollY;
+
+      if (ticking) return;
+      ticking = true;
+
+      requestAnimationFrame(() => {
+        setIsScrolled(prev => {
+          if (prev) return y > (THRESHOLD - HYST);
+          return y > (THRESHOLD + HYST);
+        });
+        ticking = false;
+      });
+    };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
+    handleScroll(); 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -163,7 +181,7 @@ export default function Navbar() {
               asChild
               className="hidden md:flex !text-[#246f67] !bg-white"
             >
-              <Link to="/">Quản lý tin</Link>
+              <Link to="/post/manage">Quản lý tin</Link>
             </Button>
           ) : (
             <Button
