@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { User as UserIcon, Lock, Eye, EyeOff, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { registerApi } from "@/api/auth"; 
+import { registerApi, loginApi, getMe, oauthUrls } from "@/api/auth";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function AuthRegister() {
   const [showPw, setShowPw] = useState(false);
@@ -12,25 +13,36 @@ export default function AuthRegister() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const nav = useNavigate();
+  const { setUser } = useAuth();
 
   async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await registerApi({ fullName, phone, password }); 
-      nav("/login");
-    } catch (err) {
-      console.error("Register failed:", err); 
-    } finally {
-      setLoading(false);
-    }
+  e.preventDefault();
+  if (loading) return;
+  setLoading(true);
+
+  try {
+    const name = fullName.trim();
+    const ph = phone.trim();
+    const pw = password;
+
+    await registerApi({ fullName: name, phone: ph, password: pw });
+
+    alert("Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.");
+    nav("/login");
+  } catch (err: any) {
+    console.error("Register failed:", err);
+    alert(err?.response?.data?.message || "Đăng ký thất bại, vui lòng thử lại.");
+  } finally {
+    setLoading(false);
   }
+}
+
 
   function onGoogle() {
-    window.location.assign("/api/auth/google");
+    window.location.assign(oauthUrls.google);
   }
   function onFacebook() {
-    window.location.assign("/api/auth/facebook");
+    window.location.assign(oauthUrls.facebook);
   }
 
   return (

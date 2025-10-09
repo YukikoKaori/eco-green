@@ -1,3 +1,4 @@
+// src/pages/auth/AuthLogin.tsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Phone, Lock, Eye, EyeOff } from "lucide-react";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { loginApi, oauthUrls, getMe } from "@/api/auth";
 import { useAuth } from "@/contexts/AuthContext";
-import api from "@/lib/axios"; // để gắn Authorization header
+import api from "@/lib/axios";
 
 export default function AuthLogin() {
   const [showPw, setShowPw] = useState(false);
@@ -21,11 +22,13 @@ export default function AuthLogin() {
     e.preventDefault();
     if (loading) return;
 
-    if (!/^\d{9,11}$/.test(phone)) {
+    const p = phone.trim();
+    const pw = password;
+    if (!/^\d{9,11}$/.test(p)) {
       setError("Số điện thoại không hợp lệ (9–11 chữ số).");
       return;
     }
-    if (!password) {
+    if (!pw) {
       setError("Vui lòng nhập mật khẩu.");
       return;
     }
@@ -34,26 +37,22 @@ export default function AuthLogin() {
     setError(null);
 
     try {
-      // 1. Gọi login API
-      const res = await loginApi({ phone, password });
+      const res = await loginApi({ phone: p, password: pw });
 
-      const token = res.token;
-      if (!token) throw new Error("Không tìm thấy token trong phản hồi.");
-      const raw = token.startsWith("Bearer ") ? token.slice(7) : token;
+      // Chuẩn hoá token và lưu theo tuỳ chọn “Nhớ tài khoản”
+      const tokenRaw = res.token;
+      if (!tokenRaw) throw new Error("Không tìm thấy token trong phản hồi.");
+      const bare = tokenRaw.startsWith("Bearer ") ? tokenRaw.slice(7) : tokenRaw;
 
-      // 2. Lưu token
       const store = remember ? localStorage : sessionStorage;
-      store.setItem("access_token", raw);
+      store.setItem("access_token", bare);
+      api.defaults.headers.common.Authorization = `Bearer ${bare}`;
 
-      // 3. Gắn Authorization header cho axios
-      api.defaults.headers.common.Authorization = `Bearer ${raw}`;
-
-      // 4. Gọi getMe để lấy đủ hồ sơ
       const me = await getMe();
 
-      // 5. Lưu user vào context
       setUser(
         {
+          id: me.id,
           username: me.username,
           fullName: me.fullName,
           email: me.email ?? "",
@@ -70,7 +69,6 @@ export default function AuthLogin() {
         { remember: remember ? "local" : "session" }
       );
 
-      // 6. Điều hướng về home
       nav("/");
     } catch (err: any) {
       const msg =
@@ -87,7 +85,6 @@ export default function AuthLogin() {
   function onFacebook() {
     window.location.assign(oauthUrls.facebook);
   }
-
 
   return (
     <div
@@ -199,24 +196,22 @@ export default function AuthLogin() {
         </div>
 
         {/* Social Login */}
-        <div className="grid gap-2">
+        <div className="grid gap-2 mb-5">
           <button
-            type="button"
             onClick={onGoogle}
-            disabled={loading}
-            className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-full border border-gray-200 bg-white text-gray-800"
+            type="button"
+            className="!inline-flex !items-center !justify-center !gap-2 !w-full !h-10 !rounded-full !border !border-gray-200 !bg-white !text-gray-800"
           >
             <GoogleIcon className="w-5 h-5" />
-            <span>Tiếp tục với Google</span>
+            <span>Đăng ký với Google</span>
           </button>
           <button
-            type="button"
             onClick={onFacebook}
-            disabled={loading}
-            className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-full border border-gray-200 bg-white text-gray-800"
+            type="button"
+            className="!inline-flex !items-center !justify-center !gap-2 !w-full !h-10 !rounded-full !border !border-gray-200 !bg-white !text-gray-800"
           >
             <FacebookIcon className="w-5 h-5" />
-            <span>Tiếp tục với Facebook</span>
+            <span>Đăng ký với Facebook</span>
           </button>
         </div>
       </div>

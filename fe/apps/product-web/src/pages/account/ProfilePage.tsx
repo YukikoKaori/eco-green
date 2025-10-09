@@ -2,13 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select, SelectTrigger, SelectContent, SelectItem, SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 import { getMe, updateMe, uploadAvatar, UserProfile } from "@/api/auth";
 import { useAuth } from "@/contexts/AuthContext";
+
 const DEFAULT_AVATAR = "/images/avatar-default.png";
 
 type Profile = {
@@ -25,9 +24,7 @@ type Profile = {
 
 const toProfile = (u: UserProfile | null): Profile => {
   const g = u?.gender ? u.gender.toLowerCase() : "";
-  const gender: Profile["gender"] =
-    g === "male" || g === "female" || g === "other" ? (g as any) : "";
-
+  const gender: Profile["gender"] = g === "male" || g === "female" || g === "other" ? (g as any) : "";
   return {
     name: u?.fullName ?? "",
     phone: u?.phone ?? "",
@@ -47,31 +44,26 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(user ? toProfile(user as any) : null);
   const [loading, setLoading] = useState(!user);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
+  // Run-once hydrate (tránh lặp vô hạn do setUser làm thay đổi user)
+  const hydratedRef = useRef(false);
   useEffect(() => {
-    if (!profile && user) setProfile(toProfile(user as any));
-
-    const needHydrate =
-      !user ||
-      !(user as any).gender ||
-      !(user as any).dateOfBirth ||
-      (user as any).address === undefined ||
-      (user as any).avatarUrl === undefined ||
-      (user as any).taxCode === undefined ||
-      (user as any).nationalId === undefined;
+    if (hydratedRef.current) return;
+    hydratedRef.current = true;
 
     let cancelled = false;
-
-    async function hydrate() {
+    (async () => {
       try {
         if (!user) setLoading(true);
         const me = await getMe();
         if (cancelled) return;
 
         setProfile(toProfile(me));
-
+        // chỉ setUser một lần sau khi getMe
         setUser(
           {
+            id: me.id,
             username: me.username,
             fullName: me.fullName,
             email: me.email ?? "",
@@ -96,11 +88,12 @@ export default function ProfilePage() {
       } finally {
         setLoading(false);
       }
-    }
+    })();
 
-    if (needHydrate) hydrate();
-    return () => { cancelled = true; };
-  }, [user]);
+    return () => {
+      cancelled = true;
+    };
+  }, []); // ⬅️ không phụ thuộc user nữa
 
   // ===== Avatar =====
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -112,8 +105,7 @@ export default function ProfilePage() {
     if (file.size > 2 * 1024 * 1024) return alert("Ảnh tối đa 2MB.");
 
     const reader = new FileReader();
-    reader.onload = () =>
-      setProfile((p) => (p ? { ...p, avatarDataUrl: String(reader.result || "") } : p));
+    reader.onload = () => setProfile((p) => (p ? { ...p, avatarDataUrl: String(reader.result || "") } : p));
     reader.readAsDataURL(file);
 
     try {
@@ -133,47 +125,55 @@ export default function ProfilePage() {
   const validateId = (v: string) =>
     !v ? undefined : idRe.test(v) ? undefined : "CCCD/CMND 9 hoặc 12 số, hoặc hộ chiếu 8-9 ký tự (A-Z,0-9)";
 
-  // ===== Submit lưu hồ sơ =====
+  // map UserProfile -> AppUser (cho setUser)
+  const toAppUser = (u: UserProfile) => ({
+    id: u.id,
+    username: u.username,
+    fullName: u.fullName,
+    email: u.email ?? null,
+    phone: u.phone,
+    status: u.status,
+    gender: u.gender,
+    dateOfBirth: u.dateOfBirth ?? null,
+    address: u.address ?? null,
+    avatarUrl: u.avatarUrl ?? null,
+    taxCode: u.taxCode ?? null,
+    role: u.role,
+    nationalId: u.nationalId ?? null
+  });
+
+  // ===== Submit =====
   const onSubmit: React.FormEventHandler = async (e) => {
     e.preventDefault();
     if (!profile) return;
 
-    const next = { phone: validatePhone(profile.phone), idNumber: validateId(profile.nationalId) };
+    const next = { phone: validatePhone(profile.phone), nationalId: validateId(profile.nationalId) };
     setErrors(next);
-    if (next.phone || next.idNumber) return;
+    if (next.phone || next.nationalId) return;
 
     try {
-      await updateMe({
+      setSubmitting(true);
+
+      const updated = await updateMe({
         fullName: profile.name,
         phone: profile.phone,
         address: profile.address,
-        email: profile.email,
-        dateOfBirth: profile.birthday,
+        email: profile.email || undefined,       
+        dateOfBirth: profile.birthday,         
         avatarUrl: profile.avatarDataUrl,
         gender: profile.gender ? profile.gender.toUpperCase() : undefined,
         taxCode: profile.taxCode,
         nationalId: profile.nationalId
       });
-      alert("Đã lưu thay đổi");
 
-      setUser(
-        {
-          username: user?.username || "",
-          fullName: profile.name,
-          email: profile.email,
-          phone: profile.phone,
-          status: user?.status || "ACTIVE",
-          gender: profile.gender ? profile.gender.toUpperCase() : undefined,
-          dateOfBirth: profile.birthday,
-          address: profile.address,
-          avatarUrl: profile.avatarDataUrl,
-          taxCode: profile.taxCode || null,
-          nationalId: profile.nationalId
-        },
-        { remember: "local" }
-      );
+      // cập nhật lại context từ response (đảm bảo có id hợp lệ)
+      setUser(toAppUser(updated), { remember: "local" });
+
+      alert("Đã lưu thay đổi");
     } catch (err: any) {
       alert(err?.response?.data?.message || "Lưu thất bại");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -183,9 +183,7 @@ export default function ProfilePage() {
       <div className="space-y-3">
         <h2 className="text-xl font-semibold text-[#246f67]">Hồ sơ cá nhân</h2>
         {fetchError && (
-          <div className="text-sm bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded">
-            {fetchError}
-          </div>
+          <div className="text-sm bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded">{fetchError}</div>
         )}
         <Button onClick={() => window.location.reload()} className="px-6 bg-[#246f67] text-white hover:bg-[#1f5c55]">
           Thử lại
@@ -196,13 +194,12 @@ export default function ProfilePage() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-6 md:max-w-3xl">
-      {/* Tiêu đề */}
       <h2 className="text-xl font-semibold border-b pb-2 text-[#246f67]">Hồ sơ cá nhân</h2>
       {fetchError && (
-        <div className="text-sm bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded">
-          {fetchError}
-        </div>
+        <div className="text-sm bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded">{fetchError}</div>
       )}
+
+      {/* Avatar */}
       <section className="bg-white rounded-lg border shadow p-4">
         <div className="flex items-center gap-4">
           <Avatar className="h-20 w-20 ring-2 ring-[#2ba195]/30 overflow-hidden">
@@ -237,33 +234,22 @@ export default function ProfilePage() {
           </div>
         </div>
       </section>
+
       {/* Thông tin cơ bản */}
       <section className="bg-white rounded-lg border shadow p-4 space-y-4">
         <div className="grid md:grid-cols-2 gap-4">
-          {/* Họ và tên – khóa cứng */}
           <div className="flex flex-col space-y-2">
             <Label>
               Họ và tên <span className="text-red-500">*</span>
             </Label>
-            <Input
-              value={profile.name}
-              readOnly
-              aria-readonly="true"
-              className="cursor-not-allowed bg-neutral-50 text-neutral-700"
-            />
+            <Input value={profile.name} readOnly aria-readonly="true" className="cursor-not-allowed bg-neutral-50 text-neutral-700" />
           </div>
 
-          {/* Điện thoại – khóa cứng */}
           <div className="flex flex-col space-y-2">
             <Label>
               Điện thoại <span className="text-red-500">*</span>
             </Label>
-            <Input
-              value={profile.phone}
-              readOnly
-              aria-readonly="true"
-              className="cursor-not-allowed bg-neutral-50 text-neutral-700"
-            />
+            <Input value={profile.phone} readOnly aria-readonly="true" className="cursor-not-allowed bg-neutral-50 text-neutral-700" />
           </div>
         </div>
 
@@ -277,7 +263,7 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* Email (readonly) */}
+      {/* Email (readOnly – đúng theo thiết kế hiện tại) */}
       <section className="bg-white rounded-lg border shadow p-4 space-y-2">
         <div className="flex items-center justify-between">
           <Label className="font-medium">Email</Label>
@@ -325,10 +311,7 @@ export default function ProfilePage() {
         <div className="grid md:grid-cols-2 gap-4">
           <div className="flex flex-col space-y-2 text-sm">
             <Label>Giới tính</Label>
-            <Select
-              value={profile.gender}
-              onValueChange={(val) => setProfile((p) => (p ? { ...p, gender: val as Profile["gender"] } : p))}
-            >
+            <Select value={profile.gender} onValueChange={(val) => setProfile((p) => (p ? { ...p, gender: val as Profile["gender"] } : p))}>
               <SelectTrigger className="!bg-white">
                 <SelectValue placeholder="Chọn giới tính" />
               </SelectTrigger>
@@ -342,11 +325,7 @@ export default function ProfilePage() {
 
           <div className="flex flex-col space-y-2">
             <Label>Ngày sinh</Label>
-            <Input
-              type="date"
-              value={profile.birthday}
-              onChange={(e) => setProfile((p) => (p ? { ...p, birthday: e.target.value } : p))}
-            />
+            <Input type="date" value={profile.birthday} onChange={(e) => setProfile((p) => (p ? { ...p, birthday: e.target.value } : p))} />
           </div>
         </div>
       </section>
@@ -355,9 +334,10 @@ export default function ProfilePage() {
       <div className="pt-1">
         <Button
           type="submit"
+          disabled={submitting}
           className="px-6 bg-gradient-to-r from-[#246f67] to-[#2ba195] text-white hover:from-[#1e5c55] hover:to-[#238678]"
         >
-          Lưu thay đổi
+          {submitting ? "Đang lưu..." : "Lưu thay đổi"}
         </Button>
       </div>
     </form>

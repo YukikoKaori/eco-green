@@ -1,9 +1,15 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import api from "@/lib/axios";
+import { logoutApi } from "@/api/auth"; 
+
+const STORAGE_USER_KEY = "current_user";
+const STORAGE_TOKEN_KEY = "access_token";
 
 export type AppUser = {
+  id: string;
   username: string;
   fullName: string;
-  email: string;
+  email?:  null; 
   phone: string;
   status: string;
   gender?: "MALE" | "FEMALE" | "OTHER" | string;
@@ -12,59 +18,96 @@ export type AppUser = {
   avatarUrl?: string | null;
   taxCode?: string | null;
   role?: string;
-  nationalId?:string |null;
+  nationalId?: string | null;
 };
 
 type AuthContextType = {
-  user: AppUser | null;   
+  user: AppUser | null;
+  isAuthenticated: boolean;
   setUser: (u: AppUser | null, opts?: { remember?: "local" | "session" }) => void;
-  logout: () => void;
+  logout: () => Promise<void>; 
 };
 
+function safeParse<T>(raw: string | null): T | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  isAuthenticated: false,
   setUser: () => {},
-  logout: () => {},
+  logout: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, _setUser] = useState<AppUser | null>(() => {
-    try {
-      const raw =
-        localStorage.getItem("current_user") ||
-        sessionStorage.getItem("current_user");
-      return raw ? (JSON.parse(raw) as AppUser) : null;
-    } catch {
-      localStorage.removeItem("current_user");
-      sessionStorage.removeItem("current_user");
-      return null;
-    }
+    const fromLocal = safeParse<AppUser>(localStorage.getItem(STORAGE_USER_KEY));
+    const fromSession = safeParse<AppUser>(sessionStorage.getItem(STORAGE_USER_KEY));
+    const u = fromLocal ?? fromSession ?? null;
+    return u && u.id ? u : null;
   });
 
+  const isAuthenticated = useMemo(() => !!user, [user]);
+
   function setUser(u: AppUser | null, opts?: { remember?: "local" | "session" }) {
-    _setUser(u);
+    localStorage.removeItem(STORAGE_USER_KEY);
+    sessionStorage.removeItem(STORAGE_USER_KEY);
 
-    localStorage.removeItem("current_user");
-    sessionStorage.removeItem("current_user");
-
-    if (u) {
-      const target =
-        (opts?.remember ?? "local") === "local" ? localStorage : sessionStorage;
-      target.setItem("current_user", JSON.stringify(u));
+    if (!u || !u.id) {
+      _setUser(null);
+      return;
     }
+
+    _setUser(u);
+    const target = (opts?.remember ?? "local") === "local" ? localStorage : sessionStorage;
+    target.setItem(STORAGE_USER_KEY, JSON.stringify(u));
   }
 
-  function logout() {
-    ["access_token", "current_user"].forEach((k) => {
+  async function logout() {
+    try {
+      await logoutApi();
+    } catch (err) {
+      console.warn("⚠️ BE logout lỗi hoặc chưa cấu hình, bỏ qua:", err);
+    }
+
+    [STORAGE_TOKEN_KEY, STORAGE_USER_KEY].forEach((k) => {
       localStorage.removeItem(k);
       sessionStorage.removeItem(k);
     });
+
+    try {
+      delete (api.defaults.headers as any).common?.Authorization;
+    } catch {}
+
     _setUser(null);
   }
 
+  useEffect(() => {
+    const token = localStorage.getItem(STORAGE_TOKEN_KEY) ?? sessionStorage.getItem(STORAGE_TOKEN_KEY);
+    if (!token) _setUser(null);
+  }, []);
+
+  useEffect(() => {
+    const onStorage = (ev: StorageEvent) => {
+      if (ev.key === STORAGE_USER_KEY) {
+        const next = safeParse<AppUser>(ev.newValue);
+        _setUser(next && next.id ? next : null);
+      }
+      if (ev.key === STORAGE_TOKEN_KEY && ev.newValue == null) {
+        _setUser(null);
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, setUser, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, setUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

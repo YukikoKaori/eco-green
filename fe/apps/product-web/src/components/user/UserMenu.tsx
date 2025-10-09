@@ -1,29 +1,15 @@
-// src/components/user/UserMenu.tsx
 import { JSX, memo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { logoutApi } from "@/api/auth";
 import {
-  Bookmark,
-  Search as SearchIcon,
-  Clock,
-  Star,
-  History,
-  Store,
-  Settings,
-  HelpCircle,
-  MessageSquare,
-  LogOut,
-  User,
-  ChevronRight,
-  Edit3,
+  Bookmark, Search as SearchIcon, Clock, Star, History, Store,
+  Settings, HelpCircle, MessageSquare, LogOut, User, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"; // ⬅️ thêm
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 
 type Item = { to: string; label: string; icon: JSX.Element; danger?: boolean };
@@ -61,8 +47,9 @@ function RowLink({ to, icon, label, danger }: Item) {
     <DropdownMenuItem asChild className="p-0">
       <Link
         to={to}
-        className={`flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2 no-underline text-sm ${danger ? "text-rose-600" : "text-gray-800"
-          }`}
+        className={`flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2 no-underline text-sm ${
+          danger ? "text-rose-600" : "text-gray-800"
+        }`}
       >
         <span className="flex items-center gap-3">
           <span className="text-gray-600">{icon}</span>
@@ -75,13 +62,19 @@ function RowLink({ to, icon, label, danger }: Item) {
 }
 
 export default memo(function UserMenu() {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth();       
+  const nav = useNavigate();               
   const isLoggedIn = !!user;
 
+  async function handleLogout() {
+    try { await logoutApi(); } catch (e) { console.warn("Server logout skipped:", e); }
+    await logout();
+    nav("/"); 
+  }
+
   const profileUrl = isLoggedIn ? `/profile/${encodeURIComponent(user!.username)}` : "/login";
-  const initials =
-    (user?.fullName?.charAt(0) || user?.username?.charAt(0) || "U").toUpperCase();
   const DEFAULT_AVATAR = "/images/avatar-default.png";
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -90,20 +83,13 @@ export default memo(function UserMenu() {
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent
-        align="end"
-        className="w-[360px] h-[600px] p-0 rounded-2xl border border-gray-200 shadow-sm"
-      >
+      <DropdownMenuContent align="end" className="w-[360px] h-[600px] p-0 rounded-2xl border border-gray-200 shadow-sm">
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <Link
               to={profileUrl}
-              aria-label={
-                isLoggedIn
-                  ? `Xem trang của ${user!.fullName || user!.username}`
-                  : "Đăng nhập"
-              }
+              aria-label={isLoggedIn ? `Xem trang của ${user!.fullName || user!.username}` : "Đăng nhập"}
               className="flex items-center gap-3 no-underline hover:opacity-90"
             >
               <Avatar className="w-14 h-14 ring-2 ring-[#2ba195]/20">
@@ -123,7 +109,7 @@ export default memo(function UserMenu() {
                   {user?.fullName || user?.username || "Khách"}
                 </div>
                 <div className="text-xs text-gray-500">
-                  {user?.email || user?.phone || "Đăng nhập để dùng đầy đủ tiện ích"}
+                  {user?.email ?? user?.phone ?? "Đăng nhập để dùng đầy đủ tiện ích"}
                 </div>
               </div>
             </Link>
@@ -134,16 +120,10 @@ export default memo(function UserMenu() {
               <div className="text-[#0f766e] font-semibold text-sm">Mua thì hời, bán thì lời!</div>
               <div className="text-gray-500 text-xs mb-3">Đăng nhập tài khoản nha!</div>
               <div className="flex items-center gap-3">
-                <Link
-                  to="/register"
-                  className="flex-1 h-9 rounded-full bg-white border border-gray-300 text-gray-800 text-sm grid place-content-center"
-                >
+                <Link to="/register" className="flex-1 h-9 rounded-full bg-white border border-gray-300 text-gray-800 text-sm grid place-content-center">
                   Tạo tài khoản
                 </Link>
-                <Link
-                  to="/login"
-                  className="flex-1 h-9 rounded-full bg-[#0f766e] text-white text-sm grid place-content-center"
-                >
+                <Link to="/login" className="flex-1 h-9 rounded-full bg-[#0f766e] text-white text-sm grid place-content-center">
                   Đăng nhập
                 </Link>
               </div>
@@ -156,9 +136,7 @@ export default memo(function UserMenu() {
           <div key={sec.title} className="px-4 py-3">
             <h4 className="text-gray-600 text-sm font-semibold mb-2">{sec.title}</h4>
             <div className="space-y-2">
-              {sec.items.map((it) => (
-                <RowLink key={it.to} {...it} />
-              ))}
+              {sec.items.map((it) => <RowLink key={it.to} {...it} />)}
             </div>
           </div>
         ))}
@@ -166,8 +144,12 @@ export default memo(function UserMenu() {
         {/* Logout */}
         {isLoggedIn && (
           <div className="px-4 pb-4">
-            <DropdownMenuItem className="p-0" onClick={logout}>
-              <button className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-rose-600">
+            <DropdownMenuItem className="p-0" onSelect={(e) => e.preventDefault()}>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-rose-600"
+              >
                 <span className="flex items-center gap-3">
                   <LogOut className="w-4 h-4 text-rose-600" />
                   Đăng xuất
