@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Menu, Heart, PlusCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,10 +24,10 @@ const mainNav = [
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { user } = useAuth();
-
+  const nav = useNavigate();
   useEffect(() => {
-    const THRESHOLD = 60; 
-    const HYST = 12;      
+    const THRESHOLD = 60;
+    const HYST = 12;
     let ticking = false;
 
     const handleScroll = () => {
@@ -46,7 +46,7 @@ export default function Navbar() {
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); 
+    handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -172,7 +172,14 @@ export default function Navbar() {
         {/* Actions */}
         <div className="ml-auto flex items-center gap-2">
           {/* Favorite */}
-          <Button size="icon" className="hidden sm:flex !bg-white">
+          <Button
+            type="button"
+            size="icon"
+            className="hidden sm:flex !bg-white"
+            aria-label="Danh sách theo dõi"
+            title="Danh sách theo dõi"
+            onClick={() => nav("/account/wishlist")}
+          >
             <Heart className="w-4 h-4 text-teal-700" />
           </Button>
 

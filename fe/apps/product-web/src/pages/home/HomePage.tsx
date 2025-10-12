@@ -1,21 +1,35 @@
 import { useEffect, useState } from "react";
 import BannerCarousel from "@/components/ui/BannerCarousel";
-import type { Listing } from "@/listings/types";
-import { mockListings } from "@/mocks/products";
+import type { ListingWithKey } from "@/listings/types";
 import KeywordSection from "@/components/ui/KeywordSection";
 import SeoAbout from "@/components/ui/SeoAbout";
 import BrandStrip, { BrandItem } from "@/components/ui/BrandStrip";
 import ListingTabs from "@/components/ui/ListingTabs";
+import { fetchLatestListings, fetchForYouListings } from "@/listings/api/listing.api"
 
 export default function HomePage() {
-  const [latest, setLatest] = useState<(Listing & { _key: string })[]>([]);
+  const [latest, setLatest] = useState<ListingWithKey[]>([]);
+  const [forYou, setForYou] = useState<ListingWithKey[]>([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const data = mockListings
-      .concat(mockListings)
-      .slice(0, 12)
-      .map((it, idx) => ({ ...it, _key: `${it.id}-${idx}` }));
-    setLatest(data);
+    (async () => {
+      try {
+        const [latestRes, forYouRes] = await Promise.all([
+          fetchLatestListings(),
+          fetchForYouListings(), 
+        ]);
+        setLatest(latestRes);
+        setForYou(forYouRes.length ? forYouRes : latestRes);
+      } catch (e) {
+        console.error("Load listings failed:", e);
+        setLatest([]); setForYou([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
+
   const brands: BrandItem[] = [
     { name: "VinFast", src: "/images/vinfast.png", to: "/xe-dien?brand=VinFast" },
     { name: "BYD", src: "/images/byd.png", to: "/xe-dien?brand=BYD" },
@@ -26,17 +40,12 @@ export default function HomePage() {
     { name: "Porsche", src: "/images/porsche.png", to: "/xe-dien?brand=Porsche" },
     { name: "MG", src: "/images/mg.png", to: "/xe-dien?brand=MG" },
   ];
+
   return (
     <div className="relative w-full mb-10 mt-8">
       <div
         aria-hidden
-        className="
-        fixed inset-0 z-0 bg-no-repeat bg-cover
-        bg-[position:center]
-        md:bg-[position:center]
-        lg:bg-[position:center]
-        xl:bg-[position:center_50px]
-        "
+        className="fixed inset-0 z-0 bg-no-repeat bg-cover bg-[position:center] md:bg-[position:center] lg:bg-[position:center] xl:bg-[position:center_50px]"
         style={{ backgroundImage: "url('/images/home-bg.png')" }}
       />
       <div className="relative z-10 mx-auto max-w-5xl p-4 md:p-0 space-y-4 ">
@@ -47,15 +56,23 @@ export default function HomePage() {
             heightClass="h-30 md:h-46 lg:h-52"
           />
         </section>
+
         <BrandStrip items={brands} />
         <section />
 
-        <ListingTabs
-          forYou={latest.slice(0, 12)}
-          latest={latest}
-          pageSize={8}
-          className="mt-1"
-        />
+        {loading ? (
+          <div className="text-center text-sm text-muted-foreground py-8">
+            Đang tải danh sách...
+          </div>
+        ) : (
+          <ListingTabs
+            forYou={forYou}
+            latest={latest}
+            pageSize={8}
+            className="mt-1"
+          />
+        )}
+
         <section>
           <SeoAbout />
         </section>

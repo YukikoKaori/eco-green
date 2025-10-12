@@ -1,14 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ListingCard from "@/listings/components/ListingCard";
-import type { Listing } from "@/listings/types";
+import type { ListingWithKey } from "@/listings/types";
 import { cn } from "@/lib/utils";
 import styles from "@/styles/ListingTabs.module.css";
 
 type Props = {
-  forYou: (Listing & { _key: string })[];
-  latest: (Listing & { _key: string })[];
+  forYou: ListingWithKey[];
+  latest: ListingWithKey[];
   className?: string;
-  pageSize?: number;
+  pageSize?: number; // số card thêm mỗi lần bấm
 };
 
 export default function ListingTabs({
@@ -18,36 +18,77 @@ export default function ListingTabs({
   pageSize = 8,
 }: Props) {
   const [tab, setTab] = useState<"foryou" | "latest">("foryou");
+
+  // Đếm số item đang hiển thị cho từng tab
+  const [counts, setCounts] = useState<{ foryou: number; latest: number }>({
+    foryou: pageSize,
+    latest: pageSize,
+  });
+
+  // Nếu pageSize prop thay đổi -> đồng bộ lại
+  useEffect(() => {
+    setCounts((c) => ({
+      foryou: Math.max(pageSize, c.foryou),
+      latest: Math.max(pageSize, c.latest),
+    }));
+  }, [pageSize]);
+
   const data = useMemo(() => (tab === "foryou" ? forYou : latest), [tab, forYou, latest]);
+  const visibleCount = tab === "foryou" ? counts.foryou : counts.latest;
+  const visible = useMemo(() => data.slice(0, visibleCount), [data, visibleCount]);
+  const canLoadMore = visibleCount < data.length;
+
+  const handleChangeTab = (t: "foryou" | "latest") => setTab(t);
+
+  const handleLoadMore = () => {
+    setCounts((c) =>
+      tab === "foryou"
+        ? { ...c, foryou: Math.min(c.foryou + pageSize, forYou.length) }
+        : { ...c, latest: Math.min(c.latest + pageSize, latest.length) }
+    );
+  };
 
   return (
     <section className={cn(styles.container, className)}>
-      {/* Tabs (text-only) + separator */}
+      {/* Tabs */}
       <div className={styles.tabsBar}>
-        <div className={styles.tabsWrapper}>
-          <Tab active={tab === "foryou"} onClick={() => setTab("foryou")} label="Dành cho bạn" />
-          <Tab active={tab === "latest"} onClick={() => setTab("latest")} label="Mới nhất" />
+        <div className={styles.tabsWrapper} role="tablist" aria-label="Bộ lọc tin">
+          <Tab active={tab === "foryou"} onClick={() => handleChangeTab("foryou")} label="Dành cho bạn" />
+          <Tab active={tab === "latest"} onClick={() => handleChangeTab("latest")} label="Mới nhất" />
         </div>
       </div>
 
-      {/* Grid */}
+      {/* Content */}
       <div className={styles.contentContainer}>
-        <div className={styles.grid}>
-          {data.slice(0, pageSize).map((item) => (
-            <div key={item._key} className={styles.cardWrapper}>
-              <div className={styles.card}>
-                <div className={styles.cardReset}>
-                  <ListingCard item={item} />
+        {visible.length === 0 ? (
+          <div className={styles.empty}>Chưa có tin phù hợp.</div>
+        ) : (
+          <div className={styles.grid}>
+            {visible.map((item) => (
+              <div key={item._key} className={styles.cardWrapper}>
+                <div className={styles.card}>
+                  <div className={styles.cardReset}>
+                    <ListingCard item={item} />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* CTA */}
-        <div className={styles.ctaContainer}>
-          <button className={styles.ctaButton}>Xem thêm</button>
-        </div>
+        {canLoadMore && (
+          <div className={styles.ctaContainer}>
+            <button
+              type="button"
+              className={styles.ctaButton}
+              onClick={handleLoadMore}
+              aria-label="Xem thêm tin"
+            >
+              Xem thêm
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -65,6 +106,8 @@ function Tab({
   return (
     <button
       type="button"
+      role="tab"
+      aria-selected={active}
       onClick={onClick}
       className={cn(styles.tabButton, active && styles.tabButtonActive)}
     >

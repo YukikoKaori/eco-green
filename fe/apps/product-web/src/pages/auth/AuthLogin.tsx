@@ -1,4 +1,3 @@
-// src/pages/auth/AuthLogin.tsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Phone, Lock, Eye, EyeOff } from "lucide-react";
@@ -39,7 +38,6 @@ export default function AuthLogin() {
     try {
       const res = await loginApi({ phone: p, password: pw });
 
-      // Chuẩn hoá token và lưu theo tuỳ chọn “Nhớ tài khoản”
       const tokenRaw = res.token;
       if (!tokenRaw) throw new Error("Không tìm thấy token trong phản hồi.");
       const bare = tokenRaw.startsWith("Bearer ") ? tokenRaw.slice(7) : tokenRaw;

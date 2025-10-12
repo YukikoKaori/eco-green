@@ -73,8 +73,6 @@ export const saveMock = (data: ListingItem[]) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch {}
 };
-
-// ---- Mock API hành động (minh hoạ) ----
 export async function apiView(id: string) { console.log("VIEW", id); }
 export async function apiEdit(id: string) { console.log("EDIT", id); }
 export async function apiRepost(id: string) { console.log("REPOST", id); }

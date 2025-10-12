@@ -14,6 +14,7 @@ import GuestOnlyRoute from "@/app/GuestOnlyRoute";
 import PostNew from "@/pages/posts/PostNew";
 import PostManage from "@/pages/posts/PostManage";
 import PostNotice from "@/pages/posts/PostNotice";
+import WishlistPage from "@/pages/account/WishlistPage";
 export default function App() {
   return (
     <Routes>
@@ -22,6 +23,7 @@ export default function App() {
       </Route>
 
       <Route element={<LayoutCompact />}>
+      <Route path="/account/wishlist" element={<WishlistPage/>} />
         <Route path="/post/notice/:id" element={
           <PrivateRoute><PostNotice /></PrivateRoute>
         } />

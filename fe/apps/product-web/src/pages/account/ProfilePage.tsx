@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-
 import { getMe, updateMe, uploadAvatar, UserProfile } from "@/api/auth";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -23,7 +22,7 @@ type Profile = {
 };
 
 const toProfile = (u: UserProfile | null): Profile => {
-  const g = u?.gender ? u.gender.toLowerCase() : "";
+  const g = u?.gender ? String(u.gender).toLowerCase() : "";
   const gender: Profile["gender"] = g === "male" || g === "female" || g === "other" ? (g as any) : "";
   return {
     name: u?.fullName ?? "",
@@ -34,50 +33,72 @@ const toProfile = (u: UserProfile | null): Profile => {
     gender,
     birthday: u?.dateOfBirth ? u.dateOfBirth.substring(0, 10) : "",
     avatarDataUrl: u?.avatarUrl ?? "",
-    nationalId: u?.nationalId ?? ""
+    nationalId: u?.nationalId ?? "",
   };
 };
 
+const toAppUser = (u: UserProfile) => ({
+  id: u.id,
+  username: u.username,
+  fullName: u.fullName,
+  email: u.email ?? null,
+  phone: u.phone,
+  status: u.status,
+  gender: u.gender,
+  dateOfBirth: u.dateOfBirth ?? null,
+  address: u.address ?? null,
+  avatarUrl: u.avatarUrl ?? null,
+  taxCode: u.taxCode ?? null,
+  role: u.role,
+  nationalId: u.nationalId ?? null,
+});
+
 export default function ProfilePage() {
-  const { user, setUser } = useAuth();
+  const { user, setUser, loading: authLoading } = useAuth();
 
   const [profile, setProfile] = useState<Profile | null>(user ? toProfile(user as any) : null);
-  const [loading, setLoading] = useState(!user);
+  const [loading, setLoading] = useState<boolean>(!user);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Run-once hydrate (tránh lặp vô hạn do setUser làm thay đổi user)
-  const hydratedRef = useRef(false);
+  // ===== Validate =====
+  const [errors, setErrors] = useState<{ name?: string; phone?: string; nationalId?: string; email?: string }>({});
+  const phoneRe = /^(\+84|0)(3|5|7|8|9)\d{8}$/;
+  const idRe = /^(?:\d{9}|\d{12}|[A-Z0-9]{8,9})$/i;
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const validatePhone = (v: string) =>
+    !v ? undefined : phoneRe.test(v) ? undefined : "Số điện thoại không hợp lệ (VD: 0981234567 hoặc +84981234567)";
+  const validateId = (v: string) =>
+    !v ? undefined : idRe.test(v) ? undefined : "CCCD/CMND 9 hoặc 12 số, hoặc hộ chiếu 8-9 ký tự (A-Z,0-9)";
+  const validateEmail = (v: string) =>
+    !v ? undefined : emailRe.test(v) ? undefined : "Email không hợp lệ (VD: ten@example.com)";
+  const validateName = (v: string) =>
+    !v.trim() ? "Họ và tên không được để trống"
+    : v.trim().length < 2 ? "Họ và tên quá ngắn"
+    : v.trim().length > 50 ? "Họ và tên tối đa 50 ký tự"
+    : undefined;
+
+  const [editingEmail, setEditingEmail] = useState(false);
+
+  const bootRef = useRef(false);
   useEffect(() => {
-    if (hydratedRef.current) return;
-    hydratedRef.current = true;
+    if (bootRef.current) return;
+    if (authLoading) return;
+    bootRef.current = true;
 
     let cancelled = false;
     (async () => {
       try {
-        if (!user) setLoading(true);
+        if (user) {
+          setProfile(toProfile(user as any));
+          setLoading(false);
+          return;
+        }
+        setLoading(true);
         const me = await getMe();
         if (cancelled) return;
-
+        setUser(toAppUser(me), { remember: "local" });
         setProfile(toProfile(me));
-        // chỉ setUser một lần sau khi getMe
-        setUser(
-          {
-            id: me.id,
-            username: me.username,
-            fullName: me.fullName,
-            email: me.email ?? "",
-            phone: me.phone,
-            status: me.status,
-            gender: me.gender,
-            dateOfBirth: me.dateOfBirth,
-            address: me.address,
-            avatarUrl: me.avatarUrl,
-            taxCode: me.taxCode ?? null,
-            nationalId: me.nationalId ?? null
-          },
-          { remember: "local" }
-        );
       } catch (e: any) {
         const msg =
           e?.response?.data?.message ||
@@ -86,14 +107,12 @@ export default function ProfilePage() {
             : "Không tải được hồ sơ.");
         setFetchError(msg);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
 
-    return () => {
-      cancelled = true;
-    };
-  }, []); // ⬅️ không phụ thuộc user nữa
+    return () => { cancelled = true; };
+  }, [authLoading, user?.id, setUser]);
 
   // ===== Avatar =====
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -116,59 +135,37 @@ export default function ProfilePage() {
     }
   };
 
-  const [errors, setErrors] = useState<{ phone?: string; nationalId?: string }>({});
-  const phoneRe = /^(\+84|0)(3|5|7|8|9)\d{8}$/;
-  const idRe = /^(?:\d{9}|\d{12}|[A-Z0-9]{8,9})$/i;
-
-  const validatePhone = (v: string) =>
-    !v ? undefined : phoneRe.test(v) ? undefined : "Số điện thoại không hợp lệ (VD: 0981234567 hoặc +84981234567)";
-  const validateId = (v: string) =>
-    !v ? undefined : idRe.test(v) ? undefined : "CCCD/CMND 9 hoặc 12 số, hoặc hộ chiếu 8-9 ký tự (A-Z,0-9)";
-
-  // map UserProfile -> AppUser (cho setUser)
-  const toAppUser = (u: UserProfile) => ({
-    id: u.id,
-    username: u.username,
-    fullName: u.fullName,
-    email: u.email ?? null,
-    phone: u.phone,
-    status: u.status,
-    gender: u.gender,
-    dateOfBirth: u.dateOfBirth ?? null,
-    address: u.address ?? null,
-    avatarUrl: u.avatarUrl ?? null,
-    taxCode: u.taxCode ?? null,
-    role: u.role,
-    nationalId: u.nationalId ?? null
-  });
-
   // ===== Submit =====
   const onSubmit: React.FormEventHandler = async (e) => {
     e.preventDefault();
     if (!profile) return;
 
-    const next = { phone: validatePhone(profile.phone), nationalId: validateId(profile.nationalId) };
+    const next = {
+      name: validateName(profile.name),
+      phone: validatePhone(profile.phone),
+      nationalId: validateId(profile.nationalId),
+      email: validateEmail(profile.email),
+    };
     setErrors(next);
-    if (next.phone || next.nationalId) return;
+    if (next.name || next.phone || next.nationalId || next.email) return;
 
     try {
       setSubmitting(true);
 
       const updated = await updateMe({
-        fullName: profile.name,
-        phone: profile.phone,
-        address: profile.address,
-        email: profile.email || undefined,       
-        dateOfBirth: profile.birthday,         
-        avatarUrl: profile.avatarDataUrl,
+        fullName: profile.name,                         
+        address: profile.address || undefined,
+        email: profile.email || null,
+        dateOfBirth: profile.birthday ? profile.birthday : null,
+        avatarUrl: profile.avatarDataUrl ? profile.avatarDataUrl : null,
+        taxCode: profile.taxCode || null,
         gender: profile.gender ? profile.gender.toUpperCase() : undefined,
-        taxCode: profile.taxCode,
-        nationalId: profile.nationalId
+        nationalId: profile.nationalId ? profile.nationalId : null,
       });
 
-      // cập nhật lại context từ response (đảm bảo có id hợp lệ)
       setUser(toAppUser(updated), { remember: "local" });
-
+      setProfile(toProfile(updated));
+      setEditingEmail(false);
       alert("Đã lưu thay đổi");
     } catch (err: any) {
       alert(err?.response?.data?.message || "Lưu thất bại");
@@ -178,13 +175,12 @@ export default function ProfilePage() {
   };
 
   if (loading) return <div className="p-4 text-sm text-muted-foreground">Đang tải hồ sơ...</div>;
+
   if (!profile) {
     return (
       <div className="space-y-3">
         <h2 className="text-xl font-semibold text-[#246f67]">Hồ sơ cá nhân</h2>
-        {fetchError && (
-          <div className="text-sm bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded">{fetchError}</div>
-        )}
+        {fetchError && <div className="text-sm bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded">{fetchError}</div>}
         <Button onClick={() => window.location.reload()} className="px-6 bg-[#246f67] text-white hover:bg-[#1f5c55]">
           Thử lại
         </Button>
@@ -195,9 +191,7 @@ export default function ProfilePage() {
   return (
     <form onSubmit={onSubmit} className="space-y-6 md:max-w-3xl">
       <h2 className="text-xl font-semibold border-b pb-2 text-[#246f67]">Hồ sơ cá nhân</h2>
-      {fetchError && (
-        <div className="text-sm bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded">{fetchError}</div>
-      )}
+      {fetchError && <div className="text-sm bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded">{fetchError}</div>}
 
       {/* Avatar */}
       <section className="bg-white rounded-lg border shadow p-4">
@@ -207,9 +201,7 @@ export default function ProfilePage() {
               src={profile.avatarDataUrl || DEFAULT_AVATAR}
               alt="avatar"
               className="object-cover"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = DEFAULT_AVATAR;
-              }}
+              onError={(e) => ((e.currentTarget as HTMLImageElement).src = DEFAULT_AVATAR)}
             />
             <AvatarFallback className="text-sm bg-gray-100">
               {(profile.name || "U").charAt(0).toUpperCase()}
@@ -235,14 +227,25 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* Thông tin cơ bản */}
       <section className="bg-white rounded-lg border shadow p-4 space-y-4">
         <div className="grid md:grid-cols-2 gap-4">
           <div className="flex flex-col space-y-2">
             <Label>
               Họ và tên <span className="text-red-500">*</span>
             </Label>
-            <Input value={profile.name} readOnly aria-readonly="true" className="cursor-not-allowed bg-neutral-50 text-neutral-700" />
+            <Input
+              value={profile.name}
+              onChange={(e) => {
+                const v = e.target.value;
+                setProfile((p) => (p ? { ...p, name: v } : p));
+                setErrors((er) => ({ ...er, name: validateName(v) }));
+              }}
+              onBlur={(e) => setErrors((er) => ({ ...er, name: validateName(e.target.value) }))}
+              placeholder="Nhập họ và tên"
+              aria-invalid={!!errors.name}
+              className={errors.name ? "ring-2 ring-red-400 focus-visible:ring-red-400" : ""}
+            />
+            {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
           </div>
 
           <div className="flex flex-col space-y-2">
@@ -263,19 +266,66 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* Email (readOnly – đúng theo thiết kế hiện tại) */}
       <section className="bg-white rounded-lg border shadow p-4 space-y-2">
         <div className="flex items-center justify-between">
           <Label className="font-medium">Email</Label>
-          <Button variant="link" type="button" className="!px-0 !text-[#246f67] !text-sm !hover:underline !bg-white">
-            Thay đổi
-          </Button>
+          <div className="space-x-3">
+            {!editingEmail ? (
+              <Button
+                variant="link"
+                type="button"
+                className="!px-0 !text-[#246f67] !text-sm !hover:underline !bg-white"
+                onClick={() => setEditingEmail(true)}
+              >
+                Thay đổi
+              </Button>
+            ) : (
+              <Button
+                variant="link"
+                type="button"
+                className="!px-0 !text-red-600 !text-sm !hover:underline !bg-white"
+                onClick={() => {
+                  if (user) {
+                    const p = toProfile(user as any);
+                    setProfile((prev) => (prev ? { ...prev, email: p.email } : prev));
+                  }
+                  setErrors((er) => ({ ...er, email: undefined }));
+                  setEditingEmail(false);
+                }}
+              >
+                Hủy
+              </Button>
+            )}
+          </div>
         </div>
-        <Input value={profile.email} readOnly />
-        <p className="text-xs text-gray-500">Dùng email này để nhận thông báo và đăng nhập.</p>
+
+        <Input
+          value={profile.email}
+          readOnly={!editingEmail}
+          onChange={(e) => {
+            const v = e.target.value.trim();
+            setProfile((p) => (p ? { ...p, email: v } : p));
+            setErrors((er) => ({ ...er, email: validateEmail(v) }));
+          }}
+          onBlur={(e) => setErrors((er) => ({ ...er, email: validateEmail(e.target.value.trim()) }))}
+          className={
+            editingEmail
+              ? errors.email
+                ? "ring-2 ring-red-400 focus-visible:ring-red-400"
+                : ""
+              : "cursor-not-allowed bg-neutral-50 text-neutral-700"
+          }
+          aria-invalid={!!errors.email}
+          placeholder="ten@example.com"
+        />
+        {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+        <p className="text-xs text-gray-500">
+          {editingEmail
+            ? "Email sẽ được cập nhật khi bạn bấm Lưu thay đổi."
+            : "Dùng email này để nhận thông báo và đăng nhập."}
+        </p>
       </section>
 
-      {/* CCCD / Hóa đơn */}
       <section className="bg-white rounded-lg border shadow p-4 space-y-4">
         <div className="grid md:grid-cols-2 gap-4">
           <div className="flex flex-col space-y-2">
@@ -306,12 +356,14 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* Giới tính / Ngày sinh */}
       <section className="bg-white rounded-lg border shadow p-4 space-y-4">
         <div className="grid md:grid-cols-2 gap-4">
           <div className="flex flex-col space-y-2 text-sm">
             <Label>Giới tính</Label>
-            <Select value={profile.gender} onValueChange={(val) => setProfile((p) => (p ? { ...p, gender: val as Profile["gender"] } : p))}>
+            <Select
+              value={profile.gender}
+              onValueChange={(val) => setProfile((p) => (p ? { ...p, gender: val as Profile["gender"] } : p))}
+            >
               <SelectTrigger className="!bg-white">
                 <SelectValue placeholder="Chọn giới tính" />
               </SelectTrigger>
