@@ -6,7 +6,6 @@ import type {
   ListingStatus,
 } from "@/listings/types";
 
-/* ===== helpers ===== */
 export function onlyActive(arr: RawListing[]): RawListing[] {
   return arr.filter((x) => String(x.status ?? "ACTIVE").toUpperCase() === "ACTIVE");
 }
@@ -19,13 +18,12 @@ export function sortByNewest<T extends { createdAt?: string }>(arr: T[]): T[] {
   });
 }
 
-/** Giá có thể là number | "4.200.000" | "8.500" | null/undefined */
 function toNumberOrString(v: unknown): number | string | null {
   if (v == null) return null;
   if (typeof v === "number") return v;
   const s = String(v);
   const cleaned = s.replace(/[^\d]/g, "");
-  if (!cleaned) return s; // giữ nguyên chuỗi nếu không parse được
+  if (!cleaned) return s; 
   const n = Number(cleaned);
   return Number.isFinite(n) ? n : s;
 }
@@ -50,7 +48,6 @@ function joinLocation(x: RawListing): string | null {
   return x.addressDetail ? String(x.addressDetail) : null;
 }
 
-/* ===== mapper chính ===== */
 export function mapRawToListing(x: RawListing): ListingWithKey {
   const conditionMap: Record<string, Condition> = {
     NEW: "NEW",

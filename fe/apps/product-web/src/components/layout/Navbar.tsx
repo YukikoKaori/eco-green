@@ -117,11 +117,11 @@ export default function Navbar() {
           </DropdownMenu>
 
           <Link to="/" className="inline-flex items-center">
-            <span className="inline-flex items-center bg-white border border-gray-200 rounded-md p-0.95 shadow-sm">
+            <span className="inline-flex items-center">
               <img
                 src="/images/logo-name.png"
                 alt="EcoGreen"
-                className="w-[80px] md:w-[80px] h-auto block object-contain"
+                className="w-[100px] md:w-[150px] h-auto block object-contain"
               />
             </span>
             <span className="sr-only">ECOGREEN</span>

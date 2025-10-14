@@ -1,4 +1,3 @@
-// ===== Domain types cho UI =====
 export type ListingType = "BATTERY" | "VEHICLE";
 export type Condition = "NEW" | "USED" | "LIKE_NEW";
 export type ListingStatus = "ACTIVE" | "INACTIVE" | "SOLD";
@@ -20,8 +19,7 @@ export interface Listing {
   description?: string | null;
 
   type: ListingType;
-  price: string | number | null;      // ⬅️ cho phép string/number/null
-
+  price: string | number | null;     
   condition?: Condition;
   status?: ListingStatus;
 
@@ -33,7 +31,7 @@ export interface Listing {
 
   thumbnail?: string | null;
 
-  location?: string | null;           // "Ward, District, City" hoặc null
+  location?: string | null;        
   distance?: string | number | null;
 
   slug?: string;
@@ -56,14 +54,13 @@ export interface Listing {
 
 export type ListingWithKey = Listing & { _key: string };
 
-// ===== Raw từ BE /product/filter/new =====
 export interface RawListing {
   id: string;
   title: string;
   description?: string | null;
 
   type: "BATTERY" | "VEHICLE" | string;
-  price?: string | number | null;             // ⬅️ BE trả "4.200.000" | "8.500" | number
+  price?: string | number | null;             
 
   conditionType?: "NEW" | "USED" | "LIKE_NEW" | string;
   status?: "ACTIVE" | "INACTIVE" | "SOLD" | string;

@@ -21,13 +21,29 @@ export type WishListResponse = {
 export async function fetchAllWishlistIds(): Promise<Set<string>> {
   const ids = new Set<string>();
   let page = 0;
+  const size = 50;
+
   while (true) {
-    const { data } = await api.get<WishListResponse>("/member/wishlist", {
-      params: { page, size: 50, sort: "addedAt,desc" },
-    });
-    for (const it of data.items ?? []) ids.add(it.productId);
-    if (!data.hasNextPage) break;
-    page += 1;
+    try {
+      const { data } = await api.get<WishListResponse>("/member/wishlist", {
+        params: { page, size, sort: "addedAt,desc" },
+      });
+      for (const it of data.items ?? []) ids.add(it.productId);
+
+      if (!data.hasNextPage || (data.items ?? []).length === 0) break;
+      page += 1;
+    } catch (e: any) {
+      if (e?.response?.status === 500) {
+        const { data } = await api.get<WishListResponse>("/member/wishlist", {
+          params: { page, size },
+        });
+        for (const it of data.items ?? []) ids.add(it.productId);
+        if (!data.hasNextPage || (data.items ?? []).length === 0) break;
+        page += 1;
+      } else {
+        throw e;
+      }
+    }
   }
   return ids;
 }
@@ -44,8 +60,8 @@ function mapWishToListing(x: WishItemDTO, idx: number, page: number): ListingWit
     id: x.productId,
     title: x.productName,
     description: null,
-    type: "VEHICLE",           
-    price: "—",                 
+    type: "VEHICLE",         
+    price: "—",
     createdAt: x.addedAt ?? undefined,
     thumbnail: x.thumbnailUrl ?? null,
     media: x.thumbnailUrl ? { cover: x.thumbnailUrl } : undefined,
@@ -58,13 +74,26 @@ function mapWishToListing(x: WishItemDTO, idx: number, page: number): ListingWit
 
 export async function fetchWishlistPaged(
   page = 0,
-  size = 12,
+  size = 50,
   sort = "addedAt,desc"
 ): Promise<{ data: ListingWithKey[]; meta: Omit<WishListResponse, "items"> }> {
-  const { data } = await api.get<WishListResponse>("/member/wishlist", {
-    params: { page, size, sort },
-  });
-  const mapped = (data.items ?? []).map((it, i) => mapWishToListing(it, i, page));
-  const { items, ...meta } = data;
-  return { data: mapped, meta };
+  const params: any = { page, size };
+  if (sort) params.sort = sort;
+
+  try {
+    const { data } = await api.get<WishListResponse>("/member/wishlist", { params });
+    const mapped = (data.items ?? []).map((it, i) => mapWishToListing(it, i, page));
+    const { items, ...meta } = data;
+    return { data: mapped, meta };
+  } catch (e: any) {
+    if (e?.response?.status === 500 && sort) {
+      const { data } = await api.get<WishListResponse>("/member/wishlist", {
+        params: { page, size },
+      });
+      const mapped = (data.items ?? []).map((it, i) => mapWishToListing(it, i, page));
+      const { items, ...meta } = data;
+      return { data: mapped, meta };
+    }
+    throw e;
+  }
 }

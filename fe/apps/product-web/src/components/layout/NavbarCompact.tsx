@@ -1,5 +1,5 @@
-import { Link, NavLink } from "react-router-dom";
-import { Menu, Heart, User, PlusCircle, Search } from "lucide-react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Menu, Heart, PlusCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,7 +20,8 @@ const mainNav = [
 ];
 
 export default function Navbar() {
-  const { user } = useAuth(); // 
+  const { user } = useAuth(); 
+  const nav = useNavigate();
 
   return (
     <header
@@ -68,8 +69,8 @@ export default function Navbar() {
             </DropdownMenuContent>
           </DropdownMenu>
           <Link to="/" className="inline-flex items-center">
-            <span className="inline-flex items-center bg-white border border-gray-200 rounded-md p-0.95 shadow-sm">
-              <img src="/images/logo-name.png" alt="EcoGreen" className="w-[80px] md:w-[80px] h-auto block object-contain" />
+            <span className="inline-flex items-center">
+              <img src="/images/logo-name.png" alt="EcoGreen" className="w-[100px] md:w-[150px] h-auto block object-contain" />
             </span>
             <span className="sr-only">ECOGREEN</span>
           </Link>
@@ -92,7 +93,14 @@ export default function Navbar() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <Button size="icon" className="hidden sm:flex !bg-white">
+          <Button
+            type="button"
+            size="icon"
+            className="hidden sm:flex !bg-white"
+            aria-label="Danh sách theo dõi"
+            title="Danh sách theo dõi"
+            onClick={() => nav("/account/wishlist")}
+          >
             <Heart className="w-4 h-4 text-teal-700" />
           </Button>
 

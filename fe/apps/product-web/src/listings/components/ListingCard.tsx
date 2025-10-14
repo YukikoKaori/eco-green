@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Listing } from "@/listings/types";
 import { Camera, MapPin } from "lucide-react";
@@ -6,29 +6,25 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import LikeButton from "@/listings/components/LikeButton";
 import { toast } from "sonner";
-import { addWishlist, removeWishlist } from "@/wishlist/api";
+import { useWishlist } from "@/contexts/WishlistContext";
 
 type Props = {
   item: Listing;
-  initialLiked?: boolean;
   onLikeChange?: (liked: boolean) => void;
 };
 
 function formatPrice(v: Listing["price"]): string {
   if (v == null || v === "") return "—";
   if (typeof v === "number") return v.toLocaleString("vi-VN") + " đ";
-  // Loại hết ký tự không phải số để tránh "8.500" -> 8.5
   const cleaned = String(v).replace(/[^\d]/g, "");
   if (!cleaned) return "—";
   const n = Number(cleaned);
   return Number.isFinite(n) ? n.toLocaleString("vi-VN") + " đ" : "—";
 }
-
 function getThumb(item: Listing): string | undefined {
   const fromMedia = item.media?.cover ?? item.media?.images?.[0] ?? undefined;
   return fromMedia ?? item.thumbnail ?? undefined;
 }
-
 function timeAgo(iso?: string) {
   if (!iso) return "";
   const t = Date.parse(iso);
@@ -44,20 +40,17 @@ function timeAgo(iso?: string) {
   return `${d} ngày trước`;
 }
 
-/* ===== component ===== */
-export default function ListingCard({ item, initialLiked = false, onLikeChange }: Props) {
+export default function ListingCard({ item, onLikeChange }: Props) {
   const thumb = getThumb(item);
   const priceLabel = formatPrice(item.price);
   const createdLabel = timeAgo(item.createdAt);
   const mediaCount = item.media?.images?.length ?? (thumb ? 1 : 0);
 
-  const [liked, setLiked] = useState<boolean>(!!initialLiked);
-  useEffect(() => {
-    setLiked(!!initialLiked);
-  }, [initialLiked, item.id]);
+  const { user } = useAuth();
+  const { isLiked, toggle } = useWishlist();
+  const liked = isLiked(item.id);
 
   const [busy, setBusy] = useState(false);
-  const { user } = useAuth();
   const nav = useNavigate();
   const loc = useLocation();
 
@@ -70,26 +63,10 @@ export default function ListingCard({ item, initialLiked = false, onLikeChange }
     }
     if (busy) return;
 
-    const prev = liked;
-    const nextLiked = !prev;
-
-    setLiked(nextLiked);
-    onLikeChange?.(nextLiked);
     setBusy(true);
-
     try {
-      if (nextLiked) {
-        await addWishlist(item.id);
-        toast.success("Tin đã được đưa vào danh sách theo dõi.");
-      } else {
-        await removeWishlist(item.id);
-        toast("Đã hủy theo dõi tin này.");
-      }
-    } catch (e) {
-      setLiked(prev);
-      onLikeChange?.(prev);
-      toast.error("Không thể cập nhật theo dõi. Vui lòng thử lại.");
-      console.error("wishlist toggle failed:", e);
+      const nextLiked = await toggle(item.id);   
+      onLikeChange?.(nextLiked);
     } finally {
       setBusy(false);
     }
