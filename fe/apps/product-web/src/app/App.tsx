@@ -14,7 +14,7 @@ import GuestOnlyRoute from "@/app/GuestOnlyRoute";
 import PostNew from "@/pages/posts/PostNew";
 import PostManage from "@/pages/posts/PostManage";
 import PostNotice from "@/pages/posts/PostNotice";
-import WishlistPage from "@/pages/account/WishlistPage";
+import WishlistPage from "@/pages/wishlist/WishlistPage";
 export default function App() {
   return (
     <Routes>

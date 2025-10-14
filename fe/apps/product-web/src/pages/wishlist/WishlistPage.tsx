@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { ListingWithKey } from "@/listings/types";
-import { fetchWishlistPaged } from "@/wishlist/api";
+import { fetchWishlistPaged } from "@/api/WishlistApi";
 import { toast } from "sonner";
 import { useWishlist } from "@/contexts/WishlistContext";
 import LikeButton from "@/listings/components/LikeButton";

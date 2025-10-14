@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { addWishlist, removeWishlist, fetchAllWishlistIds } from "@/wishlist/api";
+import { addWishlist, removeWishlist, fetchAllWishlistIds } from "@/api/WishlistApi";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
