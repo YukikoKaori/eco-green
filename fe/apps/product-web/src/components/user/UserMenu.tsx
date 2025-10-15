@@ -49,7 +49,7 @@ function RowLink({ to, icon, label, danger }: Item) {
         to={to}
         className={`flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2 no-underline text-sm ${
           danger ? "text-rose-600" : "text-gray-800"
-        }`}
+        } cursor-pointer`}
       >
         <span className="flex items-center gap-3">
           <span className="text-gray-600">{icon}</span>
@@ -77,7 +77,7 @@ export default memo(function UserMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger asChild >
         <Button size="icon" className="ml-1 !bg-white">
           <User className="w-5 h-5 text-teal-700" />
         </Button>
@@ -85,7 +85,7 @@ export default memo(function UserMenu() {
 
       <DropdownMenuContent align="end" className="w-[360px] h-[600px] p-0 rounded-2xl border border-gray-200 shadow-sm">
         {/* Header */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 ">
           <div className="flex items-center gap-3">
             <Link
               to={profileUrl}
@@ -133,9 +133,9 @@ export default memo(function UserMenu() {
 
         {/* Sections */}
         {SECTIONS.map((sec) => (
-          <div key={sec.title} className="px-4 py-3">
-            <h4 className="text-gray-600 text-sm font-semibold mb-2">{sec.title}</h4>
-            <div className="space-y-2">
+          <div key={sec.title} className="px-4 py-3 ">
+            <h4 className="text-gray-600 text-sm font-semibold mb-2 ">{sec.title}</h4>
+            <div className="space-y-2 ">
               {sec.items.map((it) => <RowLink key={it.to} {...it} />)}
             </div>
           </div>

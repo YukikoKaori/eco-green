@@ -61,7 +61,6 @@ export default function ProfilePage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // ===== Validate =====
   const [errors, setErrors] = useState<{ name?: string; phone?: string; nationalId?: string; email?: string }>({});
   const phoneRe = /^(\+84|0)(3|5|7|8|9)\d{8}$/;
   const idRe = /^(?:\d{9}|\d{12}|[A-Z0-9]{8,9})$/i;
@@ -114,7 +113,6 @@ export default function ProfilePage() {
     return () => { cancelled = true; };
   }, [authLoading, user?.id, setUser]);
 
-  // ===== Avatar =====
   const fileRef = useRef<HTMLInputElement | null>(null);
   const onPickAvatar = () => fileRef.current?.click();
   const onFileChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
@@ -135,7 +133,6 @@ export default function ProfilePage() {
     }
   };
 
-  // ===== Submit =====
   const onSubmit: React.FormEventHandler = async (e) => {
     e.preventDefault();
     if (!profile) return;
