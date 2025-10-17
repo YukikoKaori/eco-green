@@ -1,4 +1,3 @@
-// src/contexts/AuthContext.tsx
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import api from "@/lib/axios";
 import type { AxiosHeaders } from "axios";
@@ -79,12 +78,9 @@ function mapUser(me: UserProfile): AppUser {
   };
 }
 
-// ✅ gắn token vào header ngay khi file được import (fix reload)
 setAuthHeader(readStoredToken());
 
-// ✅ interceptor request: thao tác an toàn với AxiosHeaders/Record, không gán {} trực tiếp
 api.interceptors.request.use((config) => {
-  // headers có thể là AxiosHeaders (có get/set) hoặc object thường
   const headers = (config.headers ?? {}) as AxiosHeaders | Record<string, any>;
 
   const getHeader = (k: string) => {
@@ -104,20 +100,17 @@ api.interceptors.request.use((config) => {
       const bearer = t.startsWith("Bearer ") ? t : `Bearer ${t}`;
       setHeader("Authorization", bearer);
       setHeader("authorization", bearer);
-      // gán lại để thỏa kiểu cấu hình của axios
       config.headers = headers as any;
     }
   }
   return config;
 });
 
-// ✅ interceptor response: clear & (tuỳ chọn) điều hướng khi 401
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err?.response?.status === 401) {
       clearStoredAuth();
-      // optional: window.location.href = "/login";
     }
     return Promise.reject(err);
   }

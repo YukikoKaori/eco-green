@@ -8,7 +8,7 @@ type Props = {
   forYou: ListingWithKey[];
   latest: ListingWithKey[];
   className?: string;
-  pageSize?: number; // số card thêm mỗi lần bấm
+  pageSize?: number; 
 };
 
 export default function ListingTabs({
@@ -19,13 +19,11 @@ export default function ListingTabs({
 }: Props) {
   const [tab, setTab] = useState<"foryou" | "latest">("foryou");
 
-  // Đếm số item đang hiển thị cho từng tab
   const [counts, setCounts] = useState<{ foryou: number; latest: number }>({
     foryou: pageSize,
     latest: pageSize,
   });
 
-  // Nếu pageSize prop thay đổi -> đồng bộ lại
   useEffect(() => {
     setCounts((c) => ({
       foryou: Math.max(pageSize, c.foryou),
