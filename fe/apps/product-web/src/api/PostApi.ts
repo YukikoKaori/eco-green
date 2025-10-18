@@ -11,9 +11,7 @@ export type VehiclePostData = {
   title: string;
   description?: string;
   conditionType?: ConditionType;
-  price?: number;              
-  isNegotiable?: boolean;
-  sellerPhone?: string | null;
+  price?: number;        
 
   city?: string | null;
   district?: string | null;
@@ -145,3 +143,21 @@ export const toVNDFromMillions = (raw: string) => {
   const cleaned = (raw ?? "").replace(/[^\d]/g, "");
   return cleaned ? Number(cleaned) * 1_000_000 : 0;
 };
+
+// Gợi ý interface (tuỳ backend)
+export async function fetchVehicleCategories(): Promise<{id:string; name:string}[]> {
+  const { data } = await api.get("/vehicle-categories");
+  return data.result ?? data; // tuỳ envelope BE
+}
+export async function fetchVehicleBrandsByCategory(categoryId: string) {
+  const { data } = await api.get("/vehicle-brands", { params: { categoryId } });
+  return data.result ?? data;
+}
+export async function fetchModelsByBrand(brandId: string) {
+  const { data } = await api.get("/vehicle-models", { params: { brandId } });
+  return data.result ?? data;
+}
+export async function fetchVersionsByModel(modelId: string) {
+  const { data } = await api.get("/vehicle-versions", { params: { modelId } });
+  return data.result ?? data;
+}

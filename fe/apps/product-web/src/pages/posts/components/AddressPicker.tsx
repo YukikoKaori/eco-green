@@ -32,7 +32,7 @@ export default function AddressPicker({ addr, addressDetail, onAddressDetailChan
     <section className="mt-6 rounded-xl border bg-white p-4">
       <h3 className="mb-3 text-base font-semibold text-gray-800">Địa chỉ</h3>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3 lg:grid-cols-2">
         {/* Province */}
         <div className="flex flex-col gap-1">
           <LabelReq>Tỉnh/Thành</LabelReq>
@@ -66,7 +66,7 @@ export default function AddressPicker({ addr, addressDetail, onAddressDetailChan
             >
               <SelectValue
                 placeholder={
-                  !provinceCode ? "Chọn tỉnh trước" : loadingDist ? "Đang tải..." : "Chọn quận/huyện"
+                  !provinceCode ? "Chọn quận/huyện" : loadingDist ? "Đang tải..." : "Chọn quận/huyện"
                 }
               />
             </SelectTrigger>
@@ -96,7 +96,7 @@ export default function AddressPicker({ addr, addressDetail, onAddressDetailChan
             >
               <SelectValue
                 placeholder={
-                  !districtCode ? "Chọn quận/huyện trước" : loadingWard ? "Đang tải..." : "Chọn phường/xã"
+                  !districtCode ? "Chọn phường/xã" : loadingWard ? "Đang tải..." : "Chọn phường/xã"
                 }
               />
             </SelectTrigger>

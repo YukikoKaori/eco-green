@@ -6,6 +6,7 @@ export type WishItemDTO = {
   productName: string;
   thumbnailUrl?: string | null;
   addedAt?: string | null;
+  price: string;
 };
 
 export type WishListResponse = {
@@ -61,13 +62,11 @@ function mapWishToListing(x: WishItemDTO, idx: number, page: number): ListingWit
     title: x.productName,
     description: null,
     type: "VEHICLE",         
-    price: "—",
+    price: x.price,
     createdAt: x.addedAt ?? undefined,
     thumbnail: x.thumbnailUrl ?? null,
     media: x.thumbnailUrl ? { cover: x.thumbnailUrl } : undefined,
     status: "ACTIVE",
-    location: null,
-    distance: null,
   };
   return { ...item, _key: `${x.productId}-${page}-${idx}` };
 }

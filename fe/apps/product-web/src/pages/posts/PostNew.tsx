@@ -537,7 +537,7 @@ export default function PostNew() {
               </div>
 
               <div className="mt-4 flex flex-col gap-1">
-                <Label>Giá (Triệu đồng)<Required /></Label>
+                <Label>Giá<Required /></Label>
                 <Input
                   placeholder="VD: 21"
                   inputMode="decimal"

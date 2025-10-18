@@ -8,6 +8,7 @@ export interface Account {
   username: string;
   email: string | null;
   fullName: string;
+  passwordHash: string;
   phone: string | null;
   dateOfBirth?: string | null;
   address?: string | null;
@@ -36,22 +37,19 @@ function normalize(a: any): Account {
     createdAt: a.createdAt ?? null,
     updatedAt: a.updatedAt ?? null,
     gender: a.gender ?? null,
+    passwordHash: a.passwordHash,
     role: String(a.role || "").toUpperCase(),
     status: String(a.status || "").toUpperCase(),
   };
 }
 
-export async function getAllAccounts(): Promise<Account[]> {
-  const { data } = await api.get<any[]>("/admin/manage/account");
+export async function getStaffs(): Promise<Account[]> {
+  const { data } = await api.get<any[]>("/admin/manage/account/staff");
   const raw = Array.isArray((data as any)?.result) ? (data as any).result : data;
   return (raw ?? []).map(normalize);
 }
-export async function getMembers() {
-  const rows = await getAllAccounts();
-  return rows.filter(a => a.role.toUpperCase() === "MEMBER");
-}
-
-export async function getStaffs() {
-  const rows = await getAllAccounts();
-  return rows.filter(a => a.role.toUpperCase() === "STAFF");
+export async function getMembers(): Promise<Account[]> {
+  const { data } = await api.get<any[]>("/admin/manage/account/member");
+  const raw = Array.isArray((data as any)?.result) ? (data as any).result : data;
+  return (raw ?? []).map(normalize);
 }
