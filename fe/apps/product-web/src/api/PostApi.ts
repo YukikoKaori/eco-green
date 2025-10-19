@@ -208,7 +208,7 @@ export async function postVehicle(
   appendJson(fd, JSON.stringify(data));
   appendImages(fd, images);
   appendMeta(fd, JSON.stringify(imagesMeta));
-  const { data: res } = await api.post<VehiclePostResponse>("/post/products/vehicle", fd);
+  const { data: res } = await api.post<VehiclePostResponse>("/post/products/vehicle", fd,  { timeout: 60000 });
   return res;
 }
 
