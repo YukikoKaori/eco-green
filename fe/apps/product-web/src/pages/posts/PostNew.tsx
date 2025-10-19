@@ -1,3 +1,4 @@
+// src/pages/posts/PostNew.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -5,9 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/contexts/AuthContext";
 import { Image as ImageIcon, Trash2, Star, Info } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+
+import AddressPicker from "@/pages/posts/components/AddressPicker";
+import { useVNAddress } from "@/hooks/useVNAddress";
 
 import {
   postVehicle,
@@ -15,14 +19,17 @@ import {
   type ImageMeta,
   type VehiclePostData,
   type BatteryPostData,
-  fetchVehicleBrands,
   fetchBatteryBrands,
+  fetchVehicleCategories,
+  fetchVehicleBrandsByCategory,
+  fetchModelsByTypeAndBrand,
+  fetchVersionsByModel,
   type Brand,
+  type OptionItem,
+  toVNDFromMillions,
 } from "@/api/PostApi";
 
-import AddressPicker from "@/pages/posts/components/AddressPicker"
-import { useVNAddress } from "@/hooks/useVNAddress";
-
+/* ================== Types & Const ================== */
 type Category = "vehicle" | "battery";
 type ImgItem = { file: File; url: string; cover?: boolean };
 
@@ -31,41 +38,24 @@ type FormState = {
 
   title: string;
   description: string;
-  price: string;          
+  price: string; // nhập theo “triệu”
 
+  // address
   addressDetail: string;
 
-  brandId?: string;
+  // BATTERY
   batteryTypeId?: string;
-
-  builtInBatteryCapacityAh?: string;
-  builtInBatteryVoltageV?: string;
-  removableBattery?: boolean;
-  batteryHealthPercent?: string;
-
-  motorPowerW?: string;
-  maxSpeedKmh?: string;
-  mileageKm?: string;
-  rangeKm?: string;
-  chargingTimeHours?: string;
-
-  model?: string;
-  year?: string;
-  color?: string;
-  origin?: string;
-  weightKg?: string;
-  warrantyMonths?: string;
-  ownersCount?: string;
-
-  hasInsurance?: boolean;
-  hasRegistration?: boolean;
-  licensePlate?: string;
-
-  // Battery
   capacityKwh?: string;
   healthPercent?: string;
   voltageV?: string;
-  originBattery?: string;
+
+  // VEHICLE numeric inputs
+  year?: string;
+  mileageKm?: string;
+  batteryHealthPercent?: string;
+
+  // common ids (BATTERY only dùng brandId trong form)
+  brandId?: string;
 };
 
 const MAX_IMAGES = 10;
@@ -73,57 +63,135 @@ const MIN_IMAGES = 1;
 const MAX_TITLE = 50;
 const MAX_DESC = 1500;
 
+/* ================== Component ================== */
 export default function PostNew() {
   const { user } = useAuth();
   const nav = useNavigate();
 
   const addr = useVNAddress();
-  const {
-    provinceCode, districtCode, wardCode,
-    provinceName, districtName, wardName,
-  } = addr;
+  const { provinceCode, districtCode, wardCode, provinceName, districtName, wardName } = addr;
 
-  /* HÌNH ẢNH */
+  /* Images */
   const [imgs, setImgs] = useState<ImgItem[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  /* FORM */
+  /* Form */
   const [form, setForm] = useState<FormState>({
     category: "vehicle",
     title: "",
     description: "",
     price: "",
     addressDetail: "",
-    brandId: "",
-    removableBattery: true,
-    hasInsurance: false,
-    hasRegistration: false,
   });
 
-  /* BRANDS theo category */
+  const isVehicle = form.category === "vehicle";
+
+  /* Catalog states */
+  const [vehicleCategories, setVehicleCategories] = useState<OptionItem[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(""); // categoryId của VEHICLE
+
   const [vehicleBrands, setVehicleBrands] = useState<Brand[]>([]);
   const [batteryBrands, setBatteryBrands] = useState<Brand[]>([]);
+
+  const [models, setModels] = useState<OptionItem[]>([]);
+  const [versions, setVersions] = useState<OptionItem[]>([]);
+  const [selectedBrandId, setSelectedBrandId] = useState<string>("");
+  const [selectedModelId, setSelectedModelId] = useState<string>("");
+  const [selectedVersionId, setSelectedVersionId] = useState<string>("");
+
+  /* Initial loads (chỉ categories + battery brands) */
   useEffect(() => {
     (async () => {
       try {
-        const [vb, bb] = await Promise.all([fetchVehicleBrands(), fetchBatteryBrands()]);
-        setVehicleBrands(vb);
+        const [cats, bb] = await Promise.all([fetchVehicleCategories(), fetchBatteryBrands()]);
+        setVehicleCategories(cats);
         setBatteryBrands(bb);
       } catch (e) {
         console.error(e);
-        toast.error("Không tải được danh sách hãng.");
+        toast.error("Không tải được danh mục/hãng pin.");
       }
     })();
   }, []);
 
-  const isVehicle = form.category === "vehicle";
-
+  /* Ensure 1 ảnh bìa */
   useEffect(() => {
     if (imgs.length && !imgs.some((i) => i.cover)) {
       setImgs((arr) => arr.map((it, idx) => ({ ...it, cover: idx === 0 })));
     }
   }, [imgs.length]);
+
+  /* Khi đổi categoryId → reset, nạp brand theo category */
+  useEffect(() => {
+    if (!isVehicle) return;
+
+    // reset chuỗi chọn
+    setSelectedBrandId("");
+    setSelectedModelId("");
+    setSelectedVersionId("");
+    setModels([]);
+    setVersions([]);
+
+    if (!selectedCategoryId) {
+      setVehicleBrands([]);
+      return;
+    }
+
+    (async () => {
+      try {
+        const brands = await fetchVehicleBrandsByCategory(selectedCategoryId);
+        setVehicleBrands(brands);
+      } catch {
+        toast.error("Không tải được Hãng xe theo Loại xe.");
+      }
+    })();
+  }, [isVehicle, selectedCategoryId]);
+
+  /* Khi có categoryId + brandId → nạp models */
+  useEffect(() => {
+    if (!isVehicle) return;
+
+    if (!selectedCategoryId || !selectedBrandId) {
+      setModels([]);
+      setSelectedModelId("");
+      setVersions([]);
+      setSelectedVersionId("");
+      return;
+    }
+
+    (async () => {
+      try {
+        const list = await fetchModelsByTypeAndBrand(selectedCategoryId, selectedBrandId);
+        setModels(list);
+        setSelectedModelId("");
+        setVersions([]);
+        setSelectedVersionId("");
+      } catch {
+        toast.error("Không tải được Dòng xe.");
+      }
+    })();
+  }, [isVehicle, selectedCategoryId, selectedBrandId]);
+
+  /* Khi có modelId → nạp versions */
+  useEffect(() => {
+    if (!isVehicle) return;
+
+    if (!selectedModelId) {
+      setVersions([]);
+      setSelectedVersionId("");
+      return;
+    }
+
+    (async () => {
+      try {
+        const list = await fetchVersionsByModel(selectedModelId);
+        setVersions(list);
+        setSelectedVersionId("");
+      } catch {
+        toast.error("Không tải được Phiên bản.");
+      }
+    })();
+  }, [isVehicle, selectedModelId]);
 
   /* Validate */
   const titleLeft = MAX_TITLE - (form.title?.length || 0);
@@ -132,15 +200,33 @@ export default function PostNew() {
   const canSubmit = useMemo(() => {
     if (imgs.length < MIN_IMAGES) return false;
     if (!form.title || !form.price) return false;
-    if (!form.brandId) return false;
     if (!provinceCode || !districtCode || !wardCode) return false;
+
+    if (isVehicle) {
+      if (!selectedCategoryId) return false;
+      if (!selectedBrandId) return false;
+      if (!selectedModelId || !selectedVersionId) return false;
+      if (!form.year || !form.mileageKm || !form.batteryHealthPercent) return false;
+    } else {
+      if (!form.brandId) return false;
+      if (!form.capacityKwh || !form.healthPercent || !form.voltageV) return false;
+    }
     return true;
-  }, [imgs.length, form, provinceCode, districtCode, wardCode]);
+  }, [
+    imgs.length,
+    form,
+    provinceCode,
+    districtCode,
+    wardCode,
+    isVehicle,
+    selectedCategoryId,
+    selectedBrandId,
+    selectedModelId,
+    selectedVersionId,
+  ]);
 
   /* Helpers */
-  function pickFiles() {
-    fileRef.current?.click();
-  }
+  const pickFiles = () => fileRef.current?.click();
   function addFiles(files: FileList | null) {
     if (!files?.length) return;
     const remain = MAX_IMAGES - imgs.length;
@@ -162,19 +248,12 @@ export default function PostNew() {
       return next;
     });
   }
-  function setCover(i: number) {
-    setImgs((arr) => arr.map((it, idx) => ({ ...it, cover: idx === i })));
-  }
-
-  function parsePriceToVND(raw: string) {
-    const cleaned = raw.replace(/[^\d]/g, "");
-    return cleaned ? Number(cleaned) * 1_000_000 : 0;
-  }
+  const setCover = (i: number) => setImgs((arr) => arr.map((it, idx) => ({ ...it, cover: idx === i })));
 
   const buildImagesMeta = (): ImageMeta[] =>
     imgs.map((_, idx) => ({ position: idx, isPrimary: !!imgs[idx].cover }));
 
-  /* SUBMIT */
+  /* Submit */
   const [submitting, setSubmitting] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
@@ -187,10 +266,7 @@ export default function PostNew() {
         .slice()
         .sort((a, b) => (a.cover ? -1 : 0) - (b.cover ? -1 : 0))
         .map((i) => i.file);
-
       const imagesMeta = buildImagesMeta();
-
-      const DEFAULT_CONDITION: "NEW" | "USED" = "USED";
 
       const baseAddress = {
         city: (provinceName ?? "").trim(),
@@ -199,65 +275,63 @@ export default function PostNew() {
         addressDetail: form.addressDetail || "",
       };
 
+      let created:
+        | import("@/api/PostApi").VehiclePostResponse
+        | import("@/api/PostApi").BatteryPostResponse;
+
       if (isVehicle) {
         const data: VehiclePostData = {
           title: form.title,
-          description: form.description || undefined,
-          conditionType: DEFAULT_CONDITION,
-          price: parsePriceToVND(form.price),
+          description: form.description,
+          price: toVNDFromMillions(form.price),
 
           ...baseAddress,
 
-          brandId: form.brandId || undefined,
+          brandId: selectedBrandId,
+          batteryHealthPercent: Number(form.batteryHealthPercent),
+          mileageKm: Number(form.mileageKm),
 
-          builtInBatteryCapacityAh: form.builtInBatteryCapacityAh ? Number(form.builtInBatteryCapacityAh) : null,
-          builtInBatteryVoltageV: form.builtInBatteryVoltageV ? Number(form.builtInBatteryVoltageV) : null,
-          removableBattery: form.removableBattery ?? null,
-          batteryHealthPercent: form.batteryHealthPercent ? Number(form.batteryHealthPercent) : null,
-
-          motorPowerW: form.motorPowerW ? Number(form.motorPowerW) : null,
-          maxSpeedKmh: form.maxSpeedKmh ? Number(form.maxSpeedKmh) : null,
-          mileageKm: form.mileageKm ? Number(form.mileageKm) : null,
-          rangeKm: form.rangeKm ? Number(form.rangeKm) : null,
-          chargingTimeHours: form.chargingTimeHours ? Number(form.chargingTimeHours) : null,
-
-          model: form.model || null,
-          year: form.year ? Number(form.year) : null,
-          color: form.color || null,
-          origin: form.origin || null,
-          weightKg: form.weightKg ? Number(form.weightKg) : null,
-          warrantyMonths: form.warrantyMonths ? Number(form.warrantyMonths) : null,
-          ownersCount: form.ownersCount ? Number(form.ownersCount) : null,
-
-          hasInsurance: form.hasInsurance ?? null,
-          hasRegistration: form.hasRegistration ?? null,
-          licensePlate: form.licensePlate || null,
+          // ✅ gửi id theo BE
+          modelId: selectedModelId,
+          year: Number(form.year),
+          versionId: selectedVersionId,
+          categoryId: selectedCategoryId,
         };
 
-        await postVehicle(data, orderedFiles, imagesMeta);
+        created = await postVehicle(data, orderedFiles, imagesMeta);
       } else {
         const data: BatteryPostData = {
           title: form.title,
-          description: form.description || undefined,
-          conditionType: DEFAULT_CONDITION,
-          price: parsePriceToVND(form.price),
+          description: form.description,
+          price: toVNDFromMillions(form.price),
 
           ...baseAddress,
 
-          brandId: form.brandId || undefined,
+          brandId: form.brandId!,
           batteryTypeId: form.batteryTypeId || undefined,
-
-          capacityKwh: form.capacityKwh ? Number(form.capacityKwh) : null,
-          healthPercent: form.healthPercent ? Number(form.healthPercent) : null,
-          origin: form.originBattery || null,
-          voltageV: form.voltageV ? Number(form.voltageV) : null,
+          capacityKwh: Number(form.capacityKwh),
+          healthPercent: Number(form.healthPercent),
+          voltageV: Number(form.voltageV),
         };
 
-        await postBattery(data, orderedFiles, imagesMeta);
+        created = await postBattery(data, orderedFiles, imagesMeta);
       }
 
+      localStorage.setItem(
+        "last_post_created",
+        JSON.stringify({ ...created, kind: isVehicle ? "vehicle" : "battery" })
+      );
+
+      const productId = (created as any).productId;
       toast.success("Đăng tin thành công!");
-      nav("/account/posts", { replace: true });
+      nav(`/postnotice?productId=${encodeURIComponent(productId)}`, {
+        replace: true,
+        state: {
+          created,
+          type: isVehicle ? "vehicle" : "battery",
+          productId,
+        },
+      });
     } catch (err: any) {
       const msg = err?.response?.data?.message || "Đăng tin thất bại.";
       toast.error(msg);
@@ -269,12 +343,12 @@ export default function PostNew() {
 
   const Required = () => <span className="ml-1 text-red-500">*</span>;
 
-  /* ========== UI ========== */
+  /* ================== UI ================== */
   return (
     <form onSubmit={onSubmit} className="container mx-auto max-w-6xl px-4 py-6">
       <div className="overflow-x-auto bg-gray-100">
         <div className="min-w-[1120px] flex items-start gap-2">
-          {/* LEFT: images */}
+          {/* LEFT: Images */}
           <section className="sticky top-4 h-fit w-[460px] shrink-0 rounded-xl p-10 ">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">
@@ -291,7 +365,7 @@ export default function PostNew() {
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               onDrop={onDrop}
-              onClick={pickFiles}
+              onClick={() => fileRef.current?.click()}
             >
               <div className="flex flex-col items-center gap-2 text-gray-500">
                 <div className="grid h-16 w-16 place-content-center rounded-full border border-teal-200 bg-teal-50">
@@ -347,54 +421,136 @@ export default function PostNew() {
             </div>
           </section>
 
-          {/* RIGHT: form */}
+          {/* RIGHT: Form */}
           <section className="isolate flex-1 bg-white p-4 ">
-            {/* Nhóm 0: danh mục + hãng */}
+            {/* Nhóm 0: Danh mục (vehicle/battery) + Cascading */}
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-1">
                 <Label>Danh mục<Required /></Label>
                 <Select
                   value={form.category}
-                  onValueChange={(v) => setForm((f) => ({ ...f, category: v as Category, brandId: "" }))}
+                  onValueChange={(v) => setForm((f) => ({ ...f, category: v as Category }))}
                 >
-                  <SelectTrigger className="relative z-10">
+                  <SelectTrigger>
                     <SelectValue placeholder="Chọn danh mục" />
                   </SelectTrigger>
-                  <SelectContent className="z-50">
+                  <SelectContent>
                     <SelectItem value="vehicle">Xe điện</SelectItem>
                     <SelectItem value="battery">Pin điện</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="col-span-2 flex flex-col gap-1">
-                <Label>Hãng<Required /></Label>
-                <Select
-                  value={form.brandId || ""}
-                  onValueChange={(v) => setForm((f) => ({ ...f, brandId: v }))}
-                >
-                  <SelectTrigger className="relative z-10">
-                    <SelectValue placeholder="Chọn hãng" />
-                  </SelectTrigger>
-                  <SelectContent className="z-50">
-                    {(isVehicle ? vehicleBrands : batteryBrands).map((b) => (
-                      <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* VEHICLE: chỉ hiện dần khi chọn xong bước trước */}
+              {isVehicle ? (
+                <>
+                  {/* Loại xe */}
+                  <div className="flex flex-col gap-1">
+                    <Label>Loại xe<Required /></Label>
+                    <Select
+                      value={selectedCategoryId}
+                      onValueChange={(v) => setSelectedCategoryId(v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn loại xe" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {vehicleCategories.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Hãng xe */}
+                  {selectedCategoryId && (
+                    <div className="flex flex-col gap-1">
+                      <Label>Hãng xe<Required /></Label>
+                      <Select
+                        value={selectedBrandId}
+                        onValueChange={(v) => setSelectedBrandId(v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Chọn hãng" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {vehicleBrands.map(b => (
+                            <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Dòng xe */}
+                  {selectedCategoryId && selectedBrandId && (
+                    <div className="flex flex-col gap-1">
+                      <Label>Dòng xe<Required /></Label>
+                      <Select
+                        value={selectedModelId}
+                        onValueChange={(v) => setSelectedModelId(v)}
+                        disabled={models.length === 0}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Chọn dòng" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {models.map(m => (
+                            <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Phiên bản */}
+                  {selectedCategoryId && selectedBrandId && selectedModelId && (
+                    <div className="flex flex-col gap-1">
+                      <Label>Phiên bản<Required /></Label>
+                      <Select
+                        value={selectedVersionId}
+                        onValueChange={(v) => setSelectedVersionId(v)}
+                        disabled={versions.length === 0}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Chọn phiên bản" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {versions.map(v => (
+                            <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </>
+              ) : (
+                // BATTERY: chỉ chọn Hãng pin
+                <div className="col-span-2 flex flex-col gap-1">
+                  <Label>Hãng pin<Required /></Label>
+                  <Select
+                    value={form.brandId || ""}
+                    onValueChange={(v) => setForm((f) => ({ ...f, brandId: v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn hãng" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {batteryBrands.map((b) => (
+                        <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
-            {/* Nhóm 1: Khác nhau theo danh mục */}
+            {/* Nhóm 1: Các trường bổ sung */}
             <div className="mt-4 grid grid-cols-3 gap-4">
               {isVehicle ? (
                 <>
                   <div className="flex flex-col gap-1">
-                    <Label>Model</Label>
-                    <Input value={form.model || ""} onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))} />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <Label>Năm sản xuất</Label>
+                    <Label>Năm sản xuất<Required /></Label>
                     <Input
                       inputMode="numeric"
                       value={form.year || ""}
@@ -402,81 +558,28 @@ export default function PostNew() {
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <Label>Màu sắc</Label>
-                    <Input value={form.color || ""} onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))} />
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <Label>Pin tích hợp (Ah)</Label>
-                    <Input
-                      inputMode="numeric"
-                      value={form.builtInBatteryCapacityAh || ""}
-                      onChange={(e) => setForm((f) => ({ ...f, builtInBatteryCapacityAh: e.target.value.replace(/[^\d.]/g, "") }))}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <Label>Điện áp pin (V)</Label>
-                    <Input
-                      inputMode="numeric"
-                      value={form.builtInBatteryVoltageV || ""}
-                      onChange={(e) => setForm((f) => ({ ...f, builtInBatteryVoltageV: e.target.value.replace(/[^\d.]/g, "") }))}
-                    />
-                  </div>
-                  {/* <div className="flex flex-col gap-1">
-                    <Label>Sức khỏe pin (%)</Label>
-                    <Input
-                      inputMode="numeric"
-                      value={form.batteryHealthPercent || ""}
-                      onChange={(e) => setForm((f) => ({ ...f, batteryHealthPercent: e.target.value.replace(/[^\d]/g, "") }))}
-                    />
-                  </div> */}
-
-                  {/* <div className="flex flex-col gap-1">
-                    <Label>Công suất motor (W)</Label>
-                    <Input
-                      inputMode="numeric"
-                      value={form.motorPowerW || ""}
-                      onChange={(e) => setForm((f) => ({ ...f, motorPowerW: e.target.value.replace(/[^\d]/g, "") }))}
-                    />
-                  </div> */}
-                  <div className="flex flex-col gap-1">
-                    <Label>Số km đã đi (km)</Label>
+                    <Label>Số km đã đi (km)<Required /></Label>
                     <Input
                       inputMode="numeric"
                       value={form.mileageKm || ""}
                       onChange={(e) => setForm((f) => ({ ...f, mileageKm: e.target.value.replace(/[^\d]/g, "") }))}
                     />
                   </div>
-                  {/* <div className="flex flex-col gap-1">
-                    <Label>Tầm hoạt động (km)</Label>
+                  <div className="flex flex-col gap-1">
+                    <Label>Sức khỏe pin (%)<Required /></Label>
                     <Input
                       inputMode="numeric"
-                      value={form.rangeKm || ""}
-                      onChange={(e) => setForm((f) => ({ ...f, rangeKm: e.target.value.replace(/[^\d]/g, "") }))}
+                      value={form.batteryHealthPercent || ""}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, batteryHealthPercent: e.target.value.replace(/[^\d]/g, "") }))
+                      }
                     />
-                  </div> */}
-
-                  {/* <div className="flex flex-col gap-1">
-                    <Label>Thời gian sạc (giờ)</Label>
-                    <Input
-                      inputMode="decimal"
-                      value={form.chargingTimeHours || ""}
-                      onChange={(e) => setForm((f) => ({ ...f, chargingTimeHours: e.target.value.replace(/[^\d.]/g, "") }))}
-                    />
-                  </div> */}
-                  {/* <div className="flex flex-col gap-1">
-                    <Label>Trọng lượng (kg)</Label>
-                    <Input
-                      inputMode="decimal"
-                      value={form.weightKg || ""}
-                      onChange={(e) => setForm((f) => ({ ...f, weightKg: e.target.value.replace(/[^\d.]/g, "") }))}
-                    />
-                  </div> */}
+                  </div>
                 </>
               ) : (
                 <>
                   <div className="flex flex-col gap-1">
-                    <Label>Dung lượng (kWh)</Label>
+                    <Label>Dung lượng (kWh)<Required /></Label>
                     <Input
                       inputMode="decimal"
                       value={form.capacityKwh || ""}
@@ -484,7 +587,7 @@ export default function PostNew() {
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <Label>Sức khỏe pin (%)</Label>
+                    <Label>Sức khỏe pin (%)<Required /></Label>
                     <Input
                       inputMode="numeric"
                       value={form.healthPercent || ""}
@@ -492,32 +595,26 @@ export default function PostNew() {
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <Label>Điện áp (V)</Label>
+                    <Label>Điện áp (V)<Required /></Label>
                     <Input
                       inputMode="numeric"
                       value={form.voltageV || ""}
                       onChange={(e) => setForm((f) => ({ ...f, voltageV: e.target.value.replace(/[^\d]/g, "") }))}
                     />
                   </div>
-                  {/* <div className="flex flex-col gap-1">
-                    <Label>Xuất xứ</Label>
-                    <Input
-                      value={form.originBattery || ""}
-                      onChange={(e) => setForm((f) => ({ ...f, originBattery: e.target.value }))}
-                    />
-                  </div> */}
                 </>
               )}
             </div>
 
-            {/* Giá & Tiêu đề & Mô tả */}
+            {/* Tiêu đề – Mô tả – Giá */}
             <div className="mt-6">
               <h3 className="mb-2 font-semibold text-gray-800">Tiêu đề tin & mô tả</h3>
+
               <div className="flex flex-col gap-1">
                 <Label>Tiêu đề<Required /></Label>
                 <Input
                   maxLength={MAX_TITLE}
-                  placeholder="VD: VinFast Feliz S - New 2024"
+                  placeholder="VD: VinFast VF8 bản Plus 2023"
                   value={form.title}
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                 />
@@ -537,9 +634,9 @@ export default function PostNew() {
               </div>
 
               <div className="mt-4 flex flex-col gap-1">
-                <Label>Giá<Required /></Label>
+                <Label>Giá (triệu VND)<Required /></Label>
                 <Input
-                  placeholder="VD: 21"
+                  placeholder="VD: 250"
                   inputMode="decimal"
                   value={form.price}
                   onChange={(e) => setForm((f) => ({ ...f, price: e.target.value.replace(/[^\d.]/g, "") }))}
@@ -547,6 +644,7 @@ export default function PostNew() {
               </div>
             </div>
 
+            {/* Địa chỉ */}
             <AddressPicker
               addr={addr}
               addressDetail={form.addressDetail}

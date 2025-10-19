@@ -5,6 +5,6 @@ export default function PrivateRoute({ children }: { children: ReactNode }) {
   const token =
     localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
   const loc = useLocation();
-  if (!token) return <Navigate to="/login" replace state={{ from: loc }} />;
+  if (!token) return <Navigate to="/" replace state={{ from: loc }} />;
   return <>{children}</>;
 }
