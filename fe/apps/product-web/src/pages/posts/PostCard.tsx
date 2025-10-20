@@ -1,94 +1,163 @@
+// src/pages/posts/PostCard.tsx
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Eye, Edit, RotateCcw, CreditCard, EyeOff, Info, Eye as EyeIcon } from "lucide-react";
-import {
-  ListingItem,
-  ListingStatus,
-  currency,
-  tone,
-  apiView, apiEdit, apiRepost, apiPay, apiUnhide, apiHide,
-} from "@/mocks/listings";
-import { JSX } from "react";
+import { useNavigate } from "react-router-dom";
+
+import { updateProductStatus, type BEStatus } from "@/api/product";
+
+// Trạng thái hiển thị theo tab FE
+export type ListingStatus =
+  | "active"
+  | "pending"
+  | "unpaid"
+  | "draft"
+  | "rejected"
+  | "expired"
+  | "hidden"
+  | "sold";
+
+export type ListingItem = {
+  id: string;
+  title: string;
+  location: string;
+  price: number;
+  status: ListingStatus;
+  cover: string;          // luôn là string (đã fallback ở PostManage)
+  views?: number;
+  rejectReason?: string;
+};
 
 type Props = {
   item: ListingItem;
   setStatus: (id: string, st: ListingStatus) => void;
-  onShowReason: (text?: string) => void;
+  onShowReason: (text?: string) => void; // mở modal lý do bị từ chối
+};
+
+export const tone = {
+  outlinePrimary: "border-[#246f67] text-[#246f67] hover:bg-[#246f67]/5",
+};
+
+export const currency = (v: number) =>
+  v.toLocaleString("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
+
+// FE -> BE khi cập nhật trạng thái
+const FE2BE: Record<ListingStatus, BEStatus> = {
+  active: "ACTIVE",
+  pending: "PENDING_REVIEW",
+  unpaid: "PENDING_PAYMENT",
+  draft: "DRAFT",
+  rejected: "REJECTED",
+  expired: "EXPIRED",
+  hidden: "HIDDEN",
+  sold: "SOLD",
 };
 
 export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
-  const RightActions = (): JSX.Element | null => {
+  const nav = useNavigate();
+
+  // Điều hướng xem/sửa/thanhtoán
+  const viewPost = () => window.open(`/product/${it.id}`, "_blank", "noopener,noreferrer");
+  const editPost = () => nav(`/post/new?edit=${encodeURIComponent(it.id)}`);
+  const goPay   = () => nav(`/postnotice?productId=${encodeURIComponent(it.id)}`);
+
+  // Cập nhật trạng thái thật ở BE rồi update UI local
+  const update = async (next: ListingStatus) => {
+    await updateProductStatus(it.id, FE2BE[next]);
+    setStatus(it.id, next);
+  };
+
+  const RightActions = () => {
     switch (it.status) {
       case "active":
         return (
           <>
-            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={() => apiView(it.id)}>
+            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={viewPost}>
               <Eye className="w-4 h-4 mr-1" /> Xem tin
             </Button>
-            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={() => apiEdit(it.id)}>
+            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={editPost}>
               <Edit className="w-4 h-4 mr-1" /> Sửa tin
             </Button>
-            <Button size="sm" className="text-[#246f67] !border-[#246f67" onClick={async () => { await apiHide(it.id); setStatus(it.id, "hidden"); }}>
+            <Button size="sm" className="text-[#246f67] !border-[#246f67]" onClick={() => update("hidden")}>
               <EyeOff className="w-4 h-4 mr-1" /> Ẩn tin
             </Button>
           </>
         );
+
       case "expired":
         return (
           <>
-            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={() => apiView(it.id)}>
+            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={viewPost}>
               <Eye className="w-4 h-4 mr-1" /> Xem tin
             </Button>
-            <Button size="sm" className="text-[#246f67] !border-[#246f67" onClick={async () => { await apiRepost(it.id); setStatus(it.id, "active"); }}>
+            <Button size="sm" className="text-[#246f67] !border-[#246f67]" onClick={() => update("pending")}>
               <RotateCcw className="w-4 h-4 mr-1" /> Đăng lại
             </Button>
           </>
         );
+
       case "rejected":
         return (
           <>
             <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={() => onShowReason(it.rejectReason)}>
               <Info className="w-4 h-4 mr-1" /> Xem lý do
             </Button>
-            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={() => apiEdit(it.id)}>
+            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={editPost}>
               <Edit className="w-4 h-4 mr-1" /> Sửa tin
             </Button>
           </>
         );
+
       case "draft":
         return (
-          <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={() => apiEdit(it.id)}>
+          <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={editPost}>
             <Edit className="w-4 h-4 mr-1" /> Sửa tin
           </Button>
         );
+
       case "unpaid":
         return (
           <>
-            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={() => apiView(it.id)}>
+            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={viewPost}>
               <Eye className="w-4 h-4 mr-1" /> Xem tin
             </Button>
-            <Button size="sm" className="text-[#246f67] !border-[#246f67" onClick={() => apiPay(it.id)}>
+            <Button size="sm" className="text-[#246f67] !border-[#246f67]" onClick={goPay}>
               <CreditCard className="w-4 h-4 mr-1" /> Thanh toán
             </Button>
           </>
         );
+
       case "pending":
         return (
-          <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={() => apiView(it.id)}>
+          <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={viewPost}>
             <Eye className="w-4 h-4 mr-1" /> Xem tin
           </Button>
         );
+
       case "hidden":
         return (
           <>
-            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={() => apiView(it.id)}>
+            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={viewPost}>
               <Eye className="w-4 h-4 mr-1" /> Xem tin
             </Button>
-            <Button size="sm" className="text-[#246f67] !border-[#246f67" onClick={async () => { await apiUnhide(it.id); setStatus(it.id, "active"); }}>
+            <Button size="sm" className="text-[#246f67] !border-[#246f67]" onClick={() => update("active")}>
               <EyeIcon className="w-4 h-4 mr-1 rotate-180" /> Bật tin
             </Button>
           </>
         );
+
+      case "sold":
+        return (
+          <>
+            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={viewPost}>
+              <Eye className="w-4 h-4 mr-1" /> Xem tin
+            </Button>
+            <Button size="sm" className="text-[#246f67] !border-[#246f67]" onClick={() => update("pending")}>
+              <RotateCcw className="w-4 h-4 mr-1" /> Đăng lại
+            </Button>
+          </>
+        );
+
       default:
         return null;
     }
@@ -110,9 +179,11 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
             </div>
 
             <div className="text-right text-xs text-muted-foreground">
-              <div>
-                Xem: <span className="font-semibold text-gray-800">{it.views}</span>
-              </div>
+              {typeof it.views === "number" && (
+                <div>
+                  Xem: <span className="font-semibold text-gray-800">{it.views}</span>
+                </div>
+              )}
             </div>
           </div>
 

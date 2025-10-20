@@ -1,3 +1,4 @@
+// App.tsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import LayoutCompact from "@/components/layout/LayoutCompact";
@@ -15,6 +16,7 @@ import PostNew from "@/pages/posts/PostNew";
 import PostManage from "@/pages/posts/PostManage";
 import PostNotice from "@/pages/posts/PostNotice";
 import WishlistPage from "@/pages/wishlist/WishlistPage";
+
 export default function App() {
   return (
     <Routes>
@@ -23,12 +25,21 @@ export default function App() {
       </Route>
 
       <Route element={<LayoutCompact />}>
-      <Route path="/account/wishlist" element={<WishlistPage/>} />
-        <Route path="/post/notice/:id" element={
-          <PrivateRoute><PostNotice /></PrivateRoute>
-        } />
+        <Route path="/account/wishlist" element={<WishlistPage />} />
+
+        <Route
+          path="/postnotice"
+          element={
+            <PrivateRoute>
+              <PostNotice />
+            </PrivateRoute>
+          }
+        />
+        <Route path="/post/notice/:id" element={<Navigate to="/postnotice" replace />} />
+
         <Route path="/profile/:username" element={<ProfilePublicPage />} />
-        <Route path="/post/new"
+        <Route
+          path="/post/new"
           element={
             <PrivateRoute>
               <PostNew />
