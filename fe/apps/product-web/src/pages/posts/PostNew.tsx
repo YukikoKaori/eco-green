@@ -28,7 +28,6 @@ import {
   toVNDFromMillions,
 } from "@/api/PostApi";
 
-/* ================== Types & Const ================== */
 type Category = "vehicle" | "battery";
 type ImgItem = { file: File; url: string; cover?: boolean };
 
@@ -37,23 +36,19 @@ type FormState = {
 
   title: string;
   description: string;
-  price: string; // nhập theo “triệu”
+  price: string; 
 
-  // address
   addressDetail: string;
 
-  // BATTERY
   batteryTypeId?: string;
   capacityKwh?: string;
   healthPercent?: string;
   voltageV?: string;
 
-  // VEHICLE numeric inputs
   year?: string;
   mileageKm?: string;
   batteryHealthPercent?: string;
 
-  // common ids (BATTERY only dùng brandId trong form)
   brandId?: string;
 };
 
@@ -62,7 +57,6 @@ const MIN_IMAGES = 1;
 const MAX_TITLE = 50;
 const MAX_DESC = 1500;
 
-/* ================== Component ================== */
 export default function PostNew() {
   const { user } = useAuth();
   const nav = useNavigate();
@@ -99,7 +93,6 @@ export default function PostNew() {
   const [selectedModelId, setSelectedModelId] = useState<string>("");
   const [selectedVersionId, setSelectedVersionId] = useState<string>("");
 
-  /* Initial loads (chỉ categories + battery brands) */
   useEffect(() => {
     (async () => {
       try {
@@ -113,14 +106,12 @@ export default function PostNew() {
     })();
   }, []);
 
-  /* Ensure 1 ảnh bìa */
   useEffect(() => {
     if (imgs.length && !imgs.some((i) => i.cover)) {
       setImgs((arr) => arr.map((it, idx) => ({ ...it, cover: idx === 0 })));
     }
   }, [imgs.length]);
 
-  /* Khi đổi categoryId → reset, nạp brand theo category */
   useEffect(() => {
     if (!isVehicle) return;
 
@@ -146,7 +137,6 @@ export default function PostNew() {
     })();
   }, [isVehicle, selectedCategoryId]);
 
-  /* Khi có categoryId + brandId → nạp models */
   useEffect(() => {
     if (!isVehicle) return;
 
@@ -171,7 +161,6 @@ export default function PostNew() {
     })();
   }, [isVehicle, selectedCategoryId, selectedBrandId]);
 
-  /* Khi có modelId → nạp versions */
   useEffect(() => {
     if (!isVehicle) return;
 
@@ -192,7 +181,6 @@ export default function PostNew() {
     })();
   }, [isVehicle, selectedModelId]);
 
-  /* Validate */
   const titleLeft = MAX_TITLE - (form.title?.length || 0);
   const descLeft = MAX_DESC - (form.description?.length || 0);
 
@@ -289,8 +277,6 @@ export default function PostNew() {
           brandId: selectedBrandId,
           batteryHealthPercent: Number(form.batteryHealthPercent),
           mileageKm: Number(form.mileageKm),
-
-          // ✅ gửi id theo BE
           modelId: selectedModelId,
           year: Number(form.year),
           versionId: selectedVersionId,
@@ -342,7 +328,6 @@ export default function PostNew() {
 
   const Required = () => <span className="ml-1 text-red-500">*</span>;
 
-  /* ================== UI ================== */
   return (
     <form onSubmit={onSubmit} className="container mx-auto max-w-6xl px-4 py-6">
       <div className="overflow-x-auto bg-gray-100">
@@ -420,9 +405,7 @@ export default function PostNew() {
             </div>
           </section>
 
-          {/* RIGHT: Form */}
           <section className="isolate flex-1 bg-white p-4 ">
-            {/* Nhóm 0: Danh mục (vehicle/battery) + Cascading */}
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-1">
                 <Label>Danh mục<Required /></Label>
@@ -440,7 +423,6 @@ export default function PostNew() {
                 </Select>
               </div>
 
-              {/* VEHICLE: chỉ hiện dần khi chọn xong bước trước */}
               {isVehicle ? (
                 <>
                   {/* Loại xe */}
@@ -524,7 +506,6 @@ export default function PostNew() {
                   )}
                 </>
               ) : (
-                // BATTERY: chỉ chọn Hãng pin
                 <div className="col-span-2 flex flex-col gap-1">
                   <Label>Hãng pin<Required /></Label>
                   <Select
@@ -544,7 +525,6 @@ export default function PostNew() {
               )}
             </div>
 
-            {/* Nhóm 1: Các trường bổ sung */}
             <div className="mt-4 grid grid-cols-3 gap-4">
               {isVehicle ? (
                 <>
@@ -605,7 +585,6 @@ export default function PostNew() {
               )}
             </div>
 
-            {/* Tiêu đề – Mô tả – Giá */}
             <div className="mt-6">
               <h3 className="mb-2 font-semibold text-gray-800">Tiêu đề tin & mô tả</h3>
 

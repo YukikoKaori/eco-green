@@ -1,4 +1,3 @@
-// src/pages/posts/PostCard.tsx
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Eye, Edit, RotateCcw, CreditCard, EyeOff, Info, Eye as EyeIcon } from "lucide-react";
@@ -6,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 
 import { updateProductStatus, type BEStatus } from "@/api/product";
 
-// Trạng thái hiển thị theo tab FE
 export type ListingStatus =
   | "active"
   | "pending"
@@ -23,7 +21,7 @@ export type ListingItem = {
   location: string;
   price: number;
   status: ListingStatus;
-  cover: string;          // luôn là string (đã fallback ở PostManage)
+  cover: string;          
   views?: number;
   rejectReason?: string;
 };
@@ -31,7 +29,7 @@ export type ListingItem = {
 type Props = {
   item: ListingItem;
   setStatus: (id: string, st: ListingStatus) => void;
-  onShowReason: (text?: string) => void; // mở modal lý do bị từ chối
+  onShowReason: (text?: string) => void; 
 };
 
 export const tone = {
@@ -41,7 +39,6 @@ export const tone = {
 export const currency = (v: number) =>
   v.toLocaleString("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
 
-// FE -> BE khi cập nhật trạng thái
 const FE2BE: Record<ListingStatus, BEStatus> = {
   active: "ACTIVE",
   pending: "PENDING_REVIEW",
@@ -56,12 +53,10 @@ const FE2BE: Record<ListingStatus, BEStatus> = {
 export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
   const nav = useNavigate();
 
-  // Điều hướng xem/sửa/thanhtoán
   const viewPost = () => window.open(`/product/${it.id}`, "_blank", "noopener,noreferrer");
   const editPost = () => nav(`/post/new?edit=${encodeURIComponent(it.id)}`);
   const goPay   = () => nav(`/postnotice?productId=${encodeURIComponent(it.id)}`);
 
-  // Cập nhật trạng thái thật ở BE rồi update UI local
   const update = async (next: ListingStatus) => {
     await updateProductStatus(it.id, FE2BE[next]);
     setStatus(it.id, next);

@@ -1,4 +1,3 @@
-// src/pages/posts/PostNotice.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,22 +21,19 @@ const COLOR = {
   outlinePrimary: "border-[#246f67] text-[#246f67] hover:bg-[#246f67]/5",
 };
 
-// ====== Pricing (FE hiển thị; BE vẫn tự tính lại) ======
-const BASE_PRICE = 10_000;             // luôn thu
-const PRICE_PRIORITY_PER_DAY = 20_000; // gói Ưu tiên
-const PRICE_SPECIAL_PER_DAY = 30_000;  // gói Đặc biệt
+const BASE_PRICE = 10_000;             
+const PRICE_PRIORITY_PER_DAY = 20_000; 
+const PRICE_SPECIAL_PER_DAY = 30_000;  
 const DAY_OPTIONS = [7, 15, 30, 60] as const;
 
 type PackKey = "" | "priority" | "special";
 type PayMethod = "VNPAY" | "MOMO";
 
-// BE cần "Vnpay"/"Momo" (viết đúng case)
 const PAY_METHOD_MAP: Record<PayMethod, "Vnpay" | "Momo"> = {
   VNPAY: "Vnpay",
   MOMO:  "Momo",
 };
 
-// Tên gói hiển thị tiếng Việt
 const VI_LABEL: Record<"BASIC" | "PRIORITY" | "SPECIAL", string> = {
   BASIC: "Cơ bản",
   PRIORITY: "Ưu tiên",
@@ -55,7 +51,6 @@ const addDays = (d: Date, n: number) => {
 const fmt = (d: Date) =>
   d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 
-// Chuẩn hoá tên gói để map (bỏ dấu & khoảng trắng, lower-case)
 function norm(s: string) {
   return s
     .normalize("NFD")
@@ -68,7 +63,6 @@ export default function PostNotice() {
   const nav = useNavigate();
   const location = useLocation();
 
-  // 1) Lấy created từ state hoặc localStorage (để F5 không mất)
   let created: CreatedPost | undefined = (location.state as any)?.created;
   if (!created) {
     try {
@@ -77,7 +71,6 @@ export default function PostNotice() {
     } catch {}
   }
 
-  // 2) productId + kind
   const params = new URLSearchParams(location.search);
   const productId =
     (location.state as any)?.productId ||
@@ -89,7 +82,6 @@ export default function PostNotice() {
     (location.state as any)?.type ||
     (created && "batteryTypeName" in created ? "battery" : "vehicle");
 
-  // Ảnh bìa & giá hiển thị
   const cover =
     (created?.images as ProductImageResponseFE[] | undefined)?.find((i) => i.isPrimary)?.url ||
     (created?.images as ProductImageResponseFE[] | undefined)?.[0]?.url ||
@@ -97,17 +89,14 @@ export default function PostNotice() {
 
   const priceMillions = typeof created?.price === "number" ? created!.price / 1_000_000 : 0;
 
-  // UI state
   const [days, setDays] = useState<number>(30);
   const [pack, setPack] = useState<PackKey>("");
   const [payMethod, setPayMethod] = useState<PayMethod>("VNPAY");
   const [isPaying, setIsPaying] = useState(false);
   const [statusText, setStatusText] = useState<string>("PENDING_REVIEW");
 
-  // biết user đã “commit” thanh toán chưa (để quyết định lưu nháp khi rời)
   const committedRef = useRef(false);
 
-  // ====== Fetch động danh sách gói từ BE ======
   type PackageItem = { id: string; name: string; description?: string; durationDays?: number; price?: number };
   const [pkgMap, setPkgMap] = useState<Record<"BASIC" | "PRIORITY" | "SPECIAL", string> | null>(null);
   const [loadingPkg, setLoadingPkg] = useState(true);
@@ -116,8 +105,6 @@ export default function PostNotice() {
     (async () => {
       try {
         const { data } = await api.get<PackageItem[]>("/post/payments/show");
-        // Map theo tên (hỗ trợ cả tiếng Anh & tiếng Việt)
-        // Các cách match phổ biến: BASIC|COBAN, PRIORITY|UUTIEN, SPECIAL|DACBIET
         const map: Partial<Record<"BASIC" | "PRIORITY" | "SPECIAL", string>> = {};
         for (const p of data ?? []) {
           const n = norm(String(p.name ?? ""));
@@ -125,7 +112,6 @@ export default function PostNotice() {
           else if (["priority", "uutien"].includes(n)) map.PRIORITY = p.id;
           else if (["special", "dacbiet"].includes(n)) map.SPECIAL = p.id;
         }
-        // fallback thêm: thử match theo từ khoá chứa
         if (!map.BASIC) {
           const found = (data ?? []).find(p => norm(p.name ?? "").includes("basic") || norm(p.name ?? "").includes("coban"));
           if (found) map.BASIC = found.id;
@@ -146,9 +132,8 @@ export default function PostNotice() {
     })();
   }, []);
 
-  // Tính tiền (hiển thị)
   const { total, breakdown } = useMemo(() => {
-    let sum = BASE_PRICE; // luôn có base
+    let sum = BASE_PRICE; 
     const bd: string[] = [`Phí đăng tin cơ bản: ${currency(BASE_PRICE)}`];
 
     if (pack === "priority" || pack === "special") {
@@ -164,42 +149,34 @@ export default function PostNotice() {
   const startDate = fmt(start);
   const endDate = fmt(end);
 
-  // ====== API helpers ======
   async function createPackageAndPayment() {
     if (!productId) throw new Error("Missing productId");
     if (!pkgMap?.BASIC || !pkgMap?.PRIORITY || !pkgMap?.SPECIAL) {
       throw new Error("Không tìm thấy mã gói từ BE");
     }
 
-    // map pack -> packageId của BE (lấy từ pkgMap)
     const packageId =
       pack === "" ? pkgMap.BASIC : pack === "priority" ? pkgMap.PRIORITY : pkgMap.SPECIAL;
 
-    const paymentMethod = PAY_METHOD_MAP[payMethod]; // "Vnpay" | "Momo"
+    const paymentMethod = PAY_METHOD_MAP[payMethod]; 
 
-    // ✅ Dùng endpoint BE cung cấp: PUT /post/payments/{productId}/package
     const { data } = await api.put(`/post/payments/${productId}/package`, {
       packageId,
       paymentMethod,
       durationDays: days,
     });
 
-    // BE trả về paymentUrl -> FE redirect sang gateway
     return { paymentUrl: data?.paymentUrl as string, qrCodeUrl: undefined as string | undefined };
   }
 
-  // Đánh dấu tin là “DRAFT” nếu user thoát khi chưa thanh toán
   async function markDraft() {
     if (!productId) return;
     try {
-      // Nếu BE của bạn có path khác để set draft, sửa lại dòng dưới:
       await api.put(`/member/product/${productId}/status`, { status: "DRAFT" });
     } catch {
-      // nuốt lỗi, không chặn điều hướng
     }
   }
 
-  // (Optional) Lấy trạng thái tin để hiển thị badge thực
   async function fetchStatus() {
     if (!productId) return;
     try {
@@ -208,7 +185,6 @@ export default function PostNotice() {
     } catch {}
   }
 
-  // Nếu thiếu productId → quay về quản lý tin
   useEffect(() => {
     if (!productId) nav("/post/manage", { replace: true });
   }, [productId, nav]);
@@ -216,7 +192,6 @@ export default function PostNotice() {
   useEffect(() => {
     fetchStatus();
 
-    // nếu rời trang mà chưa commit thanh toán → lưu nháp
     const beforeUnload = async (e: BeforeUnloadEvent) => {
       if (!committedRef.current) {
         e.preventDefault();
@@ -238,27 +213,25 @@ export default function PostNotice() {
       window.removeEventListener("beforeunload", beforeUnload);
       window.removeEventListener("popstate", onPop);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
 
   async function onPay() {
     if (!productId) return;
     setIsPaying(true);
     try {
-      committedRef.current = true; // đã bấm thanh toán
+      committedRef.current = true; 
 
       const { paymentUrl, qrCodeUrl } = await createPackageAndPayment();
 
       if (qrCodeUrl) window.open(qrCodeUrl, "_blank", "noopener,noreferrer");
 
       if (paymentUrl) {
-        // BE đã cấu hình returnUrl về trang quản lý tin
         window.location.href = paymentUrl;
       } else {
         nav("/post/manage", { replace: true });
       }
     } catch (e) {
-      committedRef.current = false; // fail -> cho phép lưu nháp khi rời
+      committedRef.current = false; 
     } finally {
       setIsPaying(false);
     }
@@ -391,7 +364,7 @@ export default function PostNotice() {
         </CardContent>
       </Card>
 
-      {/* Tính tiền + hành động */}
+      {/* Tính tiền*/}
       <Card>
         <CardContent className="p-4">
           <div className="text-[16px] font-bold mb-1">Thanh toán</div>
@@ -426,8 +399,6 @@ export default function PostNotice() {
                   {isPaying ? "Đang tạo thanh toán..." : loadingPkg ? "Đang tải gói..." : "Thanh toán"}
                 </Button>
               </div>
-
-              {/* Sau thanh toán, BE redirect về /post/manage (đã cấu hình trong vnp_ReturnUrl/momo return) */}
             </div>
           </div>
         </CardContent>

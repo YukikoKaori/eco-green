@@ -1,4 +1,3 @@
-// src/pages/posts/PostManage.tsx
 import { useEffect, useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import api from "@/lib/axios";
 import PostCard from "@/pages/posts/PostCard";
 
-/* ---------------- FE <-> BE status mapping ---------------- */
 export type ListingStatus =
   | "active"
   | "pending"
@@ -73,13 +71,12 @@ const TABS: { key: ListingStatus; title: string }[] = [
   { key: "sold",     title: "Đã bán" },
 ];
 
-/* ---------------- Kiểu dữ liệu từ API ---------------- */
 type ProductImage = { url: string; isPrimary?: boolean };
 type ProductListItem = {
   id: string;
   title: string;
   type?: "VEHICLE" | "BATTERY";
-  price: number | string;           // BE có thể trả string như "900.000.000"
+  price: number | string;           
   status: BEStatus;
   createdAt?: string;
 
@@ -95,7 +92,6 @@ type ProductListItem = {
 
 type PageResp = ProductListItem[];
 
-/* ======================================================= */
 export default function PostManage() {
   const { user } = useAuth();
   const DEFAULT_AVATAR = "/images/avatar-default.png";
@@ -116,7 +112,6 @@ export default function PostManage() {
   const [reasonOpen, setReasonOpen] = useState(false);
   const [reasonText, setReasonText] = useState<string>("");
 
-  /* ------- Fetch list theo tab hiện tại ------- */
   useEffect(() => {
     let stop = false;
     (async () => {
@@ -132,7 +127,6 @@ export default function PostManage() {
     return () => { stop = true; };
   }, [tab]);
 
-  /* ------- Đếm số lượng từng tab (song song) ------- */
   useEffect(() => {
     let stop = false;
     (async () => {
@@ -149,14 +143,12 @@ export default function PostManage() {
           setCounts(next);
         }
       } catch {
-        // ignore
+        
       }
     })();
     return () => { stop = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // gọi 1 lần khi vào trang
+  }, []); 
 
-  /* ------- Tìm kiếm cục bộ ------- */
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return list;
@@ -171,11 +163,9 @@ export default function PostManage() {
   const pageData = filtered.slice((page - 1) * pageSize, page * pageSize);
   useEffect(() => { setPage(1); }, [tab, q]);
 
-  /* ------- Update trạng thái item ------- */
   async function setStatus(id: string, next: ListingStatus) {
     try {
       await api.put(`/member/product/${id}/status`, { status: FE2BE[next] });
-      // Cập nhật UI: bỏ khỏi tab hiện tại và cộng số lượng tab đích
       setList((prev) => prev.filter((it) => it.id !== id));
       setCounts((c) => ({
         ...c,
@@ -183,11 +173,8 @@ export default function PostManage() {
         [next]: (c[next] ?? 0) + 1,
       }));
     } catch (e) {
-      // TODO: toast.error("Không cập nhật được trạng thái");
     }
   }
-
-  /* ------- Xem lý do bị từ chối ------- */
   function onShowReason(item?: ProductListItem) {
     if (item?.rejectReason) {
       setReasonText(item.rejectReason);
