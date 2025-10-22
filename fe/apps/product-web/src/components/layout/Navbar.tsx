@@ -17,14 +17,16 @@ import { useAuth } from "@/contexts/AuthContext";
 const mainNav = [
   { label: "EcoGreen", to: "/" },
   { label: "Xe điện", to: "/xe-dien" },
-  { label: "Pin điện", to: "/pin-dien" },
+  { label: "Pin điện", to: "/pin-xe-dien" }, 
   { label: "EcoBlog", to: "/blog" },
 ];
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [keyword, setKeyword] = useState(""); 
   const { user } = useAuth();
   const nav = useNavigate();
+
   useEffect(() => {
     const THRESHOLD = 60;
     const HYST = 12;
@@ -32,7 +34,6 @@ export default function Navbar() {
 
     const handleScroll = () => {
       const y = window.scrollY;
-
       if (ticking) return;
       ticking = true;
 
@@ -50,20 +51,25 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const handleSearch = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const q = keyword.trim();
+    nav(`/xe-dien?keyword=${encodeURIComponent(q)}`);
+  };
+
   return (
     <header
-      className={`navbar sticky top-0 z-50 transition-all duration-300 ${isScrolled ? "navbar-shrink" : "navbar-expanded"
-        }`}
+      className={`navbar sticky top-0 z-50 transition-all duration-300 ${
+        isScrolled ? "navbar-shrink" : "navbar-expanded"
+      }`}
       style={
         isScrolled
-          ? {
-            background: "linear-gradient(90deg, #246f67 0%, #01c5a7ff 50%)",
-          }
+          ? { background: "linear-gradient(90deg, #246f67 0%, #01c5a7ff 50%)" }
           : {
-            backgroundImage: "url('/images/navbar-bg.png')",
-            backgroundSize: "cover",
-            backgroundRepeat: "no-repeat",
-          }
+              backgroundImage: "url('/images/navbar-bg.png')",
+              backgroundSize: "cover",
+              backgroundRepeat: "no-repeat",
+            }
       }
     >
       {/* Top bar */}
@@ -104,14 +110,10 @@ export default function Navbar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="min-w-[180px]">
               <DropdownMenuItem asChild>
-                <Link to="/xe-dien" className="w-full">
-                  Xe điện
-                </Link>
+                <Link to="/xe-dien" className="w-full">Xe điện</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/pin-dien" className="w-full">
-                  Pin điện
-                </Link>
+                <Link to="/pin-xe-dien" className="w-full">Pin điện</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -137,9 +139,10 @@ export default function Navbar() {
                   key={it.to}
                   to={it.to}
                   className={({ isActive }) =>
-                    `relative font-medium ml-5 transition-colors ${isActive
-                      ? "text-[#124f47] font-bold"
-                      : "text-[#246f67] opacity-70 hover:text-yellow-300"
+                    `relative font-medium ml-5 transition-colors ${
+                      isActive
+                        ? "text-[#124f47] font-bold"
+                        : "text-[#246f67] opacity-70 hover:text-yellow-300"
                     }`
                   }
                 >
@@ -149,12 +152,14 @@ export default function Navbar() {
             </nav>
           ) : (
             <form
-              onSubmit={(e) => e.preventDefault()}
+              onSubmit={handleSearch} 
               className="flex items-center gap-2 bg-white rounded-xl px-3 shadow w-full max-w-xl"
             >
               <Search className="w-5 h-5 text-gray-500" />
               <Input
                 placeholder="Tìm sản phẩm..."
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
                 className="flex-1 h-10 border-none shadow-none focus-visible:ring-0 text-sm"
               />
               <Button
@@ -184,17 +189,11 @@ export default function Navbar() {
           </Button>
 
           {user ? (
-            <Button
-              asChild
-              className="hidden md:flex !text-[#246f67] !bg-white"
-            >
+            <Button asChild className="hidden md:flex !text-[#246f67] !bg-white">
               <Link to="/post/manage">Quản lý tin</Link>
             </Button>
           ) : (
-            <Button
-              asChild
-              className="hidden md:flex !text-[#246f67] !bg-white"
-            >
+            <Button asChild className="hidden md:flex !text-[#246f67] !bg-white">
               <Link to="/login">Đăng nhập</Link>
             </Button>
           )}
@@ -222,12 +221,14 @@ export default function Navbar() {
 
           <div className="mx-auto max-w-4xl px-4 py-3 flex justify-center">
             <form
-              onSubmit={(e) => e.preventDefault()}
+              onSubmit={handleSearch}
               className="flex w-full max-w-3xl items-center gap-2 bg-white rounded-xl px-5 py-3 mt-11 shadow"
             >
               <Search className="w-5 h-5 text-gray-500" />
               <Input
                 placeholder="Tìm sản phẩm..."
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
                 className="flex-1 border-none shadow-none focus-visible:ring-0 text-sm"
               />
               <Button

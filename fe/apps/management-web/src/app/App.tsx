@@ -8,6 +8,7 @@ import UsersPage from "@/pages/Users";
 import StaffsPage from "@/pages/Staffs";
 import ProfilePage from "@/pages/settings/ProfilePage";
 import AccountPage from "@/pages/settings/AccountPage";
+import PendingPostsPage from "@/pages/PendingPostsPage";
 
 export default function App() {
   return (
@@ -25,7 +26,7 @@ export default function App() {
           <Route path="staffs" element={<StaffsPage />} />
 
           {/* Quản lý bài đăng */}
-          <Route path="posts/pending" element={<div>Cần phê duyệt</div>} />
+          <Route path="posts/pending" element={<PendingPostsPage/> } />
           <Route path="posts/active" element={<div>Đang hiển thị</div>} />
 
           {/* Cài đặt */}

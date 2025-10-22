@@ -2,6 +2,8 @@ import api from "@/lib/axios";
 
 export type ApiEnvelope<T> = { code: number; message: string; result: T };
 
+export type ProductStatus = "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+
 export interface UserProfile {
   id: string;
   username: string;
@@ -34,7 +36,27 @@ export interface LoginResult {
   createdAt?: string | null;
   updatedAt?: string | null;
 }
+
 export interface LoginResponse extends ApiEnvelope<LoginResult> {}
+
+export interface PendingProduct {
+  id: string;
+  status: string;
+  rejectReason: string | null;
+  title: string;
+  thumbnail: string | null;
+  productType: string;
+  updateAt: string | null;
+  modelName: string | null;
+  versionName: string | null;
+  packageName: string;
+  amount: number | null; 
+}
+
+export interface VerifyPostPayload {
+  newStatus: ProductStatus;
+  rejectReason?: string | null;
+}
 
 function unwrap<T>(data: any): T {
   return (data?.result ?? data) as T;
@@ -58,19 +80,27 @@ const compact = (obj: Record<string, any>) => {
   const out: Record<string, any> = {};
   for (const [k, v] of Object.entries(obj)) {
     if (v === undefined) continue;
-    if (typeof v === "string" && v.trim() === "") continue; 
+    if (typeof v === "string" && v.trim() === "") continue;
     out[k] = v;
   }
   return out;
 };
 
+// 🧩 AUTH
 export async function loginApi(payload: { phone: string; password: string }) {
   const { data } = await api.post<LoginResponse>("/auth/login", payload);
   return unwrap<LoginResult>(data);
 }
 
-export async function registerApi(payload: { fullName: string; phone: string; password: string }) {
-  const { data } = await api.post<ApiEnvelope<UserProfile>>("/auth/register", payload);
+export async function registerApi(payload: {
+  fullName: string;
+  phone: string;
+  password: string;
+}) {
+  const { data } = await api.post<ApiEnvelope<UserProfile>>(
+    "/auth/register",
+    payload
+  );
   return unwrap<UserProfile>(data);
 }
 
@@ -84,19 +114,21 @@ export const oauthUrls = {
   facebook: `${import.meta.env.VITE_API_URL}/auth/facebook`,
 };
 
+// PROFILE
 export async function getMe(opts?: { signal?: AbortSignal }) {
-  const { data } = await api.get<UserProfile | ApiEnvelope<UserProfile>>("/profile/me", {
-    signal: opts?.signal,
-  });
+  const { data } = await api.get<UserProfile | ApiEnvelope<UserProfile>>(
+    "/profile/me",
+    { signal: opts?.signal }
+  );
   return normalizeUser(unwrap<UserProfile>(data));
 }
 
 export type UpdateMePayload = Partial<{
-  fullName: string; 
-  phone: string;    
+  fullName: string;
+  phone: string;
   address: string;
   email: string | null;
-  dateOfBirth: string | null; 
+  dateOfBirth: string | null;
   avatarUrl: string | null;
   taxCode: string | null;
   gender: "MALE" | "FEMALE" | "OTHER" | string;
@@ -105,26 +137,51 @@ export type UpdateMePayload = Partial<{
 
 function buildUpdatePayload(body: UpdateMePayload) {
   const payload: Record<string, any> = { ...body };
-
   if (payload.gender) payload.gender = String(payload.gender).toUpperCase();
-
   return compact(payload);
 }
 
 export async function updateMe(body: UpdateMePayload) {
   const finalBody = buildUpdatePayload(body);
-  const { data } = await api.patch<UserProfile | ApiEnvelope<UserProfile>>("/profile/me/update", finalBody);
+  const { data } = await api.patch<UserProfile | ApiEnvelope<UserProfile>>(
+    "/profile/me/update",
+    finalBody
+  );
   return normalizeUser(unwrap<UserProfile>(data));
 }
 
-export async function changePassword(payload: { currentPassword: string; newPassword: string }) {
-  const { data } = await api.post<ApiEnvelope<unknown>>("/users/change-password", payload);
+export async function changePassword(payload: {
+  currentPassword: string;
+  newPassword: string;
+}) {
+  const { data } = await api.post<ApiEnvelope<unknown>>(
+    "/users/change-password",
+    payload
+  );
   return data;
 }
 
 export async function uploadAvatar(file: File) {
   const form = new FormData();
   form.append("file", file);
-  const { data } = await api.post<{ url: string } | ApiEnvelope<{ url: string }>>("/users/avatar", form);
+  const { data } = await api.post<
+    { url: string } | ApiEnvelope<{ url: string }>
+  >("/users/avatar", form);
   return unwrap<{ url: string }>(data).url;
+}
+
+export async function getPendingPosts(): Promise<PendingProduct[]> {
+  const { data } = await api.get<ApiEnvelope<PendingProduct[]>>(
+    "/staff/post/pending/review"
+  );
+  return unwrap<PendingProduct[]>(data);
+}
+
+
+export async function verifyPost(productId: string, payload: VerifyPostPayload) {
+  const { data } = await api.put<ApiEnvelope<any>>(
+    `/staff/post/${productId}/verify`,
+    payload
+  );
+  return unwrap(data);
 }

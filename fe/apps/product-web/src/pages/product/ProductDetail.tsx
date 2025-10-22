@@ -5,11 +5,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, ChevronRight, MapPin, Phone, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Phone, Clock, MessageCircle } from "lucide-react"; // 🔹 NEW
 import LikeButton from "@/listings/components/LikeButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { toast } from "sonner";
+import ReportAbuse from "@/listings/report/ReportAbuse";
+
 
 /* ----------------------------- Types ----------------------------- */
 type ProductImage = {
@@ -45,6 +47,7 @@ type ProductDetailDTO = {
   productImagesList?: ProductImage[];
   price?: number | string | null;
   createdAt?: string | null;
+  sellerId?: string | null;              
   sellerName?: string | null;
   sellerPhone?: string | null;
   status?: string | null;
@@ -159,7 +162,6 @@ export default function ProductDetail() {
         const pRes = await api.get<ProductDetailDTO>(`/product/search/${id}`);
         if (!off) {
           setProd(pRes.data);
-          // Đồng bộ wishlist từ server (không bắt buộc, nhưng giúp chắc trạng thái)
           if (user) refresh().catch(() => {});
         }
 
@@ -190,7 +192,7 @@ export default function ProductDetail() {
       toast.info("Vui lòng đăng nhập để theo dõi tin.");
       return;
     }
-    await toggle(id); // optimistic update + toast trong context
+    await toggle(id);
   }
 
   if (loading)
@@ -234,11 +236,11 @@ export default function ProductDetail() {
   /* ------------------------------ UI ------------------------------ */
   return (
     <div className="max-w-[1200px] mx-auto px-3 md:px-6 py-4">
-      <div className="grid lg:grid-cols-3 gap-4">
+      <div className="grid lg:grid-cols-5 gap-4">
         {/* Left */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-3"> 
           <div className="rounded-xl overflow-hidden relative">
-            <div className="aspect-video bg-slate-100">
+            <div className="aspect-video bg-slate-100 max-h-[480px] md:max-h-[440px]"> 
               <img
                 src={imgs[idx]?.imageUrl}
                 alt={`image-${idx}`}
@@ -265,6 +267,7 @@ export default function ProductDetail() {
                 </button>
               </>
             )}
+            <ReportAbuse productId={prod.id} className="absolute right-3 top-3" />
           </div>
 
           {/* thumbs */}
@@ -274,7 +277,7 @@ export default function ProductDetail() {
                 <button
                   key={i}
                   onClick={() => setIdx(i)}
-                  className={`h-20 w-32 shrink-0 rounded-lg overflow-hidden border ${
+                  className={`h-16 w-28 shrink-0 rounded-lg overflow-hidden border ${ 
                     i === idx ? "border-[#246f67]" : "border-slate-200"
                   }`}
                 >
@@ -300,7 +303,7 @@ export default function ProductDetail() {
           <Card className="mt-4">
             <CardContent className="p-4">
               <div className="text-lg font-semibold mb-3">Thông số chi tiết</div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-[14px]">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-[13px]">
                 {brandName && <Spec label="Hãng" value={brandName} />}
                 {modelName && <Spec label="Dòng xe" value={modelName} />}
                 {version && <Spec label="Phiên bản" value={version} />}
@@ -311,10 +314,7 @@ export default function ProductDetail() {
                   <Spec label="Số km đã đi" value={`${prod.odometerKm ?? catalog?.mileageKm} km`} />
                 )}
                 {hasNum(c?.batteryCapacityKwh ?? prod.batteryCapacityKwh) && (
-                  <Spec
-                    label="Dung lượng pin"
-                    value={`${c?.batteryCapacityKwh ?? prod.batteryCapacityKwh} kWh`}
-                  />
+                  <Spec label="Dung lượng pin" value={`${c?.batteryCapacityKwh ?? prod.batteryCapacityKwh} kWh`} />
                 )}
                 {hasNum(c?.rangeKm) && <Spec label="Tầm hoạt động" value={`${c!.rangeKm} km`} />}
                 {hasNum(c?.powerHp) && <Spec label="Công suất" value={`${c!.powerHp} HP`} />}
@@ -331,14 +331,12 @@ export default function ProductDetail() {
         </div>
 
         {/* Right */}
-        <div className="space-y-3">
+        <div className="space-y-3 lg:col-span-2"> 
           <Card>
             <CardContent className="p-4">
-              {/* Title + Save pill */}
               <div className="flex items-start justify-between gap-2">
                 <h1 className="!text-[26px] md:text-[34px] font-bold leading-tight">{title}</h1>
 
-                {/* Pill Save with LikeButton */}
                 <button
                   type="button"
                   onClick={handleToggleLike}
@@ -354,7 +352,6 @@ export default function ProductDetail() {
 
               <div className="text-[28px] font-bold text-[#d4205b] mt-3">{currencyVND(price)}</div>
 
-              {/* meta (năm – km) */}
               {metaLine && <div className="text-slate-500 text-sm mt-2">{metaLine}</div>}
 
               {/* Địa chỉ */}
@@ -370,29 +367,45 @@ export default function ProductDetail() {
                   <span>{timeAgoVi(prod.createdAt)}</span>
                 </div>
               )}
+            </CardContent>
+          </Card>
 
-              {/* Nút hiện số */}
-              <div className="grid grid-cols-1 gap-2 mt-3">
-                <Button
-                  className="!bg-[#00C4B4] hover:bg-[#00a99d] text-white"
-                  onClick={() => setShowPhone((s) => !s)}
-                >
-                  <Phone className="w-4 h-4 mr-2" />
-                  {showPhone ? prod.sellerPhone || "Chưa có SĐT" : `Hiện số ${maskPhone(prod.sellerPhone)}`}
-                </Button>
-              </div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-lg font-semibold mb-2">Người bán</div>
 
-              <Separator className="my-4" />
-
-              <div className="text-sm font-semibold mb-2">Người bán</div>
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-slate-200 grid place-items-center font-semibold">
+                <div className="h-8 w-8 rounded-full bg-slate-200 grid place-items-center font-semibold"> 
                   {(prod.sellerName || "?").charAt(0)}
                 </div>
                 <div className="flex-1">
                   <div className="text-sm font-medium">{prod.sellerName || "Người bán"}</div>
                   <div className="text-xs text-slate-500">{address || "—"}</div>
                 </div>
+              </div>
+
+              <Separator className="my-4" />
+
+              <div className="grid grid-cols-2 gap-2"> 
+                <Button
+                  variant="outline"
+                  className="!border-slate-300"
+                  onClick={() => {
+                    const to = prod.sellerId ?? prod.sellerPhone ?? prod.sellerName ?? "";
+                    nav(`/chat?to=${encodeURIComponent(String(to))}`);
+                  }}
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Chat
+                </Button>
+
+                <Button
+                  className="!bg-[#00C4B4] hover:bg-[#00a99d] text-white"
+                  onClick={() => setShowPhone((s) => !s)}
+                >
+                  <Phone className="w-4 h-4 mr-2" />
+                  {showPhone ? (prod.sellerPhone || "Chưa có SĐT") : `Hiện số ${maskPhone(prod.sellerPhone)}`}
+                </Button>
               </div>
             </CardContent>
           </Card>

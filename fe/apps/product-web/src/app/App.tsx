@@ -16,6 +16,7 @@ import PostManage from "@/pages/posts/PostManage";
 import PostNotice from "@/pages/posts/PostNotice";
 import WishlistPage from "@/pages/wishlist/WishlistPage";
 import ProductDetailPage from "@/pages/product/ProductDetail";
+import ListEVPage from "@/pages/listingEV/ListEVPage";
 
 
 export default function App() {
@@ -26,6 +27,9 @@ export default function App() {
       </Route>
 
       <Route element={<LayoutCompact />}>
+        <Route path="/xe-dien" element={<ListEVPage type="VEHICLE" />} />
+        <Route path="/pin-xe-dien" element={<ListEVPage type="BATTERY" />} />
+
         <Route path="/account/wishlist" element={<WishlistPage />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route

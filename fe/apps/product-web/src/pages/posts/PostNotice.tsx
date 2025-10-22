@@ -2,18 +2,18 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CheckCircle2, CalendarDays, Timer, Info } from "lucide-react";
 import api from "@/lib/axios";
-
 import type {
   VehiclePostResponse,
   BatteryPostResponse,
   ProductImageResponseFE,
 } from "@/api/PostApi";
+import { toast } from "sonner";
 
+/* ====================== Types ====================== */
 type PkgOption = {
   id: string;
   name: string;
@@ -32,7 +32,7 @@ type PkgDTO = {
   billingMode: "FIXED" | "PER_DAY" | string;
   category: "BASE" | "ADDON" | string;
   baseDurationDays: number | null;
-  price: number | null;        
+  price: number | null;       
   dailyPrice: number | null;   
   includesPostFee: boolean;
   priorityLevel: number | null;
@@ -45,10 +45,13 @@ type PkgDTO = {
   options: PkgOption[];
 };
 
-type CreatedPost = (VehiclePostResponse | BatteryPostResponse) & { kind?: "vehicle" | "battery" };
+type CreatedPost = (VehiclePostResponse | BatteryPostResponse) & {
+  kind?: "vehicle" | "battery";
+};
 
+/* ====================== UI helpers ====================== */
 const COLOR = {
-  primary: "bg-[#246f67] hover:bg-[#1e5c55] text-white",
+  primary: "bg-[#008377] hover:bg-[#006E64] text-white",   
   outlinePrimary: "border-[#246f67] text-[#246f67] hover:bg-[#246f67]/5",
 };
 
@@ -69,6 +72,7 @@ const addDays = (d: Date, n: number) => {
 const fmt = (d: Date) =>
   d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 
+/* ====================== Page ====================== */
 export default function PostNotice() {
   const nav = useNavigate();
   const location = useLocation();
@@ -101,19 +105,22 @@ export default function PostNotice() {
   const [statusText, setStatusText] = useState<string>("PENDING_REVIEW");
   const committedRef = useRef(false);
 
-  const [basePkg, setBasePkg] = useState<PkgDTO | null>(null);         
-  const [priorityPkg, setPriorityPkg] = useState<PkgDTO | null>(null); 
-  const [specialPkg, setSpecialPkg] = useState<PkgDTO | null>(null);  
+  const [basePkg, setBasePkg] = useState<PkgDTO | null>(null);
+  const [priorityPkg, setPriorityPkg] = useState<PkgDTO | null>(null);
+  const [specialPkg, setSpecialPkg] = useState<PkgDTO | null>(null);
   const [loadingPkg, setLoadingPkg] = useState(true);
 
   type AddonKey = "" | "PRIORITY" | "SPECIAL";
   const [addon, setAddon] = useState<AddonKey>("");
   const [addonOptionId, setAddonOptionId] = useState<string | null>(null);
 
+  const [freeEligible, setFreeEligible] = useState<boolean | null>(null);
+
   const addonDays = useMemo(() => {
     const pkg = addon === "PRIORITY" ? priorityPkg : addon === "SPECIAL" ? specialPkg : null;
     if (!pkg) return 0;
-    const opt = pkg.options.find((o) => o.id === addonOptionId) || pkg.options.find((o) => o.isDefault);
+    const opt =
+      pkg.options.find((o) => o.id === addonOptionId) || pkg.options.find((o) => o.isDefault);
     return opt?.durationDays ?? 0;
   }, [addon, addonOptionId, priorityPkg, specialPkg]);
 
@@ -122,23 +129,28 @@ export default function PostNotice() {
       try {
         setLoadingPkg(true);
         const { data } = await api.get<PkgDTO[]>("/post/payments/show");
-        const standard = data.find(p => p.postPackageCode === "STANDARD" || p.category === "BASE") || null;
-        const priority = data.find(p => p.postPackageCode === "PRIORITY") || null;
-        const special  = data.find(p => p.postPackageCode === "SPECIAL") || null;
+        const standard =
+          data.find((p) => p.postPackageCode === "STANDARD" || p.category === "BASE") || null;
+        const priority = data.find((p) => p.postPackageCode === "PRIORITY") || null;
+        const special = data.find((p) => p.postPackageCode === "SPECIAL") || null;
 
         setBasePkg(standard);
         setPriorityPkg(priority);
         setSpecialPkg(special);
-        //option
-        if (priority?.options?.length) setAddonOptionId(priority.options.find(o=>o.isDefault)?.id ?? priority.options[0].id);
-        if (special?.options?.length)  setAddonOptionId(prev => prev ?? (special.options.find(o=>o.isDefault)?.id ?? special.options[0].id));
+
+        if (priority?.options?.length)
+          setAddonOptionId(
+            priority.options.find((o) => o.isDefault)?.id ?? priority.options[0].id
+          );
+        if (special?.options?.length)
+          setAddonOptionId((prev) => prev ?? (special.options.find((o) => o.isDefault)?.id ?? special.options[0].id));
       } finally {
         setLoadingPkg(false);
       }
     })();
   }, []);
 
-  // ====== Tính tiền ======
+  // ====== Tính tiền hiển thị ======
   const { total, breakdown } = useMemo(() => {
     const lines: string[] = [];
     let sum = 0;
@@ -150,12 +162,14 @@ export default function PostNotice() {
 
     if (addon !== "") {
       const pkg = addon === "PRIORITY" ? priorityPkg : specialPkg;
-      const opt = pkg?.options.find(o => o.id === addonOptionId) || null;
+      const opt = pkg?.options.find((o) => o.id === addonOptionId) || null;
       const addonName = addon === "PRIORITY" ? VI_LABEL.PRIORITY : VI_LABEL.SPECIAL;
       const addonPrice =
         opt?.price != null
           ? opt.price
-          : (pkg?.dailyPrice && opt?.durationDays ? pkg.dailyPrice * opt.durationDays : 0);
+          : pkg?.dailyPrice && opt?.durationDays
+          ? pkg.dailyPrice * opt.durationDays
+          : 0;
       sum += addonPrice;
       if (opt) lines.push(`${addonName} (${opt.name}): ${currency(addonPrice)}`);
     }
@@ -163,13 +177,18 @@ export default function PostNotice() {
     return { total: sum, breakdown: lines };
   }, [basePkg, addon, addonOptionId, priorityPkg, specialPkg]);
 
+  const shownTotal = freeEligible ? 0 : total;
+
   const baseDays = basePkg?.baseDurationDays ?? 30;
   const start = new Date();
 
   async function markDraft() {
     if (!productId) return;
-    try { await api.put(`/member/product/${productId}/status`, { status: "DRAFT" }); } catch {}
+    try {
+      await api.put(`/member/product/${productId}/status`, { status: "DRAFT" });
+    } catch {}
   }
+
   async function fetchStatus() {
     if (!productId) return;
     try {
@@ -177,6 +196,7 @@ export default function PostNotice() {
       if (data?.status) setStatusText(String(data.status));
     } catch {}
   }
+
   useEffect(() => {
     if (!productId) nav("/post/manage", { replace: true });
   }, [productId, nav]);
@@ -187,7 +207,9 @@ export default function PostNotice() {
     const beforeUnload = async (e: BeforeUnloadEvent) => {
       if (!committedRef.current) {
         e.preventDefault();
-        try { await markDraft(); } finally {}
+        try {
+          await markDraft();
+        } finally {}
         e.returnValue = "";
       }
     };
@@ -195,7 +217,9 @@ export default function PostNotice() {
 
     const onPop = async () => {
       if (!committedRef.current) {
-        try { await markDraft(); } finally {}
+        try {
+          await markDraft();
+        } finally {}
       }
     };
     window.addEventListener("popstate", onPop);
@@ -211,25 +235,31 @@ export default function PostNotice() {
     if (!productId) throw new Error("Missing productId");
     if (!basePkg) throw new Error("Thiếu gói STANDARD");
 
-    let packageId = basePkg.postPackageId;
-    let durationDays: number = baseDays;
+    let pkgId = basePkg.postPackageId;
+    let optionId = "";
 
     if (addon !== "") {
       const pkg = addon === "PRIORITY" ? priorityPkg : specialPkg;
-      const opt = pkg?.options.find(o => o.id === addonOptionId) || pkg?.options[0] || null;
-      packageId = pkg!.postPackageId;
-      durationDays = Number(opt?.durationDays ?? 1);
+      const opt =
+        pkg?.options.find((o) => o.id === addonOptionId) || pkg?.options[0] || null;
+      pkgId = pkg!.postPackageId;
+      optionId = opt?.id ?? "";
     }
 
-    const paymentMethod: "Vnpay" | "Momo" = payMethod === "VNPAY" ? "Vnpay" : "Momo";
+    const paymentMethod = payMethod === "VNPAY" ? "VNPAY" : "MOMO";
 
-    const { data } = await api.put(`/post/payments/${productId}/package`, {
-      packageId,
+    const body = {
+      packageId: pkgId,
       paymentMethod,
-      durationDays, 
-    });
+      optionId, 
+    };
 
-    return { paymentUrl: data?.paymentUrl as string | undefined, qrCodeUrl: data?.qrCodeUrl as string | undefined };
+    const { data } = await api.put(`/post/payments/${productId}/package`, body);
+    return {
+      status: data?.status as string | undefined,
+      totalPayable: Number(data?.totalPayable ?? 0),
+      paymentUrl: data?.paymentUrl as string | null | undefined,
+    };
   }
 
   async function onPay() {
@@ -237,10 +267,18 @@ export default function PostNotice() {
     setIsPaying(true);
     try {
       committedRef.current = true;
-      const { paymentUrl, qrCodeUrl } = await createPackageAndPayment();
-      if (qrCodeUrl) window.open(qrCodeUrl, "_blank", "noopener,noreferrer");
-      if (paymentUrl) window.location.href = paymentUrl;
-      else nav("/post/manage", { replace: true });
+      const { paymentUrl, totalPayable } = await createPackageAndPayment();
+
+      // Lần đầu: miễn phí 
+      if (!totalPayable || !paymentUrl) {
+        setFreeEligible(true);
+        toast.success("Tin của bạn được duyệt miễn phí cho lần đăng đầu tiên.");
+        await fetchStatus();
+        nav("/post/manage", { replace: true });
+        return;
+      }
+
+      window.location.href = paymentUrl;
     } catch {
       committedRef.current = false;
     } finally {
@@ -250,7 +288,11 @@ export default function PostNotice() {
 
   function onExitToDraft() {
     (async () => {
-      try { await markDraft(); } finally { nav("/post/manage", { replace: true }); }
+      try {
+        await markDraft();
+      } finally {
+        nav("/post/manage", { replace: true });
+      }
     })();
   }
 
@@ -303,6 +345,9 @@ export default function PostNotice() {
                     <div className="text-[#246f67] font-bold mt-1">
                       {basePkg?.price != null ? currency(basePkg.price) : "--"}
                     </div>
+                    {freeEligible && (
+                      <div className="text-xs text-emerald-600 mt-1">Miễn phí cho lần đăng đầu tiên</div>
+                    )}
                   </div>
                 </label>
               </div>
@@ -322,7 +367,7 @@ export default function PostNotice() {
                         checked={addon === "PRIORITY"}
                         onChange={() => {
                           setAddon("PRIORITY");
-                          const def = priorityPkg?.options.find(o=>o.isDefault) || priorityPkg?.options[0];
+                          const def = priorityPkg?.options.find((o) => o.isDefault) || priorityPkg?.options[0];
                           setAddonOptionId(def?.id ?? null);
                         }}
                       />
@@ -339,7 +384,10 @@ export default function PostNotice() {
                         size="sm"
                         variant={addon === "PRIORITY" && addonOptionId === o.id ? "default" : "outline"}
                         className={addon === "PRIORITY" && addonOptionId === o.id ? COLOR.primary : ""}
-                        onClick={() => { setAddon("PRIORITY"); setAddonOptionId(o.id); }}
+                        onClick={() => {
+                          setAddon("PRIORITY");
+                          setAddonOptionId(o.id);
+                        }}
                       >
                         {o.name} {o.price != null ? `• ${currency(o.price)}` : ""}
                       </Button>
@@ -357,7 +405,7 @@ export default function PostNotice() {
                         checked={addon === "SPECIAL"}
                         onChange={() => {
                           setAddon("SPECIAL");
-                          const def = specialPkg?.options.find(o=>o.isDefault) || specialPkg?.options[0];
+                          const def = specialPkg?.options.find((o) => o.isDefault) || specialPkg?.options[0];
                           setAddonOptionId(def?.id ?? null);
                         }}
                       />
@@ -374,7 +422,10 @@ export default function PostNotice() {
                         size="sm"
                         variant={addon === "SPECIAL" && addonOptionId === o.id ? "default" : "outline"}
                         className={addon === "SPECIAL" && addonOptionId === o.id ? COLOR.primary : ""}
-                        onClick={() => { setAddon("SPECIAL"); setAddonOptionId(o.id); }}
+                        onClick={() => {
+                          setAddon("SPECIAL");
+                          setAddonOptionId(o.id);
+                        }}
                       >
                         {o.name} {o.price != null ? `• ${currency(o.price)}` : ""}
                       </Button>
@@ -385,7 +436,9 @@ export default function PostNotice() {
 
               {/* Bỏ chọn add-on */}
               <div className="mt-3">
-                <Button size="sm" variant="ghost" onClick={() => setAddon("")}>Bỏ chọn dịch vụ thêm</Button>
+                <Button size="sm" variant="ghost" onClick={() => setAddon("")}>
+                  Bỏ chọn dịch vụ thêm
+                </Button>
               </div>
             </div>
           </div>
@@ -396,13 +449,17 @@ export default function PostNotice() {
       <Card>
         <CardContent className="p-4">
           <div className="text-[16px] font-bold mb-1">Thanh toán</div>
-          <div className="text-sm text-slate-600 mb-3">Vui lòng kiểm tra chi tiết và thanh toán để hoàn tất đăng tin.</div>
+          <div className="text-sm text-slate-600 mb-3">
+            Vui lòng kiểm tra chi tiết và thanh toán để hoàn tất đăng tin.
+          </div>
 
           <div className="grid md:grid-cols-2 gap-3">
             <div className="text-sm text-slate-600">
               <div className="font-semibold mb-1">Chi tiết thanh toán</div>
               <ul className="list-disc pl-5">
-                {breakdown.map((t, i) => <li key={i}>{t}</li>)}
+                {breakdown.map((t, i) => (
+                  <li key={i}>{t}</li>
+                ))}
               </ul>
               <div className="flex items-center gap-2 text-xs text-slate-500 mt-2">
                 <Info className="w-3.5 h-3.5" />
@@ -420,7 +477,10 @@ export default function PostNotice() {
 
             <div className="text-right">
               <div className="text-sm">Tổng thanh toán</div>
-              <div className="text-2xl font-bold text-[#246f67]">{currency(total || 0)}</div>
+              <div className="text-2xl font-bold text-[#246f67]">{currency(shownTotal || 0)}</div>
+              {freeEligible && (
+                <div className="text-xs text-emerald-600 mt-1">Miễn phí cho lần đăng đầu tiên</div>
+              )}
 
               <div className="text-left mt-3">
                 <div className="text-sm font-semibold mb-1">Phương thức thanh toán</div>

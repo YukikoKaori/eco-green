@@ -5,7 +5,7 @@ type Props = {
   onToggle: () => void;
   className?: string;
   size?: number;
-  outlineWidth?: number; 
+  outlineWidth?: number;
 };
 
 export default function LikeButton({
@@ -15,6 +15,27 @@ export default function LikeButton({
   size = 20,
   outlineWidth = 4,
 }: Props) {
+  const handleClick: React.MouseEventHandler<HTMLSpanElement> = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onToggle();
+  };
+
+  const handleKeyDown: React.KeyboardEventHandler<HTMLSpanElement> = (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      e.stopPropagation();
+      onToggle();
+    }
+  };
+
+  const swallow: React.EventHandler<
+    React.MouseEvent | React.TouchEvent
+  > = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
     <span
       role="button"
@@ -22,13 +43,10 @@ export default function LikeButton({
       aria-pressed={liked}
       aria-label={liked ? "Bỏ yêu thích" : "Yêu thích"}
       title={liked ? "Bỏ yêu thích" : "Yêu thích"}
-      onClick={onToggle}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onToggle();
-        }
-      }}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      onMouseDown={swallow}
+      onTouchStart={swallow}
       className={`inline-flex items-center justify-center cursor-pointer select-none focus:outline-none ${className}`}
       style={{ width: size, height: size }}
     >
@@ -44,7 +62,7 @@ export default function LikeButton({
           <Heart
             className="absolute inset-0 text-rose-600"
             fill="currentColor"
-            stroke="!currentColor"
+            stroke="currentColor"  
             strokeWidth={2.25}
             style={{ width: size, height: size }}
           />
