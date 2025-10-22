@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+// src/contexts/WishlistContext.tsx
+import { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { addWishlist, removeWishlist, fetchAllWishlistIds } from "@/api/WishlistApi";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -6,7 +7,8 @@ import { toast } from "sonner";
 type Ctx = {
   ids: Set<string>;
   isLiked: (id: string) => boolean;
-  toggle: (id: string) => Promise<boolean>; 
+  toggle: (id: string) => Promise<boolean>;
+  refresh: () => Promise<void>; // ✅ bổ sung
 };
 
 const WishlistContext = createContext<Ctx | null>(null);
@@ -18,51 +20,86 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; };
+    return () => {
+      mounted.current = false;
+    };
   }, []);
 
-  useEffect(() => {
-    if (!user) { setIds(new Set()); return; }
-    (async () => {
-      try {
-        const set = await fetchAllWishlistIds();
-        if (mounted.current) setIds(set);
-      } catch {
-      }
-    })();
+  const refresh = useCallback(async () => {
+    // ✅ load lại từ server
+    if (!user) {
+      setIds(new Set());
+      return;
+    }
+    try {
+      const set = await fetchAllWishlistIds();
+      if (mounted.current) setIds(set);
+    } catch {
+      // im lặng, tránh spam toast khi refresh nền
+    }
   }, [user]);
 
-  const ctx: Ctx = useMemo(() => ({
-    ids,
-    isLiked: (id) => ids.has(id),
-    async toggle(id) {
-      if (!user) { toast.info("Vui lòng đăng nhập để theo dõi tin."); return false; }
-
-      if (ids.has(id)) {
-        setIds(prev => { const n = new Set(prev); n.delete(id); return n; });
-        try {
-          await removeWishlist(id);
-          toast("Đã hủy theo dõi tin này.", { id: `wl-${id}` });
-          return false;
-        } catch {
-          setIds(prev => new Set(prev).add(id));
-          toast.error("Không thể hủy theo dõi.", { id: `wl-${id}` });
-          return true;
-        }
-      } else {
-        setIds(prev => new Set(prev).add(id));
-        try {
-          await addWishlist(id);
-          toast.success("Tin đã được đưa vào danh sách theo dõi.", { id: `wl-${id}` });
-          return true;
-        } catch {
-          setIds(prev => { const n = new Set(prev); n.delete(id); return n; });
-          toast.error("Không thể theo dõi.", { id: `wl-${id}` });
-          return false;
-        }
-      }
+  useEffect(() => {
+    // ✅ load lần đầu theo user
+    if (!user) {
+      setIds(new Set());
+      return;
     }
-  }), [ids, user]);
+    (async () => {
+      await refresh();
+    })();
+  }, [user, refresh]);
+
+  const ctx: Ctx = useMemo(
+    () => ({
+      ids,
+      isLiked: (id) => ids.has(id),
+      async toggle(id) {
+        if (!user) {
+          toast.info("Vui lòng đăng nhập để theo dõi tin.");
+          return false;
+        }
+
+        if (ids.has(id)) {
+          // optimistic remove
+          setIds((prev) => {
+            const n = new Set(prev);
+            n.delete(id);
+            return n;
+          });
+          try {
+            await removeWishlist(id);
+            toast("Đã hủy theo dõi tin này.", { id: `wl-${id}` });
+            return false;
+          } catch {
+            // rollback
+            setIds((prev) => new Set(prev).add(id));
+            toast.error("Không thể hủy theo dõi.", { id: `wl-${id}` });
+            return true;
+          }
+        } else {
+          // optimistic add
+          setIds((prev) => new Set(prev).add(id));
+          try {
+            await addWishlist(id);
+            toast.success("Tin đã được đưa vào danh sách theo dõi.", { id: `wl-${id}` });
+            return true;
+          } catch {
+            // rollback
+            setIds((prev) => {
+              const n = new Set(prev);
+              n.delete(id);
+              return n;
+            });
+            toast.error("Không thể theo dõi.", { id: `wl-${id}` });
+            return false;
+          }
+        }
+      },
+      refresh, // ✅ expose ra context
+    }),
+    [ids, user, refresh]
+  );
 
   return <WishlistContext.Provider value={ctx}>{children}</WishlistContext.Provider>;
 }

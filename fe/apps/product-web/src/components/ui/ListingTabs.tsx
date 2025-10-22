@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom"; 
 import ListingCard from "@/listings/components/ListingCard";
 import type { ListingWithKey } from "@/listings/types";
 import { cn } from "@/lib/utils";
@@ -62,15 +63,40 @@ export default function ListingTabs({
           <div className={styles.empty}>Chưa có tin phù hợp.</div>
         ) : (
           <div className={styles.grid}>
-            {visible.map((item) => (
-              <div key={item._key} className={styles.cardWrapper}>
-                <div className={styles.card}>
-                  <div className={styles.cardReset}>
-                    <ListingCard item={item} />
+            {visible.map((item) => {
+              const pid =
+                (item as any).productId ??
+                (item as any).id ??
+                (item as any).productID ??
+                (item as any).product_id ??
+                null;
+                
+              if (!pid) {
+                return (
+                  <div key={item._key} className={styles.cardWrapper}>
+                    <div className={styles.card}>
+                      <div className={styles.cardReset}>
+                        <ListingCard item={item} />
+                      </div>
+                    </div>
                   </div>
+                );
+              }
+
+              return (
+                <div key={item._key} className={styles.cardWrapper}>
+                  <Link
+                    to={`/product/${pid}`}
+                    className={cn(styles.card, "block focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 rounded-lg")}
+                    aria-label={`Xem chi tiết ${((item as any).title ?? "sản phẩm")}`}
+                  >
+                    <div className={styles.cardReset}>
+                      <ListingCard item={item} />
+                    </div>
+                  </Link>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

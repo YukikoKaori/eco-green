@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
@@ -14,6 +14,37 @@ import type {
   ProductImageResponseFE,
 } from "@/api/PostApi";
 
+type PkgOption = {
+  id: string;
+  name: string;
+  durationDays: number | null;
+  price: number | null;
+  listPrice: number | null;
+  isDefault: boolean;
+  sortOrder: number | null;
+};
+
+type PkgDTO = {
+  postPackageId: string;
+  postPackageCode: "STANDARD" | "PRIORITY" | "SPECIAL" | string;
+  postPackageName: string;
+  postPackageDesc?: string | null;
+  billingMode: "FIXED" | "PER_DAY" | string;
+  category: "BASE" | "ADDON" | string;
+  baseDurationDays: number | null;
+  price: number | null;        
+  dailyPrice: number | null;   
+  includesPostFee: boolean;
+  priorityLevel: number | null;
+  badgeLabel: string | null;
+  showInLatest: boolean;
+  showTopSearch: boolean;
+  listPrice: number | null;
+  isDefault: boolean;
+  note: string | null;
+  options: PkgOption[];
+};
+
 type CreatedPost = (VehiclePostResponse | BatteryPostResponse) & { kind?: "vehicle" | "battery" };
 
 const COLOR = {
@@ -21,23 +52,10 @@ const COLOR = {
   outlinePrimary: "border-[#246f67] text-[#246f67] hover:bg-[#246f67]/5",
 };
 
-const BASE_PRICE = 10_000;             
-const PRICE_PRIORITY_PER_DAY = 20_000; 
-const PRICE_SPECIAL_PER_DAY = 30_000;  
-const DAY_OPTIONS = [7, 15, 30, 60] as const;
-
-type PackKey = "" | "priority" | "special";
-type PayMethod = "VNPAY" | "MOMO";
-
-const PAY_METHOD_MAP: Record<PayMethod, "Vnpay" | "Momo"> = {
-  VNPAY: "Vnpay",
-  MOMO:  "Momo",
-};
-
-const VI_LABEL: Record<"BASIC" | "PRIORITY" | "SPECIAL", string> = {
-  BASIC: "Cơ bản",
-  PRIORITY: "Ưu tiên",
-  SPECIAL: "Đặc biệt",
+const VI_LABEL: Record<"STANDARD" | "PRIORITY" | "SPECIAL", string> = {
+  STANDARD: "Tin thường",
+  PRIORITY: "Tin ưu tiên",
+  SPECIAL: "Tin nổi bật",
 };
 
 const currency = (v: number) =>
@@ -51,18 +69,11 @@ const addDays = (d: Date, n: number) => {
 const fmt = (d: Date) =>
   d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 
-function norm(s: string) {
-  return s
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .replace(/\s+/g, "")
-    .toLowerCase();
-}
-
 export default function PostNotice() {
   const nav = useNavigate();
   const location = useLocation();
 
+  // lấy thông tin bài vừa tạo
   let created: CreatedPost | undefined = (location.state as any)?.created;
   if (!created) {
     try {
@@ -78,10 +89,6 @@ export default function PostNotice() {
     params.get("productId") ||
     "";
 
-  const kind: "vehicle" | "battery" =
-    (location.state as any)?.type ||
-    (created && "batteryTypeName" in created ? "battery" : "vehicle");
-
   const cover =
     (created?.images as ProductImageResponseFE[] | undefined)?.find((i) => i.isPrimary)?.url ||
     (created?.images as ProductImageResponseFE[] | undefined)?.[0]?.url ||
@@ -89,94 +96,80 @@ export default function PostNotice() {
 
   const priceMillions = typeof created?.price === "number" ? created!.price / 1_000_000 : 0;
 
-  const [days, setDays] = useState<number>(30);
-  const [pack, setPack] = useState<PackKey>("");
-  const [payMethod, setPayMethod] = useState<PayMethod>("VNPAY");
+  const [payMethod, setPayMethod] = useState<"VNPAY" | "MOMO">("VNPAY");
   const [isPaying, setIsPaying] = useState(false);
   const [statusText, setStatusText] = useState<string>("PENDING_REVIEW");
-
   const committedRef = useRef(false);
 
-  type PackageItem = { id: string; name: string; description?: string; durationDays?: number; price?: number };
-  const [pkgMap, setPkgMap] = useState<Record<"BASIC" | "PRIORITY" | "SPECIAL", string> | null>(null);
+  const [basePkg, setBasePkg] = useState<PkgDTO | null>(null);         
+  const [priorityPkg, setPriorityPkg] = useState<PkgDTO | null>(null); 
+  const [specialPkg, setSpecialPkg] = useState<PkgDTO | null>(null);  
   const [loadingPkg, setLoadingPkg] = useState(true);
+
+  type AddonKey = "" | "PRIORITY" | "SPECIAL";
+  const [addon, setAddon] = useState<AddonKey>("");
+  const [addonOptionId, setAddonOptionId] = useState<string | null>(null);
+
+  const addonDays = useMemo(() => {
+    const pkg = addon === "PRIORITY" ? priorityPkg : addon === "SPECIAL" ? specialPkg : null;
+    if (!pkg) return 0;
+    const opt = pkg.options.find((o) => o.id === addonOptionId) || pkg.options.find((o) => o.isDefault);
+    return opt?.durationDays ?? 0;
+  }, [addon, addonOptionId, priorityPkg, specialPkg]);
 
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await api.get<PackageItem[]>("/post/payments/show");
-        const map: Partial<Record<"BASIC" | "PRIORITY" | "SPECIAL", string>> = {};
-        for (const p of data ?? []) {
-          const n = norm(String(p.name ?? ""));
-          if (["basic", "coban"].includes(n)) map.BASIC = p.id;
-          else if (["priority", "uutien"].includes(n)) map.PRIORITY = p.id;
-          else if (["special", "dacbiet"].includes(n)) map.SPECIAL = p.id;
-        }
-        if (!map.BASIC) {
-          const found = (data ?? []).find(p => norm(p.name ?? "").includes("basic") || norm(p.name ?? "").includes("coban"));
-          if (found) map.BASIC = found.id;
-        }
-        if (!map.PRIORITY) {
-          const found = (data ?? []).find(p => norm(p.name ?? "").includes("priority") || norm(p.name ?? "").includes("uutien"));
-          if (found) map.PRIORITY = found.id;
-        }
-        if (!map.SPECIAL) {
-          const found = (data ?? []).find(p => norm(p.name ?? "").includes("special") || norm(p.name ?? "").includes("dacbiet"));
-          if (found) map.SPECIAL = found.id;
-        }
+        setLoadingPkg(true);
+        const { data } = await api.get<PkgDTO[]>("/post/payments/show");
+        const standard = data.find(p => p.postPackageCode === "STANDARD" || p.category === "BASE") || null;
+        const priority = data.find(p => p.postPackageCode === "PRIORITY") || null;
+        const special  = data.find(p => p.postPackageCode === "SPECIAL") || null;
 
-        setPkgMap(map as Record<"BASIC" | "PRIORITY" | "SPECIAL", string>);
+        setBasePkg(standard);
+        setPriorityPkg(priority);
+        setSpecialPkg(special);
+        //option
+        if (priority?.options?.length) setAddonOptionId(priority.options.find(o=>o.isDefault)?.id ?? priority.options[0].id);
+        if (special?.options?.length)  setAddonOptionId(prev => prev ?? (special.options.find(o=>o.isDefault)?.id ?? special.options[0].id));
       } finally {
         setLoadingPkg(false);
       }
     })();
   }, []);
 
+  // ====== Tính tiền ======
   const { total, breakdown } = useMemo(() => {
-    let sum = BASE_PRICE; 
-    const bd: string[] = [`Phí đăng tin cơ bản: ${currency(BASE_PRICE)}`];
+    const lines: string[] = [];
+    let sum = 0;
 
-    if (pack === "priority" || pack === "special") {
-      const perDay = pack === "priority" ? PRICE_PRIORITY_PER_DAY : PRICE_SPECIAL_PER_DAY;
-      bd.push(`Gói ${pack === "priority" ? VI_LABEL.PRIORITY : VI_LABEL.SPECIAL} (${currency(perDay)}/ngày) x ${days} ngày`);
-      sum += perDay * days;
+    if (basePkg?.price != null) {
+      sum += basePkg.price;
+      lines.push(`${VI_LABEL.STANDARD}: ${currency(basePkg.price)}`);
     }
-    return { total: sum, breakdown: bd };
-  }, [pack, days]);
 
+    if (addon !== "") {
+      const pkg = addon === "PRIORITY" ? priorityPkg : specialPkg;
+      const opt = pkg?.options.find(o => o.id === addonOptionId) || null;
+      const addonName = addon === "PRIORITY" ? VI_LABEL.PRIORITY : VI_LABEL.SPECIAL;
+      const addonPrice =
+        opt?.price != null
+          ? opt.price
+          : (pkg?.dailyPrice && opt?.durationDays ? pkg.dailyPrice * opt.durationDays : 0);
+      sum += addonPrice;
+      if (opt) lines.push(`${addonName} (${opt.name}): ${currency(addonPrice)}`);
+    }
+
+    return { total: sum, breakdown: lines };
+  }, [basePkg, addon, addonOptionId, priorityPkg, specialPkg]);
+
+  const baseDays = basePkg?.baseDurationDays ?? 30;
   const start = new Date();
-  const end = addDays(start, days);
-  const startDate = fmt(start);
-  const endDate = fmt(end);
-
-  async function createPackageAndPayment() {
-    if (!productId) throw new Error("Missing productId");
-    if (!pkgMap?.BASIC || !pkgMap?.PRIORITY || !pkgMap?.SPECIAL) {
-      throw new Error("Không tìm thấy mã gói từ BE");
-    }
-
-    const packageId =
-      pack === "" ? pkgMap.BASIC : pack === "priority" ? pkgMap.PRIORITY : pkgMap.SPECIAL;
-
-    const paymentMethod = PAY_METHOD_MAP[payMethod]; 
-
-    const { data } = await api.put(`/post/payments/${productId}/package`, {
-      packageId,
-      paymentMethod,
-      durationDays: days,
-    });
-
-    return { paymentUrl: data?.paymentUrl as string, qrCodeUrl: undefined as string | undefined };
-  }
 
   async function markDraft() {
     if (!productId) return;
-    try {
-      await api.put(`/member/product/${productId}/status`, { status: "DRAFT" });
-    } catch {
-    }
+    try { await api.put(`/member/product/${productId}/status`, { status: "DRAFT" }); } catch {}
   }
-
   async function fetchStatus() {
     if (!productId) return;
     try {
@@ -184,7 +177,6 @@ export default function PostNotice() {
       if (data?.status) setStatusText(String(data.status));
     } catch {}
   }
-
   useEffect(() => {
     if (!productId) nav("/post/manage", { replace: true });
   }, [productId, nav]);
@@ -215,23 +207,42 @@ export default function PostNotice() {
     };
   }, [productId]);
 
+  async function createPackageAndPayment() {
+    if (!productId) throw new Error("Missing productId");
+    if (!basePkg) throw new Error("Thiếu gói STANDARD");
+
+    let packageId = basePkg.postPackageId;
+    let durationDays: number = baseDays;
+
+    if (addon !== "") {
+      const pkg = addon === "PRIORITY" ? priorityPkg : specialPkg;
+      const opt = pkg?.options.find(o => o.id === addonOptionId) || pkg?.options[0] || null;
+      packageId = pkg!.postPackageId;
+      durationDays = Number(opt?.durationDays ?? 1);
+    }
+
+    const paymentMethod: "Vnpay" | "Momo" = payMethod === "VNPAY" ? "Vnpay" : "Momo";
+
+    const { data } = await api.put(`/post/payments/${productId}/package`, {
+      packageId,
+      paymentMethod,
+      durationDays, 
+    });
+
+    return { paymentUrl: data?.paymentUrl as string | undefined, qrCodeUrl: data?.qrCodeUrl as string | undefined };
+  }
+
   async function onPay() {
     if (!productId) return;
     setIsPaying(true);
     try {
-      committedRef.current = true; 
-
+      committedRef.current = true;
       const { paymentUrl, qrCodeUrl } = await createPackageAndPayment();
-
       if (qrCodeUrl) window.open(qrCodeUrl, "_blank", "noopener,noreferrer");
-
-      if (paymentUrl) {
-        window.location.href = paymentUrl;
-      } else {
-        nav("/post/manage", { replace: true });
-      }
-    } catch (e) {
-      committedRef.current = false; 
+      if (paymentUrl) window.location.href = paymentUrl;
+      else nav("/post/manage", { replace: true });
+    } catch {
+      committedRef.current = false;
     } finally {
       setIsPaying(false);
     }
@@ -243,9 +254,11 @@ export default function PostNotice() {
     })();
   }
 
+  const endBase = addDays(start, baseDays);
+  const endAddon = addonDays ? addDays(start, addonDays) : null;
+
   return (
     <div className="max-w-5xl mx-auto px-3 md:px-6 py-5">
-      {/* Banner */}
       <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800 flex items-start gap-2">
         <CheckCircle2 className="w-5 h-5 mt-0.5" />
         <div className="text-sm">
@@ -253,15 +266,12 @@ export default function PostNotice() {
         </div>
       </div>
 
-      {/* Tổng quan bài đăng */}
       <Card className="mb-4">
         <CardContent className="p-4">
           <div className="flex gap-3">
             <img src={cover} alt="cover" className="w-[80px] h-[80px] object-cover rounded-md border" />
             <div className="flex-1">
-              <div className="font-semibold text-[15px]">
-                {created?.title || "(Không có tiêu đề)"}
-              </div>
+              <div className="font-semibold text-[15px]">{created?.title || "(Không có tiêu đề)"}</div>
               <div className="text-[#d4205b] font-bold text-[14px] mt-1">
                 {priceMillions.toLocaleString("vi-VN")} triệu
               </div>
@@ -279,92 +289,110 @@ export default function PostNotice() {
 
           <Separator className="my-4" />
 
+          {/* Chọn gói kiểu Chợ Tốt */}
           <div className="grid md:grid-cols-3 gap-3">
-            {/* Gói tin */}
-            <div className="rounded-lg border p-3 bg-slate-50">
-              <div className="text-sm font-semibold mb-1">Gói tin</div>
-              <div className="flex flex-col gap-2 text-sm">
-                <label className="inline-flex items-center gap-2">
-                  <input
-                    type="radio"
-                    className="accent-[#246f67]"
-                    checked={pack === ""}
-                    onChange={() => setPack("")}
-                  />
-                  {VI_LABEL.BASIC} (không thêm gói)
-                </label>
-                <label className="inline-flex items-center gap-2">
-                  <input
-                    type="radio"
-                    className="accent-[#246f67]"
-                    checked={pack === "priority"}
-                    onChange={() => setPack("priority")}
-                  />
-                  {VI_LABEL.PRIORITY} ({currency(PRICE_PRIORITY_PER_DAY)}/ngày)
-                </label>
-                <label className="inline-flex items-center gap-2">
-                  <input
-                    type="radio"
-                    className="accent-[#246f67]"
-                    checked={pack === "special"}
-                    onChange={() => setPack("special")}
-                  />
-                  {VI_LABEL.SPECIAL} ({currency(PRICE_SPECIAL_PER_DAY)}/ngày)
+            {/* Tin thường (STANDARD) */}
+            <div className="rounded-lg border p-3 bg-white">
+              <div className="text-sm font-semibold mb-1">Chọn phương thức đăng tin</div>
+              <div className="border rounded-lg p-3">
+                <label className="flex items-center gap-3">
+                  <input type="radio" className="accent-[#246f67]" checked readOnly />
+                  <div>
+                    <div className="font-semibold">{VI_LABEL.STANDARD}</div>
+                    <div className="text-xs text-slate-500">Áp dụng cho {baseDays} ngày</div>
+                    <div className="text-[#246f67] font-bold mt-1">
+                      {basePkg?.price != null ? currency(basePkg.price) : "--"}
+                    </div>
+                  </div>
                 </label>
               </div>
             </div>
 
-            {/* Số ngày */}
-            <div className="rounded-lg border p-3 bg-slate-50">
-              <div className="text-sm font-semibold mb-1">Số ngày đăng tin</div>
-              <Select value={String(days)} onValueChange={(v) => setDays(Number(v))}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Chọn số ngày" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DAY_OPTIONS.map((d) => (
-                    <SelectItem key={d} value={String(d)}>{d} ngày</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="text-sm flex items-center gap-2 mt-2">
-                <CalendarDays className="w-4 h-4 text-slate-500" />
-                {startDate} <span className="mx-1">đến</span> {fmt(end)}
-              </div>
-              <div className="text-[12px] text-slate-500 mt-1 flex items-center gap-1">
-                <Timer className="w-3.5 h-3.5" /> Tự động kết thúc sau {days} ngày
-              </div>
-            </div>
+            {/* Gói ưu tiên hoặc đặc biệt */}
+            <div className="rounded-lg border p-3 bg-slate-50 md:col-span-2">
+              <div className="text-sm font-semibold mb-2">Mua thêm dịch vụ bán nhanh hơn</div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {/* PRIORITY */}
+                <div className="border rounded-lg p-3 bg-white">
+                  <div className="flex items-center justify-between">
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="radio"
+                        className="accent-[#246f67]"
+                        checked={addon === "PRIORITY"}
+                        onChange={() => {
+                          setAddon("PRIORITY");
+                          const def = priorityPkg?.options.find(o=>o.isDefault) || priorityPkg?.options[0];
+                          setAddonOptionId(def?.id ?? null);
+                        }}
+                      />
+                      <span className="font-semibold">{VI_LABEL.PRIORITY}</span>
+                    </label>
+                    <span className="text-xs text-slate-500">
+                      {priorityPkg?.dailyPrice ? `${currency(priorityPkg.dailyPrice)}/ngày` : ""}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {(priorityPkg?.options ?? []).map((o) => (
+                      <Button
+                        key={o.id}
+                        size="sm"
+                        variant={addon === "PRIORITY" && addonOptionId === o.id ? "default" : "outline"}
+                        className={addon === "PRIORITY" && addonOptionId === o.id ? COLOR.primary : ""}
+                        onClick={() => { setAddon("PRIORITY"); setAddonOptionId(o.id); }}
+                      >
+                        {o.name} {o.price != null ? `• ${currency(o.price)}` : ""}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
 
-            {/* Phương thức thanh toán */}
-            <div className="rounded-lg border p-3 bg-slate-50">
-              <div className="text-sm font-semibold mb-1">Phương thức thanh toán</div>
-              <div className="flex flex-col gap-2 text-sm">
-                <label className="inline-flex items-center gap-2">
-                  <input
-                    type="radio"
-                    className="accent-[#246f67]"
-                    checked={payMethod === "VNPAY"}
-                    onChange={() => setPayMethod("VNPAY")}
-                  />
-                  VNPay
-                </label>
-                <label className="inline-flex items-center gap-2">
-                  <input
-                    type="radio"
-                    className="accent-[#246f67]"
-                    checked={payMethod === "MOMO"}
-                    onChange={() => setPayMethod("MOMO")}
-                  />
-                  MoMo
-                </label>
+                {/* SPECIAL */}
+                <div className="border rounded-lg p-3 bg-white">
+                  <div className="flex items-center justify-between">
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="radio"
+                        className="accent-[#246f67]"
+                        checked={addon === "SPECIAL"}
+                        onChange={() => {
+                          setAddon("SPECIAL");
+                          const def = specialPkg?.options.find(o=>o.isDefault) || specialPkg?.options[0];
+                          setAddonOptionId(def?.id ?? null);
+                        }}
+                      />
+                      <span className="font-semibold">{VI_LABEL.SPECIAL}</span>
+                    </label>
+                    <span className="text-xs text-slate-500">
+                      {specialPkg?.dailyPrice ? `${currency(specialPkg.dailyPrice)}/ngày` : ""}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {(specialPkg?.options ?? []).map((o) => (
+                      <Button
+                        key={o.id}
+                        size="sm"
+                        variant={addon === "SPECIAL" && addonOptionId === o.id ? "default" : "outline"}
+                        className={addon === "SPECIAL" && addonOptionId === o.id ? COLOR.primary : ""}
+                        onClick={() => { setAddon("SPECIAL"); setAddonOptionId(o.id); }}
+                      >
+                        {o.name} {o.price != null ? `• ${currency(o.price)}` : ""}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bỏ chọn add-on */}
+              <div className="mt-3">
+                <Button size="sm" variant="ghost" onClick={() => setAddon("")}>Bỏ chọn dịch vụ thêm</Button>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Tính tiền*/}
+      {/* Tính tiền */}
       <Card>
         <CardContent className="p-4">
           <div className="text-[16px] font-bold mb-1">Thanh toán</div>
@@ -378,23 +406,54 @@ export default function PostNotice() {
               </ul>
               <div className="flex items-center gap-2 text-xs text-slate-500 mt-2">
                 <Info className="w-3.5 h-3.5" />
-                Gói {VI_LABEL.PRIORITY}/{VI_LABEL.SPECIAL} tính theo ngày và cộng thêm vào phí cơ bản.
+                {VI_LABEL.PRIORITY}/{VI_LABEL.SPECIAL} là dịch vụ cộng thêm theo ngày.
+              </div>
+              <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                <CalendarDays className="w-3.5 h-3.5" />
+                Tin thường: {fmt(start)} → {fmt(addDays(start, baseDays))}
+                {addonDays ? <> ・ Add-on: {fmt(start)} → {fmt(addDays(start, addonDays))}</> : null}
+              </div>
+              <div className="text-[12px] text-slate-500 mt-1 flex items-center gap-1">
+                <Timer className="w-3.5 h-3.5" /> Tự động kết thúc theo thời hạn gói đã chọn
               </div>
             </div>
 
             <div className="text-right">
               <div className="text-sm">Tổng thanh toán</div>
-              <div className="text-2xl font-bold text-[#246f67]">{currency(total)}</div>
+              <div className="text-2xl font-bold text-[#246f67]">{currency(total || 0)}</div>
 
-              <div className="flex flex-wrap gap-2 mt-3 justify-end">
+              <div className="text-left mt-3">
+                <div className="text-sm font-semibold mb-1">Phương thức thanh toán</div>
+                <div className="flex flex-col gap-2 text-sm">
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="radio"
+                      className="accent-[#246f67]"
+                      checked={payMethod === "VNPAY"}
+                      onChange={() => setPayMethod("VNPAY")}
+                    />
+                    VNPay
+                  </label>
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="radio"
+                      className="accent-[#246f67]"
+                      checked={payMethod === "MOMO"}
+                      onChange={() => setPayMethod("MOMO")}
+                    />
+                    MoMo
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mt-4 justify-end">
                 <Button variant="outline" className={COLOR.outlinePrimary} onClick={onExitToDraft}>
                   Thoát (Lưu nháp)
                 </Button>
-
                 <Button
                   className={COLOR.primary}
                   onClick={onPay}
-                  disabled={!productId || isPaying || loadingPkg || !pkgMap}
+                  disabled={!productId || isPaying || loadingPkg || !basePkg}
                 >
                   {isPaying ? "Đang tạo thanh toán..." : loadingPkg ? "Đang tải gói..." : "Thanh toán"}
                 </Button>

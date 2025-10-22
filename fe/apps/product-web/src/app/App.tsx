@@ -1,4 +1,3 @@
-// App.tsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import LayoutCompact from "@/components/layout/LayoutCompact";
@@ -16,6 +15,8 @@ import PostNew from "@/pages/posts/PostNew";
 import PostManage from "@/pages/posts/PostManage";
 import PostNotice from "@/pages/posts/PostNotice";
 import WishlistPage from "@/pages/wishlist/WishlistPage";
+import ProductDetailPage from "@/pages/product/ProductDetail";
+
 
 export default function App() {
   return (
@@ -26,7 +27,7 @@ export default function App() {
 
       <Route element={<LayoutCompact />}>
         <Route path="/account/wishlist" element={<WishlistPage />} />
-
+        <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route
           path="/postnotice"
           element={

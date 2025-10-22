@@ -186,3 +186,9 @@ button:focus-visible {
   padding: 0 !important; 
   background: transparent;
 }
+html, body, #root {
+  height: 100%;
+}
+body {
+  overflow: hidden; 
+}
