@@ -17,7 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const mainNav = [
   { label: "EcoGreen", to: "/" },
   { label: "Xe điện", to: "/xe-dien" },
-  { label: "Pin điện", to: "/pin-xe-dien" }, 
+  { label: "Pin điện", to: "/pin-dien" }, 
   { label: "EcoBlog", to: "/blog" },
 ];
 
@@ -113,7 +113,7 @@ export default function Navbar() {
                 <Link to="/xe-dien" className="w-full">Xe điện</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/pin-xe-dien" className="w-full">Pin điện</Link>
+                <Link to="/pin-dien" className="w-full">Pin điện</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

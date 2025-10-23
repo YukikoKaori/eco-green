@@ -1,8 +1,26 @@
+// src/api/auth.ts
 import api from "@/lib/axios";
 
-export type ApiEnvelope<T> = { code: number; message: string; result: T };
+/* ─────────────────────────────────────────────────── */
+/*                    Common types                      */
+/* ─────────────────────────────────────────────────── */
 
+export type ApiEnvelope<T> = { code: number; message: string; result: T };
 export type ProductStatus = "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+
+/** Spring Page response */
+export interface PageResponse<T> {
+  content: T[];
+  number: number;            // page index (0-based)
+  size: number;              // page size
+  totalPages: number;
+  totalElements: number;
+  first?: boolean;
+  last?: boolean;
+  numberOfElements?: number;
+  sort?: unknown;
+  pageable?: unknown;
+}
 
 export interface UserProfile {
   id: string;
@@ -50,13 +68,17 @@ export interface PendingProduct {
   modelName: string | null;
   versionName: string | null;
   packageName: string;
-  amount: number | null; 
+  amount: number | null;
 }
 
 export interface VerifyPostPayload {
   newStatus: ProductStatus;
   rejectReason?: string | null;
 }
+
+/* ─────────────────────────────────────────────────── */
+/*                    Helpers                           */
+/* ─────────────────────────────────────────────────── */
 
 function unwrap<T>(data: any): T {
   return (data?.result ?? data) as T;
@@ -86,7 +108,10 @@ const compact = (obj: Record<string, any>) => {
   return out;
 };
 
-// 🧩 AUTH
+/* ─────────────────────────────────────────────────── */
+/*                       AUTH                           */
+/* ─────────────────────────────────────────────────── */
+
 export async function loginApi(payload: { phone: string; password: string }) {
   const { data } = await api.post<LoginResponse>("/auth/login", payload);
   return unwrap<LoginResult>(data);
@@ -114,7 +139,10 @@ export const oauthUrls = {
   facebook: `${import.meta.env.VITE_API_URL}/auth/facebook`,
 };
 
-// PROFILE
+/* ─────────────────────────────────────────────────── */
+/*                     PROFILE                          */
+/* ─────────────────────────────────────────────────── */
+
 export async function getMe(opts?: { signal?: AbortSignal }) {
   const { data } = await api.get<UserProfile | ApiEnvelope<UserProfile>>(
     "/profile/me",
@@ -170,15 +198,77 @@ export async function uploadAvatar(file: File) {
   return unwrap<{ url: string }>(data).url;
 }
 
-export async function getPendingPosts(): Promise<PendingProduct[]> {
-  const { data } = await api.get<ApiEnvelope<PendingProduct[]>>(
-    "/staff/post/pending/review"
-  );
-  return unwrap<PendingProduct[]>(data);
+/* ─────────────────────────────────────────────────── */
+/*                STAFF – Pending Posts                 */
+/* ─────────────────────────────────────────────────── */
+
+/** Chuẩn hoá 1 item pending về PendingProduct */
+function normalizePending(item: any): PendingProduct {
+  return {
+    id: item.id || item.productId || "",
+    status: item.status || item.newStatus || "",
+    rejectReason: item.rejectReason ?? null,
+    title: item.title ?? "",
+    thumbnail: item.thumbnail ?? null,
+    productType: item.productType || item.type || "",
+    updateAt: item.updateAt || item.updatedAt || null,
+    modelName: item.modelName ?? null,
+    versionName: item.versionName ?? null,
+    packageName: item.packageName ?? "",
+    amount: item.amount ?? item.price ?? null,
+  };
 }
 
+/**
+ * Lấy danh sách pending có phân trang + filter.
+ * - page: 0-based
+ * - size: số item / trang
+ * - status: mặc định "PENDING_REVIEW"
+ * - type: "VEHICLE" | "BATTERY" | undefined
+ * - sort: ví dụ "createdAt,desc"
+ */
+export async function getPendingPosts(params?: {
+  page?: number;            // 0-based
+  size?: number;
+  status?: ProductStatus | string;
+  type?: "VEHICLE" | "BATTERY" | string;
+  sort?: string;
+}): Promise<PageResponse<PendingProduct>> {
+  const {
+    page = 0,
+    size = 10,
+    status = "PENDING_REVIEW",
+    type,
+    sort = "createdAt,desc",
+  } = params || {};
 
-export async function verifyPost(productId: string, payload: VerifyPostPayload) {
+  // BE có thể trả theo envelope hoặc thuần Spring Page
+  const { data } = await api.get<any>("/staff/post/pending/review", {
+    params: compact({ page, size, status, type, sort }),
+  });
+
+  const raw = unwrap<any>(data);
+  const contentRaw = raw?.content ?? raw?.items ?? [];
+  const pageResp: PageResponse<PendingProduct> = {
+    content: Array.isArray(contentRaw) ? contentRaw.map(normalizePending) : [],
+    number: raw?.number ?? raw?.page ?? 0,
+    size: raw?.size ?? size,
+    totalPages: raw?.totalPages ?? 1,
+    totalElements: raw?.totalElements ?? (contentRaw?.length ?? 0),
+    first: raw?.first,
+    last: raw?.last,
+    numberOfElements: raw?.numberOfElements,
+    sort: raw?.sort,
+    pageable: raw?.pageable,
+  };
+
+  return pageResp;
+}
+
+export async function verifyPost(
+  productId: string,
+  payload: VerifyPostPayload
+) {
   const { data } = await api.put<ApiEnvelope<any>>(
     `/staff/post/${productId}/verify`,
     payload

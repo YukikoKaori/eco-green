@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { Phone } from "lucide-react";
 
 export default function RowListing({
   id, to, img, title, price, subtitleLeft, subtitleRight, seller, address,
@@ -16,7 +15,7 @@ export default function RowListing({
 }) {
   return (
     <Link to={to} className="block rounded-lg border hover:shadow-sm">
-      <div className="grid grid-cols-[140px_1fr_44px] gap-3 p-3 items-center">
+      <div className="grid grid-cols-[140px_1fr] gap-3 p-3 items-center">
         <div className="w-[140px] h-[100px] rounded-md overflow-hidden bg-slate-100">
           <img src={img} alt={title} className="w-full h-full object-cover" loading="lazy" />
         </div>
@@ -32,16 +31,6 @@ export default function RowListing({
             {seller && <span className="font-medium">{seller}</span>}
             {address && <span>• {address}</span>}
           </div>
-        </div>
-
-        <div className="flex justify-end">
-          <button
-            className="w-10 h-10 rounded-md border flex items-center justify-center hover:bg-slate-50"
-            title="Hiện số"
-            onClick={(e) => { e.preventDefault();  }}
-          >
-            <Phone className="w-4 h-4" />
-          </button>
         </div>
       </div>
     </Link>

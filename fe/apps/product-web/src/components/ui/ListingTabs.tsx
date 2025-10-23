@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom"; 
+import { Link } from "react-router-dom";
 import ListingCard from "@/listings/components/ListingCard";
 import type { ListingWithKey } from "@/listings/types";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,9 @@ type Props = {
   forYou: ListingWithKey[];
   latest: ListingWithKey[];
   className?: string;
-  pageSize?: number; 
+  pageSize?: number;
+  /** Đang tải dữ liệu? -> hiển thị skeleton đẹp hơn */
+  isLoading?: boolean;
 };
 
 export default function ListingTabs({
@@ -17,6 +19,7 @@ export default function ListingTabs({
   latest,
   className = "",
   pageSize = 8,
+  isLoading = false,
 }: Props) {
   const [tab, setTab] = useState<"foryou" | "latest">("foryou");
 
@@ -59,7 +62,16 @@ export default function ListingTabs({
 
       {/* Content */}
       <div className={styles.contentContainer}>
-        {visible.length === 0 ? (
+        {isLoading ? (
+          // Skeleton grid
+          <div className={styles.grid}>
+            {Array.from({ length: pageSize }).map((_, i) => (
+              <div key={i} className={styles.cardWrapper}>
+                <SkeletonCard />
+              </div>
+            ))}
+          </div>
+        ) : visible.length === 0 ? (
           <div className={styles.empty}>Chưa có tin phù hợp.</div>
         ) : (
           <div className={styles.grid}>
@@ -70,7 +82,7 @@ export default function ListingTabs({
                 (item as any).productID ??
                 (item as any).product_id ??
                 null;
-                
+
               if (!pid) {
                 return (
                   <div key={item._key} className={styles.cardWrapper}>
@@ -87,7 +99,10 @@ export default function ListingTabs({
                 <div key={item._key} className={styles.cardWrapper}>
                   <Link
                     to={`/product/${pid}`}
-                    className={cn(styles.card, "block focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 rounded-lg")}
+                    className={cn(
+                      styles.card,
+                      "block focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 rounded-lg"
+                    )}
                     aria-label={`Xem chi tiết ${((item as any).title ?? "sản phẩm")}`}
                   >
                     <div className={styles.cardReset}>
@@ -101,7 +116,7 @@ export default function ListingTabs({
         )}
 
         {/* CTA */}
-        {canLoadMore && (
+        {!isLoading && canLoadMore && (
           <div className={styles.ctaContainer}>
             <button
               type="button"
@@ -137,5 +152,23 @@ function Tab({
     >
       {label}
     </button>
+  );
+}
+
+/** Khung skeleton cho 1 card */
+function SkeletonCard() {
+  return (
+    <div className={cn("rounded-lg overflow-hidden shadow-sm border", "bg-background")}>
+      {/* ảnh */}
+      <div className="relative aspect-[4/3] w-full overflow-hidden">
+        <div className="h-full w-full animate-pulse bg-muted" />
+      </div>
+      {/* nội dung */}
+      <div className="p-3 space-y-2">
+        <div className="h-4 w-5/6 animate-pulse bg-muted rounded" />
+        <div className="h-4 w-2/5 animate-pulse bg-muted rounded" />
+        <div className="mt-3 h-4 w-1/3 animate-pulse bg-muted rounded" />
+      </div>
+    </div>
   );
 }

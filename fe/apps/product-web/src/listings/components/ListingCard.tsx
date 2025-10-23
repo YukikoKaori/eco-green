@@ -65,7 +65,7 @@ export default function ListingCard({ item, onLikeChange }: Props) {
 
     setBusy(true);
     try {
-      const nextLiked = await toggle(item.id);   
+      const nextLiked = await toggle(item.id);
       onLikeChange?.(nextLiked);
     } finally {
       setBusy(false);
@@ -75,12 +75,12 @@ export default function ListingCard({ item, onLikeChange }: Props) {
   return (
     <Card className="h-full overflow-hidden shadow-sm transition hover:shadow-md">
       {/* MEDIA */}
-      <div className="relative aspect-[4/3] w-full bg-muted">
+      <div className="relative aspect-[4/3] w-full bg-muted overflow-hidden">
         {thumb ? (
           <img
             src={thumb}
             alt={item.title}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-contain object-center"
             loading="lazy"
             referrerPolicy="no-referrer"
             sizes="(max-width: 768px) 100vw, 33vw"
@@ -113,6 +113,7 @@ export default function ListingCard({ item, onLikeChange }: Props) {
           )}
         </div>
       </div>
+
 
       {/* CONTENT */}
       <CardContent className="flex h-full flex-col p-3">
