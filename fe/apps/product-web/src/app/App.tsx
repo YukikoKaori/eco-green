@@ -18,7 +18,7 @@ import WishlistPage from "@/pages/wishlist/WishlistPage";
 import ProductDetailPage from "@/pages/product/ProductDetail";
 import VehicleListPage from "@/pages/listingEV/VehicleListPage";
 import BatteryListPage from "@/pages/listingEV/BatteryListPage";
-
+import SearchResults from "@/pages/search/SearchResults";
 
 export default function App() {
   return (
@@ -32,6 +32,7 @@ export default function App() {
         <Route path="/pin-dien" element={<BatteryListPage />} />
         <Route path="/account/wishlist" element={<WishlistPage />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
+        <Route path="/search" element={<SearchResults />} />
         <Route
           path="/postnotice"
           element={

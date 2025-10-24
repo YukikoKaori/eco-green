@@ -33,19 +33,20 @@ function Chip({
       type="button"
       onClick={onClick}
       className={[
-        "inline-flex items-center gap-1.5 rounded-full text-sm",
-        "px-3 py-1.5 border transition-colors",
+        "inline-flex items-center !gap-1.5 px-3 py-1.5",
+        "border transition-colors",
         active
-          ? "bg-emerald-50 border-emerald-400 text-emerald-700"
-          : "bg-white border-slate-300 text-slate-800 hover:bg-slate-50",
+          ? "bg-emerald-100 border-emerald-300 text-emerald-800"
+          : "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100",
         className,
       ].join(" ")}
     >
       {children}
-      <ChevronDown className="w-4 h-4 opacity-90" />
+      <ChevronDown className="w-4 h-4 text-emerald-600 opacity-90" />
     </button>
   );
 }
+
 
 /* ==================== Main Filter Bar ==================== */
 export function VehicleFilterBar({
@@ -89,7 +90,7 @@ export function VehicleFilterBar({
   return (
     <>
       <div className="fixed z-40 left-0 right-0" style={{ top: "calc(var(--navbar-h, 64px))" }}>
-        <div className="mx-auto bg-white/100">
+        <div className="mx-auto bg-emerald-100">
           <div className="flex items-center gap-2 px-50 py-2">
             {/* Lọc (icon + text) */}
             <span className="inline-flex items-center gap-1.5 text-slate-700 mr-1">

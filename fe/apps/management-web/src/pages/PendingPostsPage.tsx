@@ -1,5 +1,4 @@
-// src/pages/staff/PendingPostsPage.tsx
-import { getPendingPosts, verifyPost } from "@/api/auth";
+import { getPendingPosts, verifyPost, rejectPost } from "@/api/product";
 import { useEffect, useState, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, PackageCheck, Info, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Loader2, PackageCheck, Info } from "lucide-react";
+import { pushRecentRejected } from "@/utils/recentRejected";
 
 interface PendingProduct {
   id: string;
@@ -41,7 +41,6 @@ const normalizeProduct = (item: any): PendingProduct => ({
 });
 
 export default function PendingPostsPage() {
-  // filters trên đầu bảng (tuỳ chỉnh nếu cần)
   const [status] = useState<"PENDING_REVIEW">("PENDING_REVIEW");
   const [type, setType] = useState<"" | "VEHICLE" | "BATTERY">("");
 
@@ -54,6 +53,7 @@ export default function PendingPostsPage() {
   // data
   const [products, setProducts] = useState<PendingProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // dialog
@@ -73,7 +73,6 @@ export default function PendingPostsPage() {
         sort: "createdAt,desc",
       });
 
-      // Spring Page fields: content, number, size, totalPages, totalElements
       const list = (data.content ?? []).map(normalizeProduct);
       setProducts(list);
       setTotalPages(data.totalPages ?? 1);
@@ -90,25 +89,27 @@ export default function PendingPostsPage() {
 
   useEffect(() => {
     fetchPage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page0, size, status, type]);
 
   const resetDialog = () => {
     setSelected(null);
     setRejectReason("");
     setShowRejectInput(false);
+    setSubmitting(false);
   };
 
   const handleApprove = async (id: string) => {
     try {
+      setSubmitting(true);
       await verifyPost(id, { newStatus: "APPROVED" });
-      // nếu duyệt xong trang này còn 1 item thì có thể lùi về trang trước
+
       const remain = products.length - 1;
       if (remain === 0 && page0 > 0) setPage0((p) => p - 1);
       else fetchPage();
       resetDialog();
     } catch {
       alert("❌ Lỗi khi phê duyệt sản phẩm.");
+      setSubmitting(false);
     }
   };
 
@@ -118,13 +119,17 @@ export default function PendingPostsPage() {
       return;
     }
     try {
-      await verifyPost(id, { newStatus: "REJECTED", rejectReason });
+      setSubmitting(true);
+      const rejected = await rejectPost(id, rejectReason.trim());
+      pushRecentRejected(rejected);
+
       const remain = products.length - 1;
       if (remain === 0 && page0 > 0) setPage0((p) => p - 1);
       else fetchPage();
       resetDialog();
     } catch {
-      alert("❌ Lỗi khi từ chối sản phẩm.");
+      alert("Lỗi khi từ chối sản phẩm.");
+      setSubmitting(false);
     }
   };
 
@@ -144,24 +149,7 @@ export default function PendingPostsPage() {
   if (error) return <p className="p-4 text-red-600">{error}</p>;
 
   return (
-    <div className="p-6 min-h-screen bg-gray-50">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="text-sm text-gray-600">Lọc loại:</span>
-        <select
-          value={type}
-          onChange={(e) => { setType(e.target.value as any); setPage0(0); }}
-          className="border rounded-md px-2 py-1.5 text-sm"
-        >
-          <option value="">Tất cả</option>
-          <option value="VEHICLE">Xe điện</option>
-          <option value="BATTERY">Pin</option>
-        </select>
-
-        <span className="ml-auto text-sm text-gray-500">
-          Tổng: {totalElements} — Trang {page0 + 1}/{totalPages}
-        </span>
-      </div>
-
+    <div>
       <Card className="border border-gray-200 shadow-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-emerald-700">
@@ -193,7 +181,11 @@ export default function PendingPostsPage() {
                       <tr key={p.id} className="border-t hover:bg-emerald-50 transition">
                         <td className="px-4 py-3">
                           {p.thumbnail ? (
-                            <img src={p.thumbnail} alt={p.title} className="w-16 h-16 object-cover rounded-md border" />
+                            <img
+                              src={p.thumbnail}
+                              alt={p.title}
+                              className="w-16 h-16 object-cover rounded-md border"
+                            />
                           ) : (
                             <div className="w-16 h-16 flex items-center justify-center bg-gray-100 text-gray-400 rounded-md border">
                               No Image
@@ -203,7 +195,9 @@ export default function PendingPostsPage() {
                         <td className="px-4 py-3 font-medium text-gray-800">{p.title}</td>
                         <td className="px-4 py-3 text-gray-700">{p.productType}</td>
                         <td className="px-4 py-3 text-gray-700">{p.packageName}</td>
-                        <td className="px-4 py-3 text-right text-gray-800 font-semibold">{priceVN(p.amount)}</td>
+                        <td className="px-4 py-3 text-right text-gray-800 font-semibold">
+                          {priceVN(p.amount)}
+                        </td>
                         <td className="px-4 py-3">
                           <Badge
                             className={
@@ -214,7 +208,11 @@ export default function PendingPostsPage() {
                                 : "bg-red-100 text-red-700 border-red-200"
                             }
                           >
-                            {p.status === "PENDING_REVIEW" ? "Chờ phê duyệt" : p.status === "APPROVED" ? "Đã duyệt" : "Từ chối"}
+                            {p.status === "PENDING_REVIEW"
+                              ? "Chờ phê duyệt"
+                              : p.status === "APPROVED"
+                              ? "Đã duyệt"
+                              : "Từ chối"}
                           </Badge>
                         </td>
                         <td className="px-4 py-3 text-gray-500">
@@ -247,15 +245,6 @@ export default function PendingPostsPage() {
                     variant="outline"
                     size="sm"
                     disabled={page0 === 0}
-                    onClick={() => setPage0(0)}
-                    title="Trang đầu"
-                  >
-                    <ChevronsLeft className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page0 === 0}
                     onClick={() => setPage0((p) => Math.max(0, p - 1))}
                   >
                     Trước
@@ -279,26 +268,6 @@ export default function PendingPostsPage() {
                   >
                     Sau
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page0 + 1 >= totalPages}
-                    onClick={() => setPage0(totalPages - 1)}
-                    title="Trang cuối"
-                  >
-                    <ChevronsRight className="w-4 h-4" />
-                  </Button>
-
-                  {/* chọn size */}
-                  <select
-                    className="ml-2 border rounded-md px-2 py-1 text-sm"
-                    value={size}
-                    onChange={(e) => { setSize(Number(e.target.value)); setPage0(0); }}
-                  >
-                    {[10, 20, 30, 50].map((s) => (
-                      <option key={s} value={s}>{s}/trang</option>
-                    ))}
-                  </select>
                 </div>
               </div>
             </>
@@ -312,29 +281,67 @@ export default function PendingPostsPage() {
           {selected && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-emerald-700 text-lg font-semibold">Chi tiết sản phẩm</DialogTitle>
+                <DialogTitle className="text-emerald-700 text-lg font-semibold">
+                  Chi tiết sản phẩm
+                </DialogTitle>
               </DialogHeader>
 
               <div className="space-y-3 text-gray-700">
                 {selected.thumbnail && (
-                  <img src={selected.thumbnail} alt={selected.title} className="w-full h-64 object-cover rounded-lg border" />
+                  <img
+                    src={selected.thumbnail}
+                    alt={selected.title}
+                    className="w-full h-64 object-cover rounded-lg border"
+                  />
                 )}
-                <p><b>Tiêu đề:</b> {selected.title}</p>
-                <p><b>Loại:</b> {selected.productType}</p>
-                <p><b>Gói:</b> {selected.packageName}</p>
-                <p><b>Giá:</b> {priceVN(selected.amount)}</p>
-                <p><b>Trạng thái:</b> {selected.status}</p>
-                {selected.modelName && <p><b>Model:</b> {selected.modelName}</p>}
-                {selected.versionName && <p><b>Phiên bản:</b> {selected.versionName}</p>}
-                {selected.rejectReason && <p><b>Lý do từ chối:</b> {selected.rejectReason}</p>}
+                <p>
+                  <b>Tiêu đề:</b> {selected.title}
+                </p>
+                <p>
+                  <b>Loại:</b> {selected.productType}
+                </p>
+                <p>
+                  <b>Gói:</b> {selected.packageName}
+                </p>
+                <p>
+                  <b>Giá:</b> {priceVN(selected.amount)}
+                </p>
+                <p>
+                  <b>Trạng thái:</b> {selected.status}
+                </p>
+                {selected.modelName && (
+                  <p>
+                    <b>Model:</b> {selected.modelName}
+                  </p>
+                )}
+                {selected.versionName && (
+                  <p>
+                    <b>Phiên bản:</b> {selected.versionName}
+                  </p>
+                )}
+                {selected.rejectReason && (
+                  <p>
+                    <b>Lý do từ chối:</b> {selected.rejectReason}
+                  </p>
+                )}
 
                 {showRejectInput && (
                   <div className="mt-4">
                     <Label htmlFor="reason">Lý do từ chối</Label>
-                    <Input id="reason" placeholder="Nhập lý do..." value={rejectReason}
-                      onChange={(e) => setRejectReason(e.target.value)} className="mt-1" />
-                    <Button className="mt-3 !bg-red-600 hover:!bg-red-700 !text-white w-full"
-                      onClick={() => handleReject(selected.id)}>
+                    <Input
+                      id="reason"
+                      placeholder="Nhập lý do..."
+                      value={rejectReason}
+                      onChange={(e) => setRejectReason(e.target.value)}
+                      className="mt-1"
+                      disabled={submitting}
+                    />
+                    <Button
+                      className="mt-3 !bg-red-600 hover:!bg-red-700 !text-white w-full"
+                      onClick={() => handleReject(selected.id)}
+                      disabled={submitting}
+                    >
+                      {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                       Xác nhận từ chối
                     </Button>
                   </div>
@@ -344,10 +351,19 @@ export default function PendingPostsPage() {
               <DialogFooter className="flex justify-end gap-3 mt-4">
                 {!showRejectInput && (
                   <>
-                    <Button className="!bg-green-600 !text-white" onClick={() => handleApprove(selected.id)}>
+                    <Button
+                      className="!bg-green-600 !text-white"
+                      onClick={() => handleApprove(selected.id)}
+                      disabled={submitting}
+                    >
+                      {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                       Duyệt
                     </Button>
-                    <Button className="!bg-red-500 !text-white" onClick={() => setShowRejectInput(true)}>
+                    <Button
+                      className="!bg-red-500 !text-white"
+                      onClick={() => setShowRejectInput(true)}
+                      disabled={submitting}
+                    >
                       Từ chối
                     </Button>
                   </>

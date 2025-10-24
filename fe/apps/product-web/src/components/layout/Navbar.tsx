@@ -13,17 +13,18 @@ import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import "@/styles/Navbar.css";
 import UserMenu from "@/components/user/UserMenu";
 import { useAuth } from "@/contexts/AuthContext";
+import { searchProductsByName } from "@/api/search";
 
 const mainNav = [
   { label: "EcoGreen", to: "/" },
   { label: "Xe điện", to: "/xe-dien" },
-  { label: "Pin điện", to: "/pin-dien" }, 
+  { label: "Pin điện", to: "/pin-dien" },
   { label: "EcoBlog", to: "/blog" },
 ];
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [keyword, setKeyword] = useState(""); 
+  const [keyword, setKeyword] = useState("");
   const { user } = useAuth();
   const nav = useNavigate();
 
@@ -38,9 +39,9 @@ export default function Navbar() {
       ticking = true;
 
       requestAnimationFrame(() => {
-        setIsScrolled(prev => {
-          if (prev) return y > (THRESHOLD - HYST);
-          return y > (THRESHOLD + HYST);
+        setIsScrolled((prev) => {
+          if (prev) return y > THRESHOLD - HYST;
+          return y > THRESHOLD + HYST;
         });
         ticking = false;
       });
@@ -51,10 +52,18 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleSearch = (e?: React.FormEvent) => {
+  const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const q = keyword.trim();
-    nav(`/xe-dien?keyword=${encodeURIComponent(q)}`);
+
+    try {
+      if (q) {
+        await searchProductsByName(q);
+      }
+    } catch {
+    }
+
+    nav(`/search?keyword=${encodeURIComponent(q)}`);
   };
 
   return (
@@ -110,10 +119,14 @@ export default function Navbar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="min-w-[180px]">
               <DropdownMenuItem asChild>
-                <Link to="/xe-dien" className="w-full">Xe điện</Link>
+                <Link to="/xe-dien" className="w-full">
+                  Xe điện
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/pin-dien" className="w-full">Pin điện</Link>
+                <Link to="/pin-dien" className="w-full">
+                  Pin điện
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -152,7 +165,7 @@ export default function Navbar() {
             </nav>
           ) : (
             <form
-              onSubmit={handleSearch} 
+              onSubmit={handleSearch}
               className="flex items-center gap-2 bg-white rounded-xl px-3 shadow w-full max-w-xl"
             >
               <Search className="w-5 h-5 text-gray-500" />
@@ -199,7 +212,10 @@ export default function Navbar() {
           )}
 
           {/* Đăng tin */}
-          <Button asChild className="!bg-[#246f67] !text-sm hover:bg-teal-800 flex items-center gap-2 text-white">
+          <Button
+            asChild
+            className="!bg-[#246f67] !text-sm hover:bg-teal-800 flex items-center gap-2 text-white"
+          >
             <Link to="/post/new">
               <PlusCircle className="w-4 h-4" />
               <span>Đăng tin</span>

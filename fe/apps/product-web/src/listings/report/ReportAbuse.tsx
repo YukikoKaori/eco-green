@@ -1,23 +1,32 @@
-// src/listings/components/ReportAbuse.tsx
 import { useMemo, useState } from "react";
 import { Flag, MoreVertical } from "lucide-react";
-import api from "@/lib/axios";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { createReport } from "@/api/reports";
+
+const BRAND = "#008377";
+const BRAND_SOFT = "#00C4B4";
 
 type Props = {
   productId: string;
-  className?: string;       // để đặt absolute vị trí (right-3 top-3)
+  className?: string;
   defaultPhone?: string;
   defaultEmail?: string;
 };
@@ -25,12 +34,58 @@ type Props = {
 const REASONS = [
   { id: "scam", label: "Lừa đảo" },
   { id: "duplicate", label: "Trùng lặp" },
-  { id: "sold", label: "Tin đã bán" },
+  { id: "sold", label: "Hàng đã bán" },
   { id: "no-contact", label: "Không liên lạc được" },
   { id: "incorrect", label: "Thông tin không đúng thực tế" },
-  { id: "defect-after", label: "Hư hỏng sau khi mua" },
+  { id: "counterfeit", label: "Hàng giả, hàng nhái, hàng dựng" },
+  { id: "defect-after", label: "Hàng hư hỏng sau khi mua" },
   { id: "other", label: "Lý do khác" },
 ] as const;
+
+const REASON_LABELS = Object.fromEntries(REASONS.map(r => [r.id, r.label])) as Record<string, string>;
+
+function ReasonRow({
+  value,
+  current,
+  onSelect,
+  children,
+}: {
+  value: string;
+  current: string;
+  onSelect: (val: string) => void;
+  children: React.ReactNode;
+}) {
+  const selected = current === value;
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(value)}
+      className={[
+        "w-full text-left px-3 py-2 rounded-xl border transition flex items-center gap-3",
+        selected
+          ? "border-[color:var(--accent,#f59e0b)] bg-amber-50/40 shadow-[inset_0_0_0_1px_rgba(245,158,11,.15)]"
+          : "border-slate-200 hover:bg-slate-50",
+      ].join(" ")}
+      style={{ ["--accent" as any]: BRAND_SOFT }}
+    >
+      <span
+        className={[
+          "shrink-0 inline-flex items-center justify-center rounded-full border h-4 w-4",
+          selected ? "border-[color:var(--accent,#f59e0b)]" : "border-slate-300",
+        ].join(" ")}
+      >
+        <span
+          className={[
+            "block h-2.5 w-2.5 rounded-full",
+            selected ? "bg-[color:var(--accent,#f59e0b)]" : "bg-transparent",
+          ].join(" ")}
+        />
+      </span>
+
+      <span className="text-[15px] text-slate-800">{children}</span>
+    </button>
+  );
+}
 
 export default function ReportAbuse({
   productId,
@@ -40,34 +95,41 @@ export default function ReportAbuse({
 }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
   const [reason, setReason] = useState("");
   const [note, setNote] = useState("");
   const [phone, setPhone] = useState(defaultPhone);
   const [email, setEmail] = useState(defaultEmail);
   const [busy, setBusy] = useState(false);
 
-  const canSubmit = useMemo(() => !!reason && !!phone, [reason, phone]);
+  const canSubmit = useMemo(() => {
+    if (!reason) return false;
+    const phoneDigits = phone.replace(/[^\d]/g, "");
+    return phoneDigits.length >= 8;
+  }, [reason, phone]);
 
   async function submit() {
     if (!canSubmit) {
-      toast.info("Vui lòng chọn lý do và nhập số điện thoại.");
+      toast.info("Vui lòng chọn lý do và nhập số điện thoại hợp lệ.");
       return;
     }
+    const phoneTrim = phone.trim();
+    const emailTrim = email.trim() || undefined;
+
+    const reportReason =
+      reason === "other" ? (note?.trim() || "Lý do khác") : (REASON_LABELS[reason] || "Báo cáo vi phạm");
+
     try {
       setBusy(true);
-      await api.post("/reports", {
-        productId,
-        reason,
-        note: note?.trim() || null,
-        phone: phone?.trim(),
-        email: email?.trim() || null,
-      });
-      toast.success("Đã gửi báo cáo. Cảm ơn bạn!");
+      await createReport({ productId, phone: phoneTrim, email: emailTrim, reportReason });
+
+      toast.success("Đã gửi báo cáo. Cảm ơn bạn! Bộ phận kiểm duyệt sẽ xem xét sớm.");
       setDialogOpen(false);
       setReason("");
       setNote("");
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Gửi báo cáo thất bại.");
+      const msg = e?.response?.data?.message || e?.message || "Gửi báo cáo thất bại. Vui lòng thử lại.";
+      toast.error(msg);
     } finally {
       setBusy(false);
     }
@@ -75,7 +137,6 @@ export default function ReportAbuse({
 
   return (
     <>
-      {/* Nút ba chấm + menu */}
       <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -96,7 +157,7 @@ export default function ReportAbuse({
             }}
             className="cursor-pointer"
           >
-            <Flag className="mr-2 h-4 w-4" />
+            <Flag className="mr-2 h-4 w-4 text-[color:var(--brand,#008377)]" style={{ ["--brand" as any]: BRAND }} />
             Báo cáo tin đăng
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -104,29 +165,36 @@ export default function ReportAbuse({
 
       {/* Modal báo cáo */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[520px]">
+        <DialogContent className="sm:max-w-[560px] rounded-2xl shadow-xl">
           <DialogHeader>
-            <DialogTitle className ="text-[#008377]">Báo cáo vi phạm</DialogTitle>
+            <DialogTitle className="text-[color:var(--brand,#008377)]" style={{ ["--brand" as any]: BRAND }}>
+              Báo cáo vi phạm
+            </DialogTitle>
             <DialogDescription>Cho chúng tôi biết vấn đề với tin đăng này.</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
+          <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-1">
+            {/* Lý do */}
             <div className="space-y-3">
-              <Label className="font-medium">
-                Tin rao này có vấn đề gì <span className="text-rose-600">*</span>
-              </Label>
-              <RadioGroup value={reason} onValueChange={setReason} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="font-medium text-slate-800">
+                  Tin rao này có vấn đề gì <span className="text-rose-600">*</span>
+                </Label>
+              </div>
+
+              <div className="space-y-2">
                 {REASONS.map((r) => (
-                  <label key={r.id} className="flex items-center gap-2 cursor-pointer">
-                    <RadioGroupItem id={`report-${r.id}`} value={r.id} />
-                    <span>{r.label}</span>
-                  </label>
+                  <ReasonRow key={r.id} value={r.id} current={reason} onSelect={setReason}>
+                    {r.label}
+                  </ReasonRow>
                 ))}
-              </RadioGroup>
+              </div>
 
               {reason === "other" && (
-                <div className="mt-2">
-                  <Label htmlFor="report-note">Mô tả thêm</Label>
+                <div className="mt-3">
+                  <Label htmlFor="report-note" className="text-slate-700">
+                    Mô tả thêm
+                  </Label>
                   <Textarea
                     id="report-note"
                     placeholder="Mô tả ngắn gọn vấn đề…"
@@ -138,42 +206,53 @@ export default function ReportAbuse({
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label className="font-medium text-[#008377] text-sm">Thông tin liên hệ</Label>
-              <div>
-                <Label htmlFor="report-phone">Điện thoại <span className="text-rose-600">*</span></Label>
+            {/* Liên hệ */}
+            <div className="space-y-3">
+              <Label className="font-medium text-sm" style={{ color: BRAND }}>
+                Thông tin liên hệ
+              </Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="report-phone">
+                  Điện thoại <span className="text-rose-600">*</span>
+                </Label>
                 <Input
                   id="report-phone"
                   inputMode="tel"
                   placeholder="Điện thoại của bạn"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="mt-1"
                 />
               </div>
-              <div>
-                <Label htmlFor="report-email">Email</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="report-email">
+                  Email <span className="text-rose-600">*</span>
+                </Label>
                 <Input
                   id="report-email"
                   type="email"
-                  placeholder="Email của bạn (không bắt buộc)"
+                  placeholder="Email của bạn"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1"
                 />
               </div>
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-6">
             <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={busy}>
               Hủy
             </Button>
-            <Button onClick={submit} disabled={!canSubmit || busy} className="!bg-[#00C4B4] hover:bg-[#00a99d] text-white">
+            <Button
+              onClick={submit}
+              disabled={!canSubmit || busy}
+              className="text-white"
+              style={{ backgroundColor: BRAND_SOFT }}
+            >
               <Flag className="mr-2 h-4 w-4" />
               Gửi báo cáo
             </Button>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
     </>

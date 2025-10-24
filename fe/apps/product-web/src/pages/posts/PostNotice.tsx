@@ -32,8 +32,8 @@ type PkgDTO = {
   billingMode: "FIXED" | "PER_DAY" | string;
   category: "BASE" | "ADDON" | string;
   baseDurationDays: number | null;
-  price: number | null;       
-  dailyPrice: number | null;   
+  price: number | null;       // giá gói base
+  dailyPrice: number | null;  // giá theo ngày cho addon
   includesPostFee: boolean;
   priorityLevel: number | null;
   badgeLabel: string | null;
@@ -51,7 +51,7 @@ type CreatedPost = (VehiclePostResponse | BatteryPostResponse) & {
 
 /* ====================== UI helpers ====================== */
 const COLOR = {
-  primary: "bg-[#008377] hover:bg-[#006E64] text-white",   
+  primary: "bg-[#008377] hover:bg-[#006E64] text-white",
   outlinePrimary: "border-[#246f67] text-[#246f67] hover:bg-[#246f67]/5",
 };
 
@@ -124,6 +124,7 @@ export default function PostNotice() {
     return opt?.durationDays ?? 0;
   }, [addon, addonOptionId, priorityPkg, specialPkg]);
 
+  // tải danh sách gói
   useEffect(() => {
     (async () => {
       try {
@@ -144,6 +145,8 @@ export default function PostNotice() {
           );
         if (special?.options?.length)
           setAddonOptionId((prev) => prev ?? (special.options.find((o) => o.isDefault)?.id ?? special.options[0].id));
+      } catch {
+        toast.error("Không tải được danh sách gói thanh toán.");
       } finally {
         setLoadingPkg(false);
       }
@@ -186,7 +189,10 @@ export default function PostNotice() {
     if (!productId) return;
     try {
       await api.put(`/member/product/${productId}/status`, { status: "DRAFT" });
-    } catch {}
+      toast.success("Đã lưu tin vào Nháp.");
+    } catch {
+      toast.error("Lưu nháp không thành công.");
+    }
   }
 
   async function fetchStatus() {
@@ -208,7 +214,7 @@ export default function PostNotice() {
       if (!committedRef.current) {
         e.preventDefault();
         try {
-          await markDraft();
+          await api.put(`/member/product/${productId}/status`, { status: "DRAFT" });
         } finally {}
         e.returnValue = "";
       }
@@ -218,23 +224,43 @@ export default function PostNotice() {
     const onPop = async () => {
       if (!committedRef.current) {
         try {
-          await markDraft();
+          await api.put(`/member/product/${productId}/status`, { status: "DRAFT" });
         } finally {}
       }
     };
     window.addEventListener("popstate", onPop);
 
     return () => {
-      if (!committedRef.current) markDraft();
+      if (!committedRef.current) {
+        api.put(`/member/product/${productId}/status`, { status: "DRAFT" }).catch(() => {});
+      }
       window.removeEventListener("beforeunload", beforeUnload);
       window.removeEventListener("popstate", onPop);
     };
   }, [productId]);
 
+  /* ===== VNPay helper (API #3) ===== */
+  async function createVNPayPayment(pid: string, amount: number) {
+    const amt = Math.round(Number(amount) || 0);
+    const returnUrl = `${window.location.origin}/payment/return?productId=${encodeURIComponent(pid)}`;
+    const { data } = await api.post("/vnpayment", {
+      id: pid,
+      amount: String(amt), // BE chấp nhận string số (theo ảnh)
+      returnUrl,
+    });
+    return {
+      paymentUrl: data?.paymentUrl as string | undefined,
+      transactionId: data?.transactionId as string | undefined,
+      message: data?.message as string | undefined,
+};
+  }
+
+  /* ===== Kết hợp API #1 + #2 ===== */
   async function createPackageAndPayment() {
     if (!productId) throw new Error("Missing productId");
     if (!basePkg) throw new Error("Thiếu gói STANDARD");
 
+    // Xác định gói & option
     let pkgId = basePkg.postPackageId;
     let optionId = "";
 
@@ -248,17 +274,37 @@ export default function PostNotice() {
 
     const paymentMethod = payMethod === "VNPAY" ? "VNPAY" : "MOMO";
 
-    const body = {
+    // 1) Đăng ký gói + phương thức
+    const { data } = await api.put(`/post/payments/${productId}/package`, {
       packageId: pkgId,
       paymentMethod,
-      optionId, 
-    };
+      optionId,
+    });
 
-    const { data } = await api.put(`/post/payments/${productId}/package`, body);
+    const status = String(data?.status ?? "");
+    const totalPayable = Number(data?.totalPayable ?? 0);
+    let paymentUrl: string | null | undefined = data?.paymentUrl;
+
+    // 2) Miễn phí → kết thúc
+    if (!totalPayable || totalPayable <= 0) {
+      return { status, totalPayable: 0, paymentUrl: null, method: paymentMethod as "VNPAY" | "MOMO" };
+    }
+
+    // 3) Cần thanh toán
+    if (paymentMethod === "VNPAY") {
+      // PUT không trả link → tự tạo link VNPay
+      if (!paymentUrl) {
+        const res = await createVNPayPayment(productId, totalPayable);
+        paymentUrl = res.paymentUrl ?? null;
+      }
+    }
+    // MOMO: PUT đã trả paymentUrl
+
     return {
-      status: data?.status as string | undefined,
-      totalPayable: Number(data?.totalPayable ?? 0),
-      paymentUrl: data?.paymentUrl as string | null | undefined,
+      status,
+      totalPayable,
+      paymentUrl,
+      method: paymentMethod as "VNPAY" | "MOMO",
     };
   }
 
@@ -267,20 +313,34 @@ export default function PostNotice() {
     setIsPaying(true);
     try {
       committedRef.current = true;
-      const { paymentUrl, totalPayable } = await createPackageAndPayment();
 
-      // Lần đầu: miễn phí 
-      if (!totalPayable || !paymentUrl) {
+      // Miễn phí do rule hiển thị (lần đầu)
+      if (!shownTotal) {
         setFreeEligible(true);
-        toast.success("Tin của bạn được duyệt miễn phí cho lần đăng đầu tiên.");
+        toast.success("Tin được đăng MIỄN PHÍ cho lần đầu. Hệ thống sẽ duyệt sớm.");
         await fetchStatus();
         nav("/post/manage", { replace: true });
         return;
       }
 
+      const { paymentUrl, totalPayable, method } = await createPackageAndPayment();
+
+      // BE cũng xác nhận miễn phí (phòng hờ)
+      if (!totalPayable || !paymentUrl) {
+        setFreeEligible(true);
+        toast.success("Tin của bạn được miễn phí. Không cần thanh toán.");
+        await fetchStatus();
+        nav("/post/manage", { replace: true });
+        return;
+      }
+
+      // Có tiền & có link -> chuyển sang cổng thanh toán
+      const methodLabel = method === "MOMO" ? "MoMo" : "VNPay";
+      toast.message(`Đang chuyển tới cổng ${methodLabel}…`, { description: "Vui lòng hoàn tất thanh toán trên trang đối tác." });
       window.location.href = paymentUrl;
     } catch {
       committedRef.current = false;
+      toast.error("Tạo thanh toán thất bại. Vui lòng thử lại.");
     } finally {
       setIsPaying(false);
     }
@@ -331,7 +391,7 @@ export default function PostNotice() {
 
           <Separator className="my-4" />
 
-          {/* Chọn gói kiểu Chợ Tốt */}
+          {/* Chọn gói */}
           <div className="grid md:grid-cols-3 gap-3">
             {/* Tin thường (STANDARD) */}
             <div className="rounded-lg border p-3 bg-white">

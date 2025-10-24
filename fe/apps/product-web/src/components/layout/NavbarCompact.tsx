@@ -1,3 +1,4 @@
+import { useState } from "react"; 
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Menu, Heart, PlusCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,6 @@ import {
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import UserMenu from "../user/UserMenu";
 import { useAuth } from "@/contexts/AuthContext";
-
 const mainNav = [
   { label: "EcoGreen", to: "/" },
   { label: "Xe điện", to: "/xe-dien" },
@@ -20,8 +20,17 @@ const mainNav = [
 ];
 
 export default function Navbar() {
-  const { user } = useAuth(); 
+  const { user } = useAuth();
   const nav = useNavigate();
+
+  const [keyword, setKeyword] = useState("");
+
+  const handleSearch = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const q = keyword.trim();
+
+    nav(`/search?keyword=${encodeURIComponent(q)}`);
+  };
 
   return (
     <header
@@ -78,12 +87,14 @@ export default function Navbar() {
 
         <div className="hidden md:flex flex-1 justify-center">
           <form
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={handleSearch}  
             className="flex items-center gap-2 bg-white rounded-xl px-3 shadow w-full max-w-xl"
           >
             <Search className="w-5 h-5 text-gray-500" />
             <Input
               placeholder="Tìm sản phẩm..."
+              value={keyword}                     
+              onChange={(e) => setKeyword(e.target.value)} 
               className="flex-1 h-10 !border-none !shadow-none !focus-visible:ring-0 !text-sm"
             />
             <Button type="submit" className="!h-7 !px-2 !text-sm !bg-[#246f67] !hover:bg-gray-800 !text-white">
@@ -108,7 +119,6 @@ export default function Navbar() {
             <Button asChild className="hidden md:flex !text-[#246f67] !bg-white">
               <Link to="/post/manage">Quản lý tin</Link>
             </Button>
-
           ) : (
             <Button asChild className="hidden md:flex !text-[#246f67] !bg-white">
               <Link to="/login">Đăng nhập</Link>

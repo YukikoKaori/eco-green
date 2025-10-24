@@ -1,6 +1,6 @@
-// src/layouts/Sidebar.tsx
 import { useLocation, NavLink } from "react-router-dom";
 import { useMemo, useState } from "react";
+import { Ban } from "lucide-react";
 import {
   LayoutDashboard,
   FileText,
@@ -13,6 +13,7 @@ import {
   Settings,
   ChevronDown,
   LockKeyhole,
+  ListOrdered,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -20,7 +21,6 @@ import SidebarUserCard from "@/components/SidebarUserCard";
 
 const BRAND = "#0f766e";
 
-// style helpers (đồng bộ cho mọi item)
 const linkBase =
   "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition";
 const linkActive =
@@ -32,8 +32,10 @@ const groupBtn = `${linkBase} w-full justify-between select-none`;
 export default function Sidebar() {
   const { pathname } = useLocation();
 
-  // active detection cho group
-  const isPostsActive = useMemo(() => pathname.startsWith("/posts"), [pathname]);
+  const isPostsActive = useMemo(
+    () => pathname.startsWith("/posts") || pathname.startsWith("/reports"),
+    [pathname]
+  );
   const isAccountsActive = useMemo(
     () => pathname.startsWith("/users") || pathname.startsWith("/staffs"),
     [pathname]
@@ -43,7 +45,6 @@ export default function Sidebar() {
     [pathname]
   );
 
-  // mở mặc định nếu đang ở trong nhóm
   const [openPosts, setOpenPosts] = useState(isPostsActive);
   const [openAccounts, setOpenAccounts] = useState(isAccountsActive);
   const [openSettings, setOpenSettings] = useState(isSettingsActive);
@@ -103,32 +104,63 @@ export default function Sidebar() {
               id="menu-posts"
               className={[
                 "overflow-hidden pl-9 pr-1",
-                openPosts ? "max-h-48 py-1" : "max-h-0",
+                openPosts ? "max-h-64 py-1" : "max-h-0",
                 "transition-[max-height,padding] duration-300 ease-in-out",
               ].join(" ")}
             >
               <NavLink
                 to="/posts/pending"
                 className={({ isActive }) =>
-                  ["flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                   isActive ? linkActive : linkIdle].join(" ")
+                  [
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
+                    isActive ? linkActive : linkIdle,
+                  ].join(" ")
                 }
                 aria-label="Cần phê duyệt"
               >
                 <Clock3 className="h-4 w-4" />
                 <span className="truncate">Cần phê duyệt</span>
               </NavLink>
-
+              <NavLink
+                to="/posts/rejected"
+                className={({ isActive }) =>
+                  [
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
+                    isActive ? linkActive : linkIdle,
+                  ].join(" ")
+                }
+                aria-label="Bị từ chối"
+              >
+                <Ban className="h-4 w-4" />
+                <span className="truncate">Bị từ chối</span>
+              </NavLink>
               <NavLink
                 to="/posts/active"
                 className={({ isActive }) =>
-                  ["flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                   isActive ? linkActive : linkIdle].join(" ")
+                  [
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
+                    isActive ? linkActive : linkIdle,
+                  ].join(" ")
                 }
                 aria-label="Đang hiển thị"
               >
                 <Eye className="h-4 w-4" />
                 <span className="truncate">Đang hiển thị</span>
+              </NavLink>
+
+              {/* ĐÃ CHUYỂN: Các khiếu nại nằm trong nhóm Quản lý bài đăng */}
+              <NavLink
+                to="/reports/count"
+                className={({ isActive }) =>
+                  [
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
+                    isActive ? linkActive : linkIdle,
+                  ].join(" ")
+                }
+                aria-label="Các khiếu nại"
+              >
+                <ListOrdered className="h-4 w-4" />
+                <span className="truncate">Các khiếu nại</span>
               </NavLink>
             </div>
 
@@ -163,8 +195,10 @@ export default function Sidebar() {
               <NavLink
                 to="/users"
                 className={({ isActive }) =>
-                  ["flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                   isActive ? linkActive : linkIdle].join(" ")
+                  [
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
+                    isActive ? linkActive : linkIdle,
+                  ].join(" ")
                 }
                 aria-label="Người dùng"
               >
@@ -175,8 +209,10 @@ export default function Sidebar() {
               <NavLink
                 to="/staffs"
                 className={({ isActive }) =>
-                  ["flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                   isActive ? linkActive : linkIdle].join(" ")
+                  [
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
+                    isActive ? linkActive : linkIdle,
+                  ].join(" ")
                 }
                 aria-label="Nhân viên"
               >
@@ -228,8 +264,10 @@ export default function Sidebar() {
               <NavLink
                 to="/profile"
                 className={({ isActive }) =>
-                  ["flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                   isActive ? linkActive : linkIdle].join(" ")
+                  [
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
+                    isActive ? linkActive : linkIdle,
+                  ].join(" ")
                 }
                 aria-label="Hồ sơ cá nhân"
               >
@@ -240,8 +278,10 @@ export default function Sidebar() {
               <NavLink
                 to="/password"
                 className={({ isActive }) =>
-                  ["flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                   isActive ? linkActive : linkIdle].join(" ")
+                  [
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
+                    isActive ? linkActive : linkIdle,
+                  ].join(" ")
                 }
                 aria-label="Đổi mật khẩu"
               >
@@ -252,7 +292,6 @@ export default function Sidebar() {
           </nav>
         </ScrollArea>
 
-        {/* Thẻ thông tin Admin + Logout ở đáy */}
         <SidebarUserCard />
       </div>
     </aside>

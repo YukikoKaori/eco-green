@@ -5,13 +5,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, ChevronRight, MapPin, Phone, Clock, MessageCircle } from "lucide-react"; // 🔹 NEW
+import { ChevronLeft, ChevronRight, MapPin, Phone, Clock, MessageCircle } from "lucide-react";
 import LikeButton from "@/listings/components/LikeButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { toast } from "sonner";
 import ReportAbuse from "@/listings/report/ReportAbuse";
-
 
 /* ----------------------------- Types ----------------------------- */
 type ProductImage = {
@@ -47,7 +46,7 @@ type ProductDetailDTO = {
   productImagesList?: ProductImage[];
   price?: number | string | null;
   createdAt?: string | null;
-  sellerId?: string | null;              
+  sellerId?: string | null;
   sellerName?: string | null;
   sellerPhone?: string | null;
   status?: string | null;
@@ -82,6 +81,24 @@ type VehicleCatalogEnvelope = {
   hasInsurance?: boolean | null;
   warrantyMonths?: number | null;
   vehicleCatalog: VehicleCatalog;
+};
+
+/* Similar item types */
+type SimilarItemRaw = {
+  productId: string;
+  tittle: string; // BE field
+  price: number;
+  brandName?: string;
+  modelName?: string;
+  images?: string;
+};
+type NormalizedSimilarItem = {
+  id: string;
+  title: string;
+  price: number;
+  brandName?: string | null;
+  modelName?: string | null;
+  image?: string | null;
 };
 
 /* --------------------------- Helpers ---------------------------- */
@@ -120,6 +137,18 @@ function hasNum(n: number | null | undefined) {
   return typeof n === "number" && Number.isFinite(n);
 }
 
+function normalizeSimilar(list: SimilarItemRaw[] | unknown): NormalizedSimilarItem[] {
+  if (!Array.isArray(list)) return [];
+  return list.map((x) => ({
+    id: (x as SimilarItemRaw).productId,
+    title: (x as SimilarItemRaw).tittle ?? "",
+    price: Number((x as SimilarItemRaw).price ?? 0),
+    brandName: (x as SimilarItemRaw).brandName ?? null,
+    modelName: (x as SimilarItemRaw).modelName ?? null,
+    image: (x as SimilarItemRaw).images ?? null,
+  }));
+}
+
 /* ============================== Page ============================== */
 export default function ProductDetail() {
   const { id = "" } = useParams();
@@ -133,6 +162,10 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [showPhone, setShowPhone] = useState(false);
+
+  /* Similar state */
+  const [similar, setSimilar] = useState<NormalizedSimilarItem[]>([]);
+  const [loadingSimilar, setLoadingSimilar] = useState(false);
 
   const liked = useMemo(() => (id ? isLiked(id) : false), [id, isLiked]);
 
@@ -165,13 +198,34 @@ export default function ProductDetail() {
           if (user) refresh().catch(() => {});
         }
 
+        // vehicle catalog (nếu là xe)
         if (pRes.data?.type?.toUpperCase() === "VEHICLE") {
           try {
             const cRes = await api.get<VehicleCatalogEnvelope>(`/vehicle/catalog/${id}`);
             if (!off) setCatalog(cRes.data);
           } catch {
-            // ignore
+            /* ignore */
           }
+        } else {
+          if (!off) setCatalog(null);
+        }
+
+        // ===== Similar listings (Vehicle/Battery) =====
+        try {
+          setLoadingSimilar(true);
+          if (pRes.data?.type?.toUpperCase() === "VEHICLE") {
+            const sRes = await api.get<SimilarItemRaw[]>(`/vehicle/${id}/similar`);
+            if (!off) setSimilar(normalizeSimilar(sRes.data));
+          } else if (pRes.data?.type?.toUpperCase() === "BATTERY") {
+            const sRes = await api.get<SimilarItemRaw[]>(`/battery/${id}/similar`);
+            if (!off) setSimilar(normalizeSimilar(sRes.data));
+          } else {
+            if (!off) setSimilar([]);
+          }
+        } catch {
+          if (!off) setSimilar([]);
+        } finally {
+          if (!off) setLoadingSimilar(false);
         }
       } catch (e: any) {
         if (!off) setErr(e?.response?.data?.message || "Không tải được sản phẩm.");
@@ -238,9 +292,9 @@ export default function ProductDetail() {
     <div className="max-w-[1200px] mx-auto px-3 md:px-6 py-4">
       <div className="grid lg:grid-cols-5 gap-4">
         {/* Left */}
-        <div className="lg:col-span-3"> 
+        <div className="lg:col-span-3">
           <div className="rounded-xl overflow-hidden relative">
-            <div className="aspect-video bg-slate-100 max-h-[480px] md:max-h-[440px]"> 
+            <div className="aspect-video bg-slate-100 max-h-[480px] md:max-h-[440px]">
               <img
                 src={imgs[idx]?.imageUrl}
                 alt={`image-${idx}`}
@@ -277,7 +331,7 @@ export default function ProductDetail() {
                 <button
                   key={i}
                   onClick={() => setIdx(i)}
-                  className={`h-16 w-28 shrink-0 rounded-lg overflow-hidden border ${ 
+                  className={`h-16 w-28 shrink-0 rounded-lg overflow-hidden border ${
                     i === idx ? "border-[#246f67]" : "border-slate-200"
                   }`}
                 >
@@ -331,7 +385,7 @@ export default function ProductDetail() {
         </div>
 
         {/* Right */}
-        <div className="space-y-3 lg:col-span-2"> 
+        <div className="space-y-3 lg:col-span-2">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-start justify-between gap-2">
@@ -375,7 +429,7 @@ export default function ProductDetail() {
               <div className="text-lg font-semibold mb-2">Người bán</div>
 
               <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-slate-200 grid place-items-center font-semibold"> 
+                <div className="h-8 w-8 rounded-full bg-slate-200 grid place-items-center font-semibold">
                   {(prod.sellerName || "?").charAt(0)}
                 </div>
                 <div className="flex-1">
@@ -386,7 +440,7 @@ export default function ProductDetail() {
 
               <Separator className="my-4" />
 
-              <div className="grid grid-cols-2 gap-2"> 
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
                   className="!border-slate-300"
@@ -411,6 +465,53 @@ export default function ProductDetail() {
           </Card>
         </div>
       </div>
+
+      {/* ===================== Similar Listings ===================== */}
+      {similar.length > 0 && (
+        <Card className="mt-6">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-lg font-semibold">Tin đăng tương tự</div>
+            </div>
+
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+              {similar.map((s) => (
+                <Link
+                  key={s.id}
+                  to={`/product/${s.id}`}
+                  className="min-w-[280px] max-w-[280px] bg-white rounded-xl border border-slate-200 hover:shadow-md transition"
+                >
+                  <div className="aspect-video rounded-t-xl overflow-hidden bg-slate-100">
+                    <img
+                      src={s.image || "https://via.placeholder.com/640x360?text=No+Image"}
+                      alt={s.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="p-3">
+                    <div className="text-sm text-slate-500 mb-0.5">
+                      {[s.brandName, s.modelName].filter(Boolean).join(" · ")}
+                    </div>
+                    <div className="font-medium line-clamp-2">{s.title}</div>
+                    <div className="mt-2 text-[#d4205b] font-bold">
+                      {currencyVND(s.price)}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {loadingSimilar && (
+              <div className="flex gap-3 mt-2">
+                <Skeleton className="h-44 w-[280px] rounded-xl" />
+                <Skeleton className="h-44 w-[280px] rounded-xl" />
+                <Skeleton className="h-44 w-[280px] rounded-xl" />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

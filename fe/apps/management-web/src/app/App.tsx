@@ -9,6 +9,8 @@ import StaffsPage from "@/pages/Staffs";
 import ProfilePage from "@/pages/settings/ProfilePage";
 import AccountPage from "@/pages/settings/AccountPage";
 import PendingPostsPage from "@/pages/PendingPostsPage";
+import ReportStatsPage from "@/pages/ReportStatsPage";
+import RejectedPostsPage from "@/pages/RejectedPostsPage";
 
 export default function App() {
   return (
@@ -26,9 +28,10 @@ export default function App() {
           <Route path="staffs" element={<StaffsPage />} />
 
           {/* Quản lý bài đăng */}
-          <Route path="posts/pending" element={<PendingPostsPage/> } />
+          <Route path="posts/pending" element={<PendingPostsPage />} />
+          <Route path="/posts/rejected" element={<RejectedPostsPage />} />
           <Route path="posts/active" element={<div>Đang hiển thị</div>} />
-
+          <Route path="/reports/count" element={<ReportStatsPage />} />
           {/* Cài đặt */}
           <Route path="profile" element={<ProfilePage />} />
           <Route path="password" element={<AccountPage />} />

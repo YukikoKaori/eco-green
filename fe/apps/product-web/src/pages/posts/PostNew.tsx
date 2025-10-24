@@ -25,7 +25,6 @@ import {
   fetchVersionsByModel,
   type Brand,
   type OptionItem,
-  toVNDFromMillions,
 } from "@/api/PostApi";
 
 type Category = "vehicle" | "battery";
@@ -36,7 +35,7 @@ type FormState = {
 
   title: string;
   description: string;
-  price: string; 
+  price: string;
 
   addressDetail: string;
 
@@ -57,6 +56,17 @@ const MIN_IMAGES = 1;
 const MAX_TITLE = 50;
 const MAX_DESC = 1500;
 
+/* ---------------- VND helpers (mới) ---------------- */
+function formatVNDInput(raw: string | number) {
+  const digits = String(raw).replace(/[^\d]/g, "");
+  if (!digits) return "";
+  return Number(digits).toLocaleString("vi-VN");
+}
+function parseVNDToNumber(raw: string) {
+  const digits = raw.replace(/[^\d]/g, "");
+  return digits ? Number(digits) : 0;
+}
+
 export default function PostNew() {
   const { user } = useAuth();
   const nav = useNavigate();
@@ -74,7 +84,7 @@ export default function PostNew() {
     category: "vehicle",
     title: "",
     description: "",
-    price: "",
+    price: "", 
     addressDetail: "",
   });
 
@@ -82,7 +92,7 @@ export default function PostNew() {
 
   /* Catalog states */
   const [vehicleCategories, setVehicleCategories] = useState<OptionItem[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(""); // categoryId của VEHICLE
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(""); 
 
   const [vehicleBrands, setVehicleBrands] = useState<Brand[]>([]);
   const [batteryBrands, setBatteryBrands] = useState<Brand[]>([]);
@@ -114,8 +124,6 @@ export default function PostNew() {
 
   useEffect(() => {
     if (!isVehicle) return;
-
-    // reset chuỗi chọn
     setSelectedBrandId("");
     setSelectedModelId("");
     setSelectedVersionId("");
@@ -187,6 +195,7 @@ export default function PostNew() {
   const canSubmit = useMemo(() => {
     if (imgs.length < MIN_IMAGES) return false;
     if (!form.title || !form.price) return false;
+    if (parseVNDToNumber(form.price) <= 0) return false; 
     if (!provinceCode || !districtCode || !wardCode) return false;
 
     if (isVehicle) {
@@ -262,6 +271,8 @@ export default function PostNew() {
         addressDetail: form.addressDetail || "",
       };
 
+      const priceVND = parseVNDToNumber(form.price); 
+
       let created:
         | import("@/api/PostApi").VehiclePostResponse
         | import("@/api/PostApi").BatteryPostResponse;
@@ -270,7 +281,7 @@ export default function PostNew() {
         const data: VehiclePostData = {
           title: form.title,
           description: form.description,
-          price: toVNDFromMillions(form.price),
+          price: priceVND, 
 
           ...baseAddress,
 
@@ -288,7 +299,7 @@ export default function PostNew() {
         const data: BatteryPostData = {
           title: form.title,
           description: form.description,
-          price: toVNDFromMillions(form.price),
+          price: priceVND, 
 
           ...baseAddress,
 
@@ -611,13 +622,18 @@ export default function PostNew() {
                 <div className="text-xs text-gray-500">{descLeft}/1500 kí tự</div>
               </div>
 
+              {/* ---- GIÁ: nhập dạng VND có dấu chấm ---- */}
               <div className="mt-4 flex flex-col gap-1">
-                <Label>Giá (triệu VND)<Required /></Label>
+                <Label>Giá (VND)<Required /></Label>
                 <Input
-                  placeholder="VD: 250"
-                  inputMode="decimal"
+                  placeholder="VD: 400.000.000"
+                  inputMode="numeric"
                   value={form.price}
-                  onChange={(e) => setForm((f) => ({ ...f, price: e.target.value.replace(/[^\d.]/g, "") }))}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    const formatted = formatVNDInput(v);
+                    setForm((f) => ({ ...f, price: formatted }));
+                  }}
                 />
               </div>
             </div>
