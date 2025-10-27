@@ -1,4 +1,4 @@
-import { getPendingPosts, verifyPost, rejectPost } from "@/api/product";
+import { getPendingPosts, verifyPost, rejectPost, approvePostActive } from "@/api/product";
 import { useEffect, useState, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,7 @@ export default function PendingPostsPage() {
   const [type, setType] = useState<"" | "VEHICLE" | "BATTERY">("");
 
   // pagination
-  const [page0, setPage0] = useState(0); // 0-based
+  const [page0, setPage0] = useState(0); 
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
@@ -101,14 +101,14 @@ export default function PendingPostsPage() {
   const handleApprove = async (id: string) => {
     try {
       setSubmitting(true);
-      await verifyPost(id, { newStatus: "APPROVED" });
+      await approvePostActive(id);
 
       const remain = products.length - 1;
       if (remain === 0 && page0 > 0) setPage0((p) => p - 1);
-      else fetchPage();
+      else await fetchPage();
       resetDialog();
     } catch {
-      alert("❌ Lỗi khi phê duyệt sản phẩm.");
+      alert(" Lỗi khi phê duyệt sản phẩm.");
       setSubmitting(false);
     }
   };
@@ -125,7 +125,7 @@ export default function PendingPostsPage() {
 
       const remain = products.length - 1;
       if (remain === 0 && page0 > 0) setPage0((p) => p - 1);
-      else fetchPage();
+      else await fetchPage();
       resetDialog();
     } catch {
       alert("Lỗi khi từ chối sản phẩm.");
@@ -203,13 +203,15 @@ export default function PendingPostsPage() {
                             className={
                               p.status === "PENDING_REVIEW"
                                 ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-                                : p.status === "APPROVED"
+                                : p.status === "ACTIVE" || p.status === "APPROVED"
                                 ? "bg-green-100 text-green-700 border-green-200"
                                 : "bg-red-100 text-red-700 border-red-200"
                             }
                           >
                             {p.status === "PENDING_REVIEW"
                               ? "Chờ phê duyệt"
+                              : p.status === "ACTIVE"
+                              ? "Đang hiển thị"
                               : p.status === "APPROVED"
                               ? "Đã duyệt"
                               : "Từ chối"}
@@ -354,7 +356,7 @@ export default function PendingPostsPage() {
                     <Button
                       className="!bg-green-600 !text-white"
                       onClick={() => handleApprove(selected.id)}
-                      disabled={submitting}
+                      disabled={submitting || selected.status !== "PENDING_REVIEW"}
                     >
                       {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                       Duyệt
@@ -362,7 +364,7 @@ export default function PendingPostsPage() {
                     <Button
                       className="!bg-red-500 !text-white"
                       onClick={() => setShowRejectInput(true)}
-                      disabled={submitting}
+                      disabled={submitting || selected.status !== "PENDING_REVIEW"}
                     >
                       Từ chối
                     </Button>

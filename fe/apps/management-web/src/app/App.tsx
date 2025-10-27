@@ -11,7 +11,8 @@ import AccountPage from "@/pages/settings/AccountPage";
 import PendingPostsPage from "@/pages/PendingPostsPage";
 import ReportStatsPage from "@/pages/ReportStatsPage";
 import RejectedPostsPage from "@/pages/RejectedPostsPage";
-
+import StaffPostsManagePage from "@/pages/PostsManagePage";
+import ReviewDetailPage from "@/pages/ReviewDetailPage";
 export default function App() {
   return (
     <Routes>
@@ -30,8 +31,9 @@ export default function App() {
           {/* Quản lý bài đăng */}
           <Route path="posts/pending" element={<PendingPostsPage />} />
           <Route path="/posts/rejected" element={<RejectedPostsPage />} />
-          <Route path="posts/active" element={<div>Đang hiển thị</div>} />
           <Route path="/reports/count" element={<ReportStatsPage />} />
+          <Route path="/posts/moderate" element={<StaffPostsManagePage />} />
+          <Route path="/posts/review/:id" element={<ReviewDetailPage />} />
           {/* Cài đặt */}
           <Route path="profile" element={<ProfilePage />} />
           <Route path="password" element={<AccountPage />} />

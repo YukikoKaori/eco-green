@@ -1,6 +1,5 @@
 import { useLocation, NavLink } from "react-router-dom";
 import { useMemo, useState } from "react";
-import { Ban } from "lucide-react";
 import {
   LayoutDashboard,
   FileText,
@@ -109,46 +108,16 @@ export default function Sidebar() {
               ].join(" ")}
             >
               <NavLink
-                to="/posts/pending"
+                to="/posts/moderate"
                 className={({ isActive }) =>
-                  [
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                    isActive ? linkActive : linkIdle,
-                  ].join(" ")
+                  [linkBase, isActive ? linkActive : linkIdle].join(" ")
                 }
-                aria-label="Cần phê duyệt"
-              >
-                <Clock3 className="h-4 w-4" />
-                <span className="truncate">Cần phê duyệt</span>
-              </NavLink>
-              <NavLink
-                to="/posts/rejected"
-                className={({ isActive }) =>
-                  [
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                    isActive ? linkActive : linkIdle,
-                  ].join(" ")
-                }
-                aria-label="Bị từ chối"
-              >
-                <Ban className="h-4 w-4" />
-                <span className="truncate">Bị từ chối</span>
-              </NavLink>
-              <NavLink
-                to="/posts/active"
-                className={({ isActive }) =>
-                  [
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                    isActive ? linkActive : linkIdle,
-                  ].join(" ")
-                }
-                aria-label="Đang hiển thị"
+                aria-label="Tất cả tin đăng"
               >
                 <Eye className="h-4 w-4" />
-                <span className="truncate">Đang hiển thị</span>
+                <span className="truncate">Tất cả tin đăng</span>
               </NavLink>
 
-              {/* ĐÃ CHUYỂN: Các khiếu nại nằm trong nhóm Quản lý bài đăng */}
               <NavLink
                 to="/reports/count"
                 className={({ isActive }) =>
@@ -164,7 +133,6 @@ export default function Sidebar() {
               </NavLink>
             </div>
 
-            {/* Quản lý tài khoản (group) */}
             <button
               type="button"
               onClick={() => setOpenAccounts((v) => !v)}

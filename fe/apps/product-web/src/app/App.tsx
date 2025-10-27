@@ -19,6 +19,7 @@ import ProductDetailPage from "@/pages/product/ProductDetail";
 import VehicleListPage from "@/pages/listingEV/VehicleListPage";
 import BatteryListPage from "@/pages/listingEV/BatteryListPage";
 import SearchResults from "@/pages/search/SearchResults";
+import VNPayReturn from "@/pages/payment/VNPayReturn";
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/account/wishlist" element={<WishlistPage />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route path="/search" element={<SearchResults />} />
+         <Route path="/payment/vnpay-return" element={<VNPayReturn />} />
         <Route
           path="/postnotice"
           element={

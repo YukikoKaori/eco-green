@@ -44,11 +44,6 @@ export default function RecentlyRejectedPage() {
             <Ban className="w-6 h-6 text-rose-600" />
             Các tin đăng bị từ chối
           </CardTitle>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => { clearRecentRejected(); setItems([]); }}>
-              Xoá danh sách
-            </Button>
-          </div>
         </CardHeader>
 
         <CardContent>

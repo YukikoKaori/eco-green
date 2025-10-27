@@ -8,6 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Image as ImageIcon, Trash2, Star, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { Sparkles, Loader2 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipProvider,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 import AddressPicker from "@/pages/posts/components/AddressPicker";
 import { useVNAddress } from "@/hooks/useVNAddress";
@@ -26,17 +33,16 @@ import {
   type Brand,
   type OptionItem,
 } from "@/api/PostApi";
+import { suggestPrice } from "@/api/aiPricing";
 
 type Category = "vehicle" | "battery";
 type ImgItem = { file: File; url: string; cover?: boolean };
 
 type FormState = {
   category: Category;
-
   title: string;
   description: string;
   price: string;
-
   addressDetail: string;
 
   batteryTypeId?: string;
@@ -48,7 +54,7 @@ type FormState = {
   mileageKm?: string;
   batteryHealthPercent?: string;
 
-  brandId?: string;
+  brandId?: string; // dùng cho battery
 };
 
 const MAX_IMAGES = 10;
@@ -56,7 +62,7 @@ const MIN_IMAGES = 1;
 const MAX_TITLE = 50;
 const MAX_DESC = 1500;
 
-/* ---------------- VND helpers (mới) ---------------- */
+/* VND helpers */
 function formatVNDInput(raw: string | number) {
   const digits = String(raw).replace(/[^\d]/g, "");
   if (!digits) return "";
@@ -79,12 +85,12 @@ export default function PostNew() {
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  /* Form */
+  /* Form (không autosave) */
   const [form, setForm] = useState<FormState>({
     category: "vehicle",
     title: "",
     description: "",
-    price: "", 
+    price: "",
     addressDetail: "",
   });
 
@@ -92,7 +98,7 @@ export default function PostNew() {
 
   /* Catalog states */
   const [vehicleCategories, setVehicleCategories] = useState<OptionItem[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(""); 
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
 
   const [vehicleBrands, setVehicleBrands] = useState<Brand[]>([]);
   const [batteryBrands, setBatteryBrands] = useState<Brand[]>([]);
@@ -103,6 +109,56 @@ export default function PostNew() {
   const [selectedModelId, setSelectedModelId] = useState<string>("");
   const [selectedVersionId, setSelectedVersionId] = useState<string>("");
 
+  /* ==== AI suggest price ==== */
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiReason, setAiReason] = useState("");
+
+  function findNameById<T extends { id: string; name: string }>(list: T[], id?: string) {
+    return (list.find((x) => x.id === id)?.name ?? "").trim();
+  }
+
+  async function onSuggestPrice() {
+    try {
+      setAiLoading(true);
+      setAiReason("");
+
+      const brandName = isVehicle
+        ? findNameById(vehicleBrands, selectedBrandId)
+        : findNameById(batteryBrands, form.brandId);
+      const modelName = findNameById(models, selectedModelId);
+      const versionName = findNameById(versions, selectedVersionId);
+
+      const payload = {
+        title: form.title || undefined,
+        brand: brandName || undefined,
+        modelName: modelName || undefined,
+        versionName: versionName || undefined,
+        batteryHealth: isVehicle ? form.batteryHealthPercent || undefined : form.healthPercent || undefined,
+        mileageKm: isVehicle ? form.mileageKm || undefined : undefined,
+        manufactureYear: isVehicle ? form.year || undefined : undefined,
+      };
+
+      const res = await suggestPrice(payload, { timeout: 60000 });
+      const raw = String(res?.price ?? "");
+      const digits = raw.replace(/[^\d]/g, "");
+      if (digits) {
+        const n = Number(digits);
+        setForm((f) => ({ ...f, price: n.toLocaleString("vi-VN") }));
+        toast.success("Đã chèn giá gợi ý vào ô Giá.");
+      } else {
+        toast.message("Không nhận được giá hợp lệ từ AI.");
+      }
+      if (res?.reason) setAiReason(res.reason);
+    } catch (e: any) {
+      if (e?.code === "ECONNABORTED") toast.error("AI phản hồi chậm. Thử lại sau nhé!");
+      else toast.error("Gợi ý giá thất bại.");
+      console.error(e);
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  /* Load catalogs */
   useEffect(() => {
     (async () => {
       try {
@@ -116,12 +172,14 @@ export default function PostNew() {
     })();
   }, []);
 
+  /* Ảnh: gán bìa mặc định */
   useEffect(() => {
     if (imgs.length && !imgs.some((i) => i.cover)) {
       setImgs((arr) => arr.map((it, idx) => ({ ...it, cover: idx === 0 })));
     }
   }, [imgs.length]);
 
+  /* Khi chọn category (vehicle) → load brands */
   useEffect(() => {
     if (!isVehicle) return;
     setSelectedBrandId("");
@@ -145,6 +203,7 @@ export default function PostNew() {
     })();
   }, [isVehicle, selectedCategoryId]);
 
+  /* Load models theo category + brand */
   useEffect(() => {
     if (!isVehicle) return;
 
@@ -169,6 +228,7 @@ export default function PostNew() {
     })();
   }, [isVehicle, selectedCategoryId, selectedBrandId]);
 
+  /* Load versions theo model */
   useEffect(() => {
     if (!isVehicle) return;
 
@@ -192,10 +252,11 @@ export default function PostNew() {
   const titleLeft = MAX_TITLE - (form.title?.length || 0);
   const descLeft = MAX_DESC - (form.description?.length || 0);
 
+  /* Validate submit */
   const canSubmit = useMemo(() => {
     if (imgs.length < MIN_IMAGES) return false;
     if (!form.title || !form.price) return false;
-    if (parseVNDToNumber(form.price) <= 0) return false; 
+    if (parseVNDToNumber(form.price) <= 0) return false;
     if (!provinceCode || !districtCode || !wardCode) return false;
 
     if (isVehicle) {
@@ -221,7 +282,7 @@ export default function PostNew() {
     selectedVersionId,
   ]);
 
-  /* Helpers */
+  /* Helpers chọn ảnh */
   const pickFiles = () => fileRef.current?.click();
   function addFiles(files: FileList | null) {
     if (!files?.length) return;
@@ -271,7 +332,7 @@ export default function PostNew() {
         addressDetail: form.addressDetail || "",
       };
 
-      const priceVND = parseVNDToNumber(form.price); 
+      const priceVND = parseVNDToNumber(form.price);
 
       let created:
         | import("@/api/PostApi").VehiclePostResponse
@@ -281,10 +342,8 @@ export default function PostNew() {
         const data: VehiclePostData = {
           title: form.title,
           description: form.description,
-          price: priceVND, 
-
+          price: priceVND,
           ...baseAddress,
-
           brandId: selectedBrandId,
           batteryHealthPercent: Number(form.batteryHealthPercent),
           mileageKm: Number(form.mileageKm),
@@ -293,23 +352,19 @@ export default function PostNew() {
           versionId: selectedVersionId,
           categoryId: selectedCategoryId,
         };
-
         created = await postVehicle(data, orderedFiles, imagesMeta);
       } else {
         const data: BatteryPostData = {
           title: form.title,
           description: form.description,
-          price: priceVND, 
-
+          price: priceVND,
           ...baseAddress,
-
           brandId: form.brandId!,
           batteryTypeId: form.batteryTypeId || undefined,
           capacityKwh: Number(form.capacityKwh),
           healthPercent: Number(form.healthPercent),
           voltageV: Number(form.voltageV),
         };
-
         created = await postBattery(data, orderedFiles, imagesMeta);
       }
 
@@ -322,11 +377,7 @@ export default function PostNew() {
       toast.success("Đăng tin thành công!");
       nav(`/postnotice?productId=${encodeURIComponent(productId)}`, {
         replace: true,
-        state: {
-          created,
-          type: isVehicle ? "vehicle" : "battery",
-          productId,
-        },
+        state: { created, type: isVehicle ? "vehicle" : "battery", productId },
       });
     } catch (err: any) {
       const msg = err?.response?.data?.message || "Đăng tin thất bại.";
@@ -416,6 +467,7 @@ export default function PostNew() {
             </div>
           </section>
 
+          {/* RIGHT: Form */}
           <section className="isolate flex-1 bg-white p-4 ">
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-1">
@@ -439,10 +491,7 @@ export default function PostNew() {
                   {/* Loại xe */}
                   <div className="flex flex-col gap-1">
                     <Label>Loại xe<Required /></Label>
-                    <Select
-                      value={selectedCategoryId}
-                      onValueChange={(v) => setSelectedCategoryId(v)}
-                    >
+                    <Select value={selectedCategoryId} onValueChange={(v) => setSelectedCategoryId(v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Chọn loại xe" />
                       </SelectTrigger>
@@ -458,15 +507,12 @@ export default function PostNew() {
                   {selectedCategoryId && (
                     <div className="flex flex-col gap-1">
                       <Label>Hãng xe<Required /></Label>
-                      <Select
-                        value={selectedBrandId}
-                        onValueChange={(v) => setSelectedBrandId(v)}
-                      >
+                      <Select value={selectedBrandId} onValueChange={(v) => setSelectedBrandId(v)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Chọn hãng" />
                         </SelectTrigger>
                         <SelectContent>
-                          {vehicleBrands.map(b => (
+                          {vehicleBrands.map((b) => (
                             <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
                           ))}
                         </SelectContent>
@@ -487,7 +533,7 @@ export default function PostNew() {
                           <SelectValue placeholder="Chọn dòng" />
                         </SelectTrigger>
                         <SelectContent>
-                          {models.map(m => (
+                          {models.map((m) => (
                             <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
                           ))}
                         </SelectContent>
@@ -508,7 +554,7 @@ export default function PostNew() {
                           <SelectValue placeholder="Chọn phiên bản" />
                         </SelectTrigger>
                         <SelectContent>
-                          {versions.map(v => (
+                          {versions.map((v) => (
                             <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
                           ))}
                         </SelectContent>
@@ -622,9 +668,65 @@ export default function PostNew() {
                 <div className="text-xs text-gray-500">{descLeft}/1500 kí tự</div>
               </div>
 
-              {/* ---- GIÁ: nhập dạng VND có dấu chấm ---- */}
+              {/* ---- GIÁ + AI gợi ý ---- */}
               <div className="mt-4 flex flex-col gap-1">
-                <Label>Giá (VND)<Required /></Label>
+                <div className="flex items-center justify-between">
+                  <Label>Giá (VND)<Required /></Label>
+
+                  <TooltipProvider delayDuration={150}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          onClick={onSuggestPrice}
+                          disabled={aiLoading}
+                          // style “viên thuốc” + viền gradient + hover glow
+                          className={[
+                            "relative overflow-hidden",
+                            "rounded-full px-4 h-9",
+                            "border border-transparent",
+                            "bg-white/90 dark:bg-neutral-900/90",
+                            "shadow-sm hover:shadow-md transition",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500",
+                            "disabled:opacity-60 disabled:cursor-not-allowed",
+                          ].join(" ")}
+                        >
+                          {/* gradient viền mỏng */}
+                          <span
+                            aria-hidden
+                            className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-transparent"
+                            style={{
+                              background:
+                                "linear-gradient(135deg,#24a19433,#24a19400 40%,#24a19433)",
+                            }}
+                          />
+
+                          {/* nền nhạt bên trong */}
+                          <span className="absolute inset-[1px] rounded-full bg-emerald-50/60 dark:bg-emerald-900/20" />
+
+                          {/* nội dung nút */}
+                          <span className="relative z-10 flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-medium">
+                            {aiLoading ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Đang gợi ý...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="h-4 w-4" />
+                                Gợi ý giá (AI)
+                              </>
+                            )}
+                          </span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-sm">
+                        Dùng AI ước tính giá dựa trên hãng/dòng/phiên bản, năm, ODO, sức khỏe pin…
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+
                 <Input
                   placeholder="VD: 400.000.000"
                   inputMode="numeric"
@@ -635,6 +737,11 @@ export default function PostNew() {
                     setForm((f) => ({ ...f, price: formatted }));
                   }}
                 />
+                {aiReason && (
+                  <div className="text-xs text-slate-600 mt-1">
+                    <span className="font-medium text-[#246f67]">AI giải thích:</span> {aiReason}
+                  </div>
+                )}
               </div>
             </div>
 

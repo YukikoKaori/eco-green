@@ -8,7 +8,6 @@ import {
 } from "@/api/reports";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, List, PieChart, Clock } from "lucide-react";
 import ReportDetailDialog from "@/components/ReportDetailDialog";
@@ -111,7 +110,6 @@ export default function ReportStatsPage() {
   }, [filtered]);
 
   const goToProductDetail = (id: string) => {
-    // Ví dụ: nav(`/posts/${id}`);
     nav(`/posts/${id}`);
   };
 

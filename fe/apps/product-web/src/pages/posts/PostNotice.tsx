@@ -32,8 +32,8 @@ type PkgDTO = {
   billingMode: "FIXED" | "PER_DAY" | string;
   category: "BASE" | "ADDON" | string;
   baseDurationDays: number | null;
-  price: number | null;       // giá gói base
-  dailyPrice: number | null;  // giá theo ngày cho addon
+  price: number | null;
+  dailyPrice: number | null;
   includesPostFee: boolean;
   priorityLevel: number | null;
   badgeLabel: string | null;
@@ -77,7 +77,6 @@ export default function PostNotice() {
   const nav = useNavigate();
   const location = useLocation();
 
-  // lấy thông tin bài vừa tạo
   let created: CreatedPost | undefined = (location.state as any)?.created;
   if (!created) {
     try {
@@ -102,7 +101,10 @@ export default function PostNotice() {
 
   const [payMethod, setPayMethod] = useState<"VNPAY" | "MOMO">("VNPAY");
   const [isPaying, setIsPaying] = useState(false);
-  const [statusText, setStatusText] = useState<string>("PENDING_REVIEW");
+
+  const initialStatus = (created?.status as string) || "PENDING_REVIEW";
+  const [statusText, setStatusText] = useState<string>(initialStatus);
+
   const committedRef = useRef(false);
 
   const [basePkg, setBasePkg] = useState<PkgDTO | null>(null);
@@ -124,7 +126,6 @@ export default function PostNotice() {
     return opt?.durationDays ?? 0;
   }, [addon, addonOptionId, priorityPkg, specialPkg]);
 
-  // tải danh sách gói
   useEffect(() => {
     (async () => {
       try {
@@ -153,7 +154,6 @@ export default function PostNotice() {
     })();
   }, []);
 
-  // ====== Tính tiền hiển thị ======
   const { total, breakdown } = useMemo(() => {
     const lines: string[] = [];
     let sum = 0;
@@ -185,123 +185,59 @@ export default function PostNotice() {
   const baseDays = basePkg?.baseDurationDays ?? 30;
   const start = new Date();
 
-  async function markDraft() {
-    if (!productId) return;
-    try {
-      await api.put(`/member/product/${productId}/status`, { status: "DRAFT" });
-      toast.success("Đã lưu tin vào Nháp.");
-    } catch {
-      toast.error("Lưu nháp không thành công.");
-    }
-  }
-
-  async function fetchStatus() {
-    if (!productId) return;
-    try {
-      const { data } = await api.get(`/member/product/${productId}`);
-      if (data?.status) setStatusText(String(data.status));
-    } catch {}
-  }
-
-  useEffect(() => {
-    if (!productId) nav("/post/manage", { replace: true });
-  }, [productId, nav]);
-
-  useEffect(() => {
-    fetchStatus();
-
-    const beforeUnload = async (e: BeforeUnloadEvent) => {
-      if (!committedRef.current) {
-        e.preventDefault();
-        try {
-          await api.put(`/member/product/${productId}/status`, { status: "DRAFT" });
-        } finally {}
-        e.returnValue = "";
-      }
-    };
-    window.addEventListener("beforeunload", beforeUnload);
-
-    const onPop = async () => {
-      if (!committedRef.current) {
-        try {
-          await api.put(`/member/product/${productId}/status`, { status: "DRAFT" });
-        } finally {}
-      }
-    };
-    window.addEventListener("popstate", onPop);
-
-    return () => {
-      if (!committedRef.current) {
-        api.put(`/member/product/${productId}/status`, { status: "DRAFT" }).catch(() => {});
-      }
-      window.removeEventListener("beforeunload", beforeUnload);
-      window.removeEventListener("popstate", onPop);
-    };
-  }, [productId]);
-
-  /* ===== VNPay helper (API #3) ===== */
+  /* ===== VNPay helper ===== */
   async function createVNPayPayment(pid: string, amount: number) {
     const amt = Math.round(Number(amount) || 0);
-    const returnUrl = `${window.location.origin}/payment/return?productId=${encodeURIComponent(pid)}`;
+    const returnUrl = `${window.location.origin}/payment/vnpay-return?pid=${encodeURIComponent(pid)}`;
     const { data } = await api.post("/vnpayment", {
       id: pid,
-      amount: String(amt), // BE chấp nhận string số (theo ảnh)
+      amount: String(amt),
       returnUrl,
     });
     return {
       paymentUrl: data?.paymentUrl as string | undefined,
       transactionId: data?.transactionId as string | undefined,
       message: data?.message as string | undefined,
-};
+    };
   }
 
-  /* ===== Kết hợp API #1 + #2 ===== */
   async function createPackageAndPayment() {
     if (!productId) throw new Error("Missing productId");
     if (!basePkg) throw new Error("Thiếu gói STANDARD");
 
-    // Xác định gói & option
     let pkgId = basePkg.postPackageId;
     let optionId = "";
 
     if (addon !== "") {
       const pkg = addon === "PRIORITY" ? priorityPkg : specialPkg;
-      const opt =
-        pkg?.options.find((o) => o.id === addonOptionId) || pkg?.options[0] || null;
+      const opt = pkg?.options.find((o) => o.id === addonOptionId) || pkg?.options[0] || null;
       pkgId = pkg!.postPackageId;
       optionId = opt?.id ?? "";
     }
 
     const paymentMethod = payMethod === "VNPAY" ? "VNPAY" : "MOMO";
 
-    // 1) Đăng ký gói + phương thức
     const { data } = await api.put(`/post/payments/${productId}/package`, {
       packageId: pkgId,
       paymentMethod,
       optionId,
     });
 
-    const status = String(data?.status ?? "");
+    if (data?.status) setStatusText(String(data.status));
+
     const totalPayable = Number(data?.totalPayable ?? 0);
     let paymentUrl: string | null | undefined = data?.paymentUrl;
 
-    // 2) Miễn phí → kết thúc
     if (!totalPayable || totalPayable <= 0) {
-      return { status, totalPayable: 0, paymentUrl: null, method: paymentMethod as "VNPAY" | "MOMO" };
+      return { totalPayable: 0, paymentUrl: null, method: paymentMethod as "VNPAY" | "MOMO" };
     }
 
-    // 3) Cần thanh toán
-    if (paymentMethod === "VNPAY") {
-      // PUT không trả link → tự tạo link VNPay
-      if (!paymentUrl) {
-        const res = await createVNPayPayment(productId, totalPayable);
-        paymentUrl = res.paymentUrl ?? null;
-      }
+    if (paymentMethod === "VNPAY" && !paymentUrl) {
+      const res = await createVNPayPayment(productId, totalPayable);
+      paymentUrl = res.paymentUrl ?? null;
     }
-    // MOMO: PUT đã trả paymentUrl
 
     return {
-      status,
       totalPayable,
       paymentUrl,
       method: paymentMethod as "VNPAY" | "MOMO",
@@ -314,29 +250,28 @@ export default function PostNotice() {
     try {
       committedRef.current = true;
 
-      // Miễn phí do rule hiển thị (lần đầu)
       if (!shownTotal) {
         setFreeEligible(true);
+        setStatusText("PENDING_REVIEW");
         toast.success("Tin được đăng MIỄN PHÍ cho lần đầu. Hệ thống sẽ duyệt sớm.");
-        await fetchStatus();
         nav("/post/manage", { replace: true });
         return;
       }
 
       const { paymentUrl, totalPayable, method } = await createPackageAndPayment();
 
-      // BE cũng xác nhận miễn phí (phòng hờ)
       if (!totalPayable || !paymentUrl) {
         setFreeEligible(true);
+        setStatusText("PENDING_REVIEW");
         toast.success("Tin của bạn được miễn phí. Không cần thanh toán.");
-        await fetchStatus();
         nav("/post/manage", { replace: true });
         return;
       }
 
-      // Có tiền & có link -> chuyển sang cổng thanh toán
       const methodLabel = method === "MOMO" ? "MoMo" : "VNPay";
-      toast.message(`Đang chuyển tới cổng ${methodLabel}…`, { description: "Vui lòng hoàn tất thanh toán trên trang đối tác." });
+      toast.message(`Đang chuyển tới cổng ${methodLabel}…`, {
+        description: "Vui lòng hoàn tất thanh toán trên trang đối tác.",
+      });
       window.location.href = paymentUrl;
     } catch {
       committedRef.current = false;
@@ -347,24 +282,22 @@ export default function PostNotice() {
   }
 
   function onExitToDraft() {
-    (async () => {
-      try {
-        await markDraft();
-      } finally {
-        nav("/post/manage", { replace: true });
-      }
-    })();
+    nav("/post/manage", { replace: true });
   }
 
   const endBase = addDays(start, baseDays);
   const endAddon = addonDays ? addDays(start, addonDays) : null;
+
+  useEffect(() => {
+    if (!productId) nav("/post/manage", { replace: true });
+  }, [productId, nav]);
 
   return (
     <div className="max-w-5xl mx-auto px-3 md:px-6 py-5">
       <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800 flex items-start gap-2">
         <CheckCircle2 className="w-5 h-5 mt-0.5" />
         <div className="text-sm">
-          <b>Đăng tin thành công!</b> Vui lòng chọn gói và thanh toán để hoàn tất.
+          <b>Vui lòng chọn gói và thanh toán để hoàn tất giao dịch</b>
         </div>
       </div>
 
@@ -377,7 +310,6 @@ export default function PostNotice() {
               <div className="text-[#d4205b] font-bold text-[14px] mt-1">
                 {priceMillions.toLocaleString("vi-VN")} triệu
               </div>
-              <div className="text-xs text-slate-500 mt-1">Mã tin: {productId}</div>
               <Badge className="mt-2 bg-slate-200 text-slate-700 hover:bg-slate-200">
                 {statusText === "PENDING_REVIEW" ? "Đợi duyệt" :
                  statusText === "APPROVED" ? "Đã duyệt" :
@@ -395,7 +327,7 @@ export default function PostNotice() {
           <div className="grid md:grid-cols-3 gap-3">
             {/* Tin thường (STANDARD) */}
             <div className="rounded-lg border p-3 bg-white">
-              <div className="text-sm font-semibold mb-1">Chọn phương thức đăng tin</div>
+              <div className="text-sm text-[#246f67] font-semibold mb-1">Chọn phương thức đăng tin</div>
               <div className="border rounded-lg p-3">
                 <label className="flex items-center gap-3">
                   <input type="radio" className="accent-[#246f67]" checked readOnly />
@@ -413,17 +345,17 @@ export default function PostNotice() {
               </div>
             </div>
 
-            {/* Gói ưu tiên hoặc đặc biệt */}
+            {/* Gói ưu tiên / nổi bật */}
             <div className="rounded-lg border p-3 bg-slate-50 md:col-span-2">
-              <div className="text-sm font-semibold mb-2">Mua thêm dịch vụ bán nhanh hơn</div>
+              <div className="text-sm text-[#246f67] font-semibold mb-2">Mua thêm dịch vụ bán nhanh hơn</div>
               <div className="grid sm:grid-cols-2 gap-3">
                 {/* PRIORITY */}
                 <div className="border rounded-lg p-3 bg-white">
                   <div className="flex items-center justify-between">
-                    <label className="inline-flex items-center gap-2">
+                    <label className="inline-flex items-center gap-2 text-sm">
                       <input
                         type="radio"
-                        className="accent-[#246f67]"
+                        className="accent-[#246f67] "
                         checked={addon === "PRIORITY"}
                         onChange={() => {
                           setAddon("PRIORITY");
@@ -458,7 +390,7 @@ export default function PostNotice() {
                 {/* SPECIAL */}
                 <div className="border rounded-lg p-3 bg-white">
                   <div className="flex items-center justify-between">
-                    <label className="inline-flex items-center gap-2">
+                    <label className="inline-flex items-center gap-2 text-sm">
                       <input
                         type="radio"
                         className="accent-[#246f67]"
@@ -494,8 +426,7 @@ export default function PostNotice() {
                 </div>
               </div>
 
-              {/* Bỏ chọn add-on */}
-              <div className="mt-3">
+              <div className="mt-3 text-sm text-[#246f67]">
                 <Button size="sm" variant="ghost" onClick={() => setAddon("")}>
                   Bỏ chọn dịch vụ thêm
                 </Button>
@@ -508,14 +439,14 @@ export default function PostNotice() {
       {/* Tính tiền */}
       <Card>
         <CardContent className="p-4">
-          <div className="text-[16px] font-bold mb-1">Thanh toán</div>
+          <div className="text-[16px] text-[#246f67] font-bold mb-1">Thanh toán</div>
           <div className="text-sm text-slate-600 mb-3">
             Vui lòng kiểm tra chi tiết và thanh toán để hoàn tất đăng tin.
           </div>
 
           <div className="grid md:grid-cols-2 gap-3">
             <div className="text-sm text-slate-600">
-              <div className="font-semibold mb-1">Chi tiết thanh toán</div>
+              <div className="font-semibold mb-1 text-[#246f67]">Chi tiết thanh toán</div>
               <ul className="list-disc pl-5">
                 {breakdown.map((t, i) => (
                   <li key={i}>{t}</li>
@@ -528,7 +459,7 @@ export default function PostNotice() {
               <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
                 <CalendarDays className="w-3.5 h-3.5" />
                 Tin thường: {fmt(start)} → {fmt(addDays(start, baseDays))}
-                {addonDays ? <> ・ Add-on: {fmt(start)} → {fmt(addDays(start, addonDays))}</> : null}
+                {addonDays ? <> ・ Hạn gói: {fmt(start)} → {fmt(addDays(start, addonDays))}</> : null}
               </div>
               <div className="text-[12px] text-slate-500 mt-1 flex items-center gap-1">
                 <Timer className="w-3.5 h-3.5" /> Tự động kết thúc theo thời hạn gói đã chọn
@@ -536,7 +467,7 @@ export default function PostNotice() {
             </div>
 
             <div className="text-right">
-              <div className="text-sm">Tổng thanh toán</div>
+              <div className="text-sm font-bold text-[#d4205b]">Tổng thanh toán</div>
               <div className="text-2xl font-bold text-[#246f67]">{currency(shownTotal || 0)}</div>
               {freeEligible && (
                 <div className="text-xs text-emerald-600 mt-1">Miễn phí cho lần đăng đầu tiên</div>
@@ -568,10 +499,10 @@ export default function PostNotice() {
 
               <div className="flex flex-wrap gap-2 mt-4 justify-end">
                 <Button variant="outline" className={COLOR.outlinePrimary} onClick={onExitToDraft}>
-                  Thoát (Lưu nháp)
+                  Thoát
                 </Button>
                 <Button
-                  className={COLOR.primary}
+                  className="text-[#246f67]"
                   onClick={onPay}
                   disabled={!productId || isPaying || loadingPkg || !basePkg}
                 >

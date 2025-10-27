@@ -60,7 +60,6 @@ export default function HomePage() {
         <BrandStrip items={brands} />
         <section />
 
-        {/* ✅ Luôn render ListingTabs, dùng isLoading để hiện skeleton */}
         <ListingTabs
           forYou={forYou}
           latest={latest}
