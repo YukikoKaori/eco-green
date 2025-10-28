@@ -15,9 +15,8 @@ export async function suggestPrice(
   payload: SuggestPayload,
   opts?: { signal?: AbortSignal; timeout?: number }
 ) {
-  const timeout = opts?.timeout ?? 60000;              // ⬅️ tăng lên 60s
+  const timeout = opts?.timeout ?? 60000;             
   const controller = new AbortController();
-  // nếu caller truyền signal thì nối chuỗi abort
   const link = opts?.signal;
   if (link) link.addEventListener("abort", () => controller.abort(), { once: true });
 
@@ -26,5 +25,5 @@ export async function suggestPrice(
     payload,
     { timeout, signal: controller.signal }
   );
-  return data; // { price: "Khoảng 285.000.000 VND", reason: "..." }
+  return data; 
 }

@@ -32,72 +32,45 @@ export default function Navbar() {
     const THRESHOLD = 60;
     const HYST = 12;
     let ticking = false;
-
-    const handleScroll = () => {
+    const onScroll = () => {
       const y = window.scrollY;
       if (ticking) return;
       ticking = true;
-
       requestAnimationFrame(() => {
-        setIsScrolled((prev) => {
-          if (prev) return y > THRESHOLD - HYST;
-          return y > THRESHOLD + HYST;
-        });
+        setIsScrolled(prev => (prev ? y > THRESHOLD - HYST : y > THRESHOLD + HYST));
         ticking = false;
       });
     };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const q = keyword.trim();
-
-    try {
-      if (q) {
-        await searchProductsByName(q);
-      }
-    } catch {
-    }
-
+    try { if (q) await searchProductsByName(q); } catch {}
     nav(`/search?keyword=${encodeURIComponent(q)}`);
   };
 
   return (
     <header
-      className={`navbar sticky top-0 z-50 transition-all duration-300 ${
-        isScrolled ? "navbar-shrink" : "navbar-expanded"
-      }`}
-      style={
-        isScrolled
-          ? { background: "linear-gradient(90deg, #246f67 0%, #01c5a7ff 50%)" }
-          : {
-              backgroundImage: "url('/images/navbar-bg.png')",
-              backgroundSize: "cover",
-              backgroundRepeat: "no-repeat",
-            }
-      }
+      className={`navbar fixed top-0 left-0 right-0 ${isScrolled ? "navbar-shrink" : "navbar-expanded"}`}
+      style={isScrolled ? { background: "linear-gradient(90deg,#246f67 0%,#01c5a7ff 50%)" } : { background: "transparent" }}
     >
-      {/* Top bar */}
-      <div className="!w-full !h-16 !flex items-center !gap-4 !px-3 !sm:px-4">
-        {/* Drawer Menu (mobile) */}
+      {/* TOP BAR */}
+      <div style={{ height: "var(--nav-h)" }} className="w-full flex items-center gap-4 px-3 sm:px-4">
+        {/* Drawer (mobile) */}
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="text-black md:hidden">
-              <Menu className="!w-5 h-5" />
+              <Menu className="w-5 h-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-72">
+          <SheetContent side="right" className="w-72 z-[12000]">
             <nav className="mt-6 grid gap-3">
-              {mainNav.map((it) => (
-                <NavLink
-                  key={it.to}
-                  to={it.to}
-                  className="text-black !px-2 !py-2 !rounded !hover:bg-accent"
-                >
+              {mainNav.map(it => (
+                <NavLink key={it.to} to={it.to} className="text-black px-2 py-2 rounded hover:bg-accent">
                   {it.label}
                 </NavLink>
               ))}
@@ -111,51 +84,44 @@ export default function Navbar() {
             <DropdownMenuTrigger asChild>
               <Button
                 size="icon"
-                className="hidden md:inline-flex !bg-white/90 text-teal-700"
+                className="hidden md:inline-flex bg-white/90 text-teal-700"
                 aria-label="Danh mục"
               >
                 <Menu className="w-5 h-5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-[180px]">
-              <DropdownMenuItem asChild>
-                <Link to="/xe-dien" className="w-full">
-                  Xe điện
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/pin-dien" className="w-full">
-                  Pin điện
-                </Link>
-              </DropdownMenuItem>
+
+            <DropdownMenuContent
+              align="start"
+              sideOffset={8}
+              className="min-w-[180px] z-[12010] max-h-[70vh] overflow-auto"
+            >
+              <DropdownMenuItem asChild><Link to="/xe-dien" className="w-full">Xe điện</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link to="/pin-dien" className="w-full">Pin điện</Link></DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
           <Link to="/" className="inline-flex items-center">
-            <span className="inline-flex items-center">
-              <img
-                src="/images/logo-name.png"
-                alt="EcoGreen"
-                className="w-[100px] md:w-[150px] h-auto block object-contain"
-              />
-            </span>
+            <img
+              src="/images/logo-name.png"
+              alt="EcoGreen"
+              className="w-[92px] md:w-[132px] h-auto object-contain"
+            />
             <span className="sr-only">ECOGREEN</span>
           </Link>
         </div>
 
-        {/* Navigation (desktop) */}
+        {/* Nav desktop / Search khi shrink */}
         <div className="hidden md:flex flex-1 justify-center">
           {!isScrolled ? (
             <nav className="flex items-center gap-6 pl-35">
-              {mainNav.map((it) => (
+              {mainNav.map(it => (
                 <NavLink
                   key={it.to}
                   to={it.to}
                   className={({ isActive }) =>
                     `relative font-medium ml-5 transition-colors ${
-                      isActive
-                        ? "text-[#124f47] font-bold"
-                        : "text-[#246f67] opacity-70 hover:text-yellow-300"
+                      isActive ? "text-[#124f47] font-bold" : "text-[#246f67] opacity-70 hover:text-yellow-300"
                     }`
                   }
                 >
@@ -166,20 +132,20 @@ export default function Navbar() {
           ) : (
             <form
               onSubmit={handleSearch}
-              className="flex items-center gap-2 bg-white rounded-xl px-3 shadow w-full max-w-xl"
+              className="flex items-center gap-2 bg-white rounded-lg px-3 shadow w-full max-w-xl"
             >
-              <Search className="w-5 h-5 text-gray-500" />
+              <Search className="w-4 h-4 text-gray-500" />
               <Input
                 placeholder="Tìm sản phẩm..."
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
-                className="flex-1 h-10 border-none shadow-none focus-visible:ring-0 text-sm"
+                className="flex-1 h-9 border-none shadow-none focus-visible:ring-0 text-sm"
               />
               <Button
                 type="submit"
-                className="h-8 px-3 text-sm font-medium text-white 
-                bg-gradient-to-r from-[#246f67] to-[#2ba195] 
-                hover:from-[#1e5c55] hover:to-[#238678]"
+                className="!h-7 !px-3 !text-[14px] text-white
+                           !bg-gradient-to-r from-[#246f67] to-[#2ba195]
+                           hover:from-[#1e5c55] hover:to-[#238678]"
               >
                 Tìm kiếm
               </Button>
@@ -189,11 +155,10 @@ export default function Navbar() {
 
         {/* Actions */}
         <div className="ml-auto flex items-center gap-2">
-          {/* Favorite */}
           <Button
             type="button"
             size="icon"
-            className="hidden sm:flex !bg-white"
+            className="hidden sm:flex bg-white"
             aria-label="Danh sách theo dõi"
             title="Danh sách theo dõi"
             onClick={() => nav("/account/wishlist")}
@@ -202,60 +167,50 @@ export default function Navbar() {
           </Button>
 
           {user ? (
-            <Button asChild className="hidden md:flex !text-[#246f67] !bg-white">
+            <Button asChild className="hidden md:flex text-[#246f67] !bg-white">
               <Link to="/post/manage">Quản lý tin</Link>
             </Button>
           ) : (
-            <Button asChild className="hidden md:flex !text-[#246f67] !bg-white">
+            <Button asChild className="hidden md:flex text-[#246f67] bg-white">
               <Link to="/login">Đăng nhập</Link>
             </Button>
           )}
 
-          {/* Đăng tin */}
-          <Button
-            asChild
-            className="!bg-[#246f67] !text-sm hover:bg-teal-800 flex items-center gap-2 text-white"
-          >
-            <Link to="/post/new">
-              <PlusCircle className="w-4 h-4" />
-              <span>Đăng tin</span>
-            </Link>
+          <Button asChild className="bg-[#246f67] text-sm hover:bg-teal-800 flex items-center gap-2 text-white">
+            <Link to="/post/new"><PlusCircle className="w-4 h-4" /><span>Đăng tin</span></Link>
           </Button>
 
           <UserMenu />
         </div>
       </div>
 
-      {/* Banner dưới nếu chưa scroll */}
       {!isScrolled && (
-        <>
-          <div className="w-full flex justify-center py-2">
-            <span className="text-[#246f67] text-3xl md:text-4xl font-extrabold mt-1.5 tracking-wide drop-shadow">
-              "Đăng tin dễ – Chốt đơn nhanh!"
-            </span>
-          </div>
-
-          <div className="mx-auto max-w-4xl px-4 py-3 flex justify-center">
-            <form
-              onSubmit={handleSearch}
-              className="flex w-full max-w-3xl items-center gap-2 bg-white rounded-xl px-5 py-3 mt-11 shadow"
-            >
-              <Search className="w-5 h-5 text-gray-500" />
-              <Input
-                placeholder="Tìm sản phẩm..."
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                className="flex-1 border-none shadow-none focus-visible:ring-0 text-sm"
-              />
-              <Button
-                type="submit"
-                className="!h-10 !px-4 !bg-[#246f67] !text-white hover:!bg-gray-800"
+        <div className="nav-overlay">
+          <div className="mx-auto max-w-5xl px-4">
+            <div className="w-full flex justify-center py-1">
+              <span className="text-[#246f67] text-2xl md:text-3xl lg:text-[30px] font-bold tracking-wide drop-shadow leading-tight text-center mt-14">
+                "Đăng tin dễ – Chốt đơn nhanh!"
+              </span>
+            </div>
+            <div className="mx-auto max-w-4xl px-0 py-1 flex justify-center">
+              <form
+                onSubmit={handleSearch}
+                className="flex w-full max-w-3xl items-center gap-2 bg-white rounded-xl px-4 py-2 mt-1 shadow"
               >
-                Tìm kiếm
-              </Button>
-            </form>
+                <Search className="w-4 h-4 text-gray-500" />
+                <Input
+                  placeholder="Tìm sản phẩm..."
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  className="flex-1 h-10 border-none shadow-none focus-visible:ring-0 text-sm"
+                />
+                <Button type="submit" className="h-10 px-4 !bg-[#246f67] text-white hover:bg-gray-800">
+                  Tìm kiếm
+                </Button>
+              </form>
+            </div>
           </div>
-        </>
+        </div>
       )}
     </header>
   );

@@ -16,30 +16,21 @@ type Item = { to: string; label: string; icon: JSX.Element; danger?: boolean };
 type Section = { title: string; items: Item[] };
 
 const SECTIONS: Section[] = [
-  {
-    title: "Tiện ích",
-    items: [
-      { to: "/saved", label: "Tin đăng đã lưu", icon: <Bookmark className="w-4 h-4" /> },
-      { to: "/search/saved", label: "Tìm kiếm đã lưu", icon: <SearchIcon className="w-4 h-4" /> },
-      { to: "/history/views", label: "Lịch sử xem tin", icon: <Clock className="w-4 h-4" /> },
-      { to: "/ratings", label: "Đánh giá từ tôi", icon: <Star className="w-4 h-4" /> },
-    ],
-  },
-  {
-    title: "Dịch vụ trả phí",
-    items: [
-      { to: "/orders", label: "Lịch sử giao dịch", icon: <History className="w-4 h-4" /> },
-      { to: "/store", label: "Cửa hàng/Chuyên trang", icon: <Store className="w-4 h-4" /> },
-    ],
-  },
-  {
-    title: "Khác",
-    items: [
-      { to: "/account/profile", label: "Cài đặt tài khoản", icon: <Settings className="w-4 h-4" /> },
-      { to: "/help", label: "Trợ giúp", icon: <HelpCircle className="w-4 h-4" /> },
-      { to: "/feedback", label: "Đóng góp ý kiến", icon: <MessageSquare className="w-4 h-4" /> },
-    ],
-  },
+  { title: "Tiện ích", items: [
+    { to: "/saved", label: "Tin đăng đã lưu", icon: <Bookmark className="w-4 h-4" /> },
+    { to: "/search/saved", label: "Tìm kiếm đã lưu", icon: <SearchIcon className="w-4 h-4" /> },
+    { to: "/history/views", label: "Lịch sử xem tin", icon: <Clock className="w-4 h-4" /> },
+    { to: "/ratings", label: "Đánh giá từ tôi", icon: <Star className="w-4 h-4" /> },
+  ]},
+  { title: "Dịch vụ trả phí", items: [
+    { to: "/orders", label: "Lịch sử giao dịch", icon: <History className="w-4 h-4" /> },
+    { to: "/store", label: "Cửa hàng/Chuyên trang", icon: <Store className="w-4 h-4" /> },
+  ]},
+  { title: "Khác", items: [
+    { to: "/account/profile", label: "Cài đặt tài khoản", icon: <Settings className="w-4 h-4" /> },
+    { to: "/help", label: "Trợ giúp", icon: <HelpCircle className="w-4 h-4" /> },
+    { to: "/feedback", label: "Đóng góp ý kiến", icon: <MessageSquare className="w-4 h-4" /> },
+  ]},
 ];
 
 function RowLink({ to, icon, label, danger }: Item) {
@@ -62,14 +53,14 @@ function RowLink({ to, icon, label, danger }: Item) {
 }
 
 export default memo(function UserMenu() {
-  const { user, logout } = useAuth();       
-  const nav = useNavigate();               
+  const { user, logout } = useAuth();
+  const nav = useNavigate();
   const isLoggedIn = !!user;
 
   async function handleLogout() {
-    try { await logoutApi(); } catch (e) { console.warn("Server logout skipped:", e); }
+    try { await logoutApi(); } catch {}
     await logout();
-    nav("/"); 
+    nav("/");
   }
 
   const profileUrl = isLoggedIn ? `/profile/${encodeURIComponent(user!.username)}` : "/login";
@@ -77,15 +68,20 @@ export default memo(function UserMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild >
+      <DropdownMenuTrigger asChild>
         <Button size="icon" className="ml-1 !bg-white">
           <User className="w-5 h-5 text-teal-700" />
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-[360px] h-[600px] p-0 rounded-2xl border border-gray-200 shadow-sm">
+      <DropdownMenuContent
+        align="end"
+        sideOffset={10}
+        className="w-[360px] h-[600px] p-0 rounded-2xl border border-gray-200 shadow-sm
+                   z-[12020] max-h-[70vh] overflow-auto"
+      >
         {/* Header */}
-        <div className="p-4 border-b border-gray-200 ">
+        <div className="p-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <Link
               to={profileUrl}
@@ -133,9 +129,9 @@ export default memo(function UserMenu() {
 
         {/* Sections */}
         {SECTIONS.map((sec) => (
-          <div key={sec.title} className="px-4 py-3 ">
-            <h4 className="text-gray-600 text-sm font-semibold mb-2 ">{sec.title}</h4>
-            <div className="space-y-2 ">
+          <div key={sec.title} className="px-4 py-3">
+            <h4 className="text-gray-600 text-sm font-semibold mb-2">{sec.title}</h4>
+            <div className="space-y-2">
               {sec.items.map((it) => <RowLink key={it.to} {...it} />)}
             </div>
           </div>

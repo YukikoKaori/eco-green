@@ -5,10 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Image as ImageIcon, Trash2, Star, Info } from "lucide-react";
+import { Image as ImageIcon, Trash2, Star, Info, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { Sparkles, Loader2 } from "lucide-react";
 import {
   Tooltip,
   TooltipProvider,
@@ -27,6 +26,7 @@ import {
   type BatteryPostData,
   fetchBatteryBrands,
   fetchVehicleCategories,
+  fetchBatteryTypes,
   fetchVehicleBrandsByCategory,
   fetchModelsByTypeAndBrand,
   fetchVersionsByModel,
@@ -102,6 +102,7 @@ export default function PostNew() {
 
   const [vehicleBrands, setVehicleBrands] = useState<Brand[]>([]);
   const [batteryBrands, setBatteryBrands] = useState<Brand[]>([]);
+  const [batteryTypes, setBatteryTypes] = useState<OptionItem[]>([]);
 
   const [models, setModels] = useState<OptionItem[]>([]);
   const [versions, setVersions] = useState<OptionItem[]>([]);
@@ -158,16 +159,21 @@ export default function PostNew() {
     }
   }
 
-  /* Load catalogs */
+  /* Load catalogs (FIX: setBatteryTypes) */
   useEffect(() => {
     (async () => {
       try {
-        const [cats, bb] = await Promise.all([fetchVehicleCategories(), fetchBatteryBrands()]);
+        const [cats, bb, bt] = await Promise.all([
+          fetchVehicleCategories(),
+          fetchBatteryBrands(),
+          fetchBatteryTypes(),
+        ]);
         setVehicleCategories(cats);
         setBatteryBrands(bb);
+        setBatteryTypes(bt); // <-- quan trọng
       } catch (e) {
         console.error(e);
-        toast.error("Không tải được danh mục/hãng pin.");
+        toast.error("Không tải được danh mục/hãng/loại pin.");
       }
     })();
   }, []);
@@ -252,7 +258,7 @@ export default function PostNew() {
   const titleLeft = MAX_TITLE - (form.title?.length || 0);
   const descLeft = MAX_DESC - (form.description?.length || 0);
 
-  /* Validate submit */
+  /* Validate submit (FIX: yêu cầu batteryTypeId) */
   const canSubmit = useMemo(() => {
     if (imgs.length < MIN_IMAGES) return false;
     if (!form.title || !form.price) return false;
@@ -266,6 +272,7 @@ export default function PostNew() {
       if (!form.year || !form.mileageKm || !form.batteryHealthPercent) return false;
     } else {
       if (!form.brandId) return false;
+      if (!form.batteryTypeId) return false;            // <-- bắt buộc
       if (!form.capacityKwh || !form.healthPercent || !form.voltageV) return false;
     }
     return true;
@@ -360,7 +367,7 @@ export default function PostNew() {
           price: priceVND,
           ...baseAddress,
           brandId: form.brandId!,
-          batteryTypeId: form.batteryTypeId || undefined,
+          batteryTypeId: form.batteryTypeId!,           // <-- gửi chắc chắn
           capacityKwh: Number(form.capacityKwh),
           healthPercent: Number(form.healthPercent),
           voltageV: Number(form.voltageV),
@@ -563,22 +570,43 @@ export default function PostNew() {
                   )}
                 </>
               ) : (
-                <div className="col-span-2 flex flex-col gap-1">
-                  <Label>Hãng pin<Required /></Label>
-                  <Select
-                    value={form.brandId || ""}
-                    onValueChange={(v) => setForm((f) => ({ ...f, brandId: v }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn hãng" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {batteryBrands.map((b) => (
-                        <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <>
+                  {/* Hãng pin */}
+                  <div className="flex flex-col gap-1">
+                    <Label>Hãng pin<Required /></Label>
+                    <Select
+                      value={form.brandId || ""}
+                      onValueChange={(v) => setForm((f) => ({ ...f, brandId: v }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn hãng" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {batteryBrands.map((b) => (
+                          <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Loại pin */}
+                  <div className="flex flex-col gap-1">
+                    <Label>Loại pin<Required /></Label>
+                    <Select
+                      value={form.batteryTypeId || ""}
+                      onValueChange={(v) => setForm((f) => ({ ...f, batteryTypeId: v }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn loại pin" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {batteryTypes.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
               )}
             </div>
 
@@ -680,7 +708,6 @@ export default function PostNew() {
                           type="button"
                           onClick={onSuggestPrice}
                           disabled={aiLoading}
-                          // style “viên thuốc” + viền gradient + hover glow
                           className={[
                             "relative overflow-hidden",
                             "rounded-full px-4 h-9",
@@ -691,7 +718,6 @@ export default function PostNew() {
                             "disabled:opacity-60 disabled:cursor-not-allowed",
                           ].join(" ")}
                         >
-                          {/* gradient viền mỏng */}
                           <span
                             aria-hidden
                             className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-transparent"
@@ -700,11 +726,7 @@ export default function PostNew() {
                                 "linear-gradient(135deg,#24a19433,#24a19400 40%,#24a19433)",
                             }}
                           />
-
-                          {/* nền nhạt bên trong */}
                           <span className="absolute inset-[1px] rounded-full bg-emerald-50/60 dark:bg-emerald-900/20" />
-
-                          {/* nội dung nút */}
                           <span className="relative z-10 flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-medium">
                             {aiLoading ? (
                               <>

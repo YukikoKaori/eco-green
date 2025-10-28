@@ -42,7 +42,7 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="relative w-full mb-10 mt-8">
+    <div className="relative w-full mb-10 mt-12">
       <div
         aria-hidden
         className="fixed inset-0 z-0 bg-no-repeat bg-cover bg-[position:center] md:bg-[position:center] lg:bg-[position:center] xl:bg-[position:center_50px]"
