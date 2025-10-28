@@ -1,0 +1,48 @@
+/* Nút gradient chạy + hiệu ứng lướt sáng */
+.btn-gradient{
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+/* Lớp nền gradient chạy ngang */
+.btn-gradient::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:9999px;
+  background: linear-gradient(90deg,#0f766e,#14b8a6,#0f766e);
+  background-size: 200% 100%;
+  animation: eco-gradient-shift 2.8s linear infinite;
+  z-index: 0;
+}
+
+/* Lớp lướt sáng */
+.btn-gradient::after{
+  content:"";
+  position:absolute;
+  inset:-60% -20%;
+  transform: skewX(-20deg);
+  background: linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);
+  animation: eco-sheen 2.4s ease-in-out infinite;
+  z-index: 0;
+}
+
+/* Nội dung nằm trên cùng */
+.btn-gradient > span{
+  position: relative;
+  z-index: 1;
+}
+
+/* Keyframes */
+@keyframes eco-gradient-shift{
+  0%   { background-position:   0% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes eco-sheen{
+  0%   { transform: translateX(-120%) skewX(-20deg); opacity:.0; }
+  20%  { opacity:.9; }
+  60%  { opacity:.9; }
+  100% { transform: translateX(120%)  skewX(-20deg); opacity:.0; }
+}

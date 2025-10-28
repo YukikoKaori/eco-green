@@ -5,16 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Image as ImageIcon, Trash2, Star, Info, Sparkles, Loader2 } from "lucide-react";
+import { Image as ImageIcon, Trash2, Star, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  Tooltip,
-  TooltipProvider,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
-
 import AddressPicker from "@/pages/posts/components/AddressPicker";
 import { useVNAddress } from "@/hooks/useVNAddress";
 
@@ -33,7 +26,8 @@ import {
   type Brand,
   type OptionItem,
 } from "@/api/PostApi";
-import { suggestPrice } from "@/api/aiPricing";
+import AIPriceChat from "@/components/ai/AIPricer";
+import AIPriceFab from "@/components/ai/AIPriceFab";
 
 type Category = "vehicle" | "battery";
 type ImgItem = { file: File; url: string; cover?: boolean };
@@ -54,7 +48,7 @@ type FormState = {
   mileageKm?: string;
   batteryHealthPercent?: string;
 
-  brandId?: string; // dùng cho battery
+  brandId?: string; 
 };
 
 const MAX_IMAGES = 10;
@@ -110,56 +104,49 @@ export default function PostNew() {
   const [selectedModelId, setSelectedModelId] = useState<string>("");
   const [selectedVersionId, setSelectedVersionId] = useState<string>("");
 
-  /* ==== AI suggest price ==== */
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiReason, setAiReason] = useState("");
+  /* ==== AI (Chat + Floating Button) ==== */
+  const [aiOpen, setAiOpen] = useState(false);
 
   function findNameById<T extends { id: string; name: string }>(list: T[], id?: string) {
     return (list.find((x) => x.id === id)?.name ?? "").trim();
   }
 
-  async function onSuggestPrice() {
-    try {
-      setAiLoading(true);
-      setAiReason("");
+  const aiPayload = useMemo(() => {
+    const brandName = isVehicle
+      ? findNameById(vehicleBrands, selectedBrandId)
+      : findNameById(batteryBrands, form.brandId);
 
-      const brandName = isVehicle
-        ? findNameById(vehicleBrands, selectedBrandId)
-        : findNameById(batteryBrands, form.brandId);
-      const modelName = findNameById(models, selectedModelId);
-      const versionName = findNameById(versions, selectedVersionId);
+    return {
+      title: form.title || undefined,
+      brand: brandName || undefined,
+      modelName: findNameById(models, selectedModelId) || undefined,
+      versionName: findNameById(versions, selectedVersionId) || undefined,
+      batteryHealth: isVehicle ? (form.batteryHealthPercent || undefined) : (form.healthPercent || undefined),
+      mileageKm: isVehicle ? (form.mileageKm || undefined) : undefined,
+      manufactureYear: isVehicle ? (form.year || undefined) : undefined,
+    };
+  }, [
+    form.title,
+    form.brandId,
+    form.healthPercent,
+    form.batteryHealthPercent,
+    form.mileageKm,
+    form.year,
+    isVehicle,
+    vehicleBrands,
+    batteryBrands,
+    models,
+    versions,
+    selectedBrandId,
+    selectedModelId,
+    selectedVersionId,
+  ]);
 
-      const payload = {
-        title: form.title || undefined,
-        brand: brandName || undefined,
-        modelName: modelName || undefined,
-        versionName: versionName || undefined,
-        batteryHealth: isVehicle ? form.batteryHealthPercent || undefined : form.healthPercent || undefined,
-        mileageKm: isVehicle ? form.mileageKm || undefined : undefined,
-        manufactureYear: isVehicle ? form.year || undefined : undefined,
-      };
+  const applyAiPriceToForm = (priceVnd: number) => {
+    setForm((f) => ({ ...f, price: formatVNDInput(priceVnd) }));
+    toast.success("Đã chèn giá bạn chọn từ AI.");
+  };
 
-      const res = await suggestPrice(payload, { timeout: 60000 });
-      const raw = String(res?.price ?? "");
-      const digits = raw.replace(/[^\d]/g, "");
-      if (digits) {
-        const n = Number(digits);
-        setForm((f) => ({ ...f, price: n.toLocaleString("vi-VN") }));
-        toast.success("Đã chèn giá gợi ý vào ô Giá.");
-      } else {
-        toast.message("Không nhận được giá hợp lệ từ AI.");
-      }
-      if (res?.reason) setAiReason(res.reason);
-    } catch (e: any) {
-      if (e?.code === "ECONNABORTED") toast.error("AI phản hồi chậm. Thử lại sau nhé!");
-      else toast.error("Gợi ý giá thất bại.");
-      console.error(e);
-    } finally {
-      setAiLoading(false);
-    }
-  }
-
-  /* Load catalogs (FIX: setBatteryTypes) */
   useEffect(() => {
     (async () => {
       try {
@@ -170,7 +157,7 @@ export default function PostNew() {
         ]);
         setVehicleCategories(cats);
         setBatteryBrands(bb);
-        setBatteryTypes(bt); // <-- quan trọng
+        setBatteryTypes(bt);
       } catch (e) {
         console.error(e);
         toast.error("Không tải được danh mục/hãng/loại pin.");
@@ -178,14 +165,12 @@ export default function PostNew() {
     })();
   }, []);
 
-  /* Ảnh: gán bìa mặc định */
   useEffect(() => {
     if (imgs.length && !imgs.some((i) => i.cover)) {
       setImgs((arr) => arr.map((it, idx) => ({ ...it, cover: idx === 0 })));
     }
   }, [imgs.length]);
 
-  /* Khi chọn category (vehicle) → load brands */
   useEffect(() => {
     if (!isVehicle) return;
     setSelectedBrandId("");
@@ -209,7 +194,6 @@ export default function PostNew() {
     })();
   }, [isVehicle, selectedCategoryId]);
 
-  /* Load models theo category + brand */
   useEffect(() => {
     if (!isVehicle) return;
 
@@ -234,7 +218,6 @@ export default function PostNew() {
     })();
   }, [isVehicle, selectedCategoryId, selectedBrandId]);
 
-  /* Load versions theo model */
   useEffect(() => {
     if (!isVehicle) return;
 
@@ -258,7 +241,6 @@ export default function PostNew() {
   const titleLeft = MAX_TITLE - (form.title?.length || 0);
   const descLeft = MAX_DESC - (form.description?.length || 0);
 
-  /* Validate submit (FIX: yêu cầu batteryTypeId) */
   const canSubmit = useMemo(() => {
     if (imgs.length < MIN_IMAGES) return false;
     if (!form.title || !form.price) return false;
@@ -272,7 +254,7 @@ export default function PostNew() {
       if (!form.year || !form.mileageKm || !form.batteryHealthPercent) return false;
     } else {
       if (!form.brandId) return false;
-      if (!form.batteryTypeId) return false;            // <-- bắt buộc
+      if (!form.batteryTypeId) return false;
       if (!form.capacityKwh || !form.healthPercent || !form.voltageV) return false;
     }
     return true;
@@ -289,7 +271,6 @@ export default function PostNew() {
     selectedVersionId,
   ]);
 
-  /* Helpers chọn ảnh */
   const pickFiles = () => fileRef.current?.click();
   function addFiles(files: FileList | null) {
     if (!files?.length) return;
@@ -367,7 +348,7 @@ export default function PostNew() {
           price: priceVND,
           ...baseAddress,
           brandId: form.brandId!,
-          batteryTypeId: form.batteryTypeId!,           // <-- gửi chắc chắn
+          batteryTypeId: form.batteryTypeId!,
           capacityKwh: Number(form.capacityKwh),
           healthPercent: Number(form.healthPercent),
           voltageV: Number(form.voltageV),
@@ -398,398 +379,356 @@ export default function PostNew() {
   const Required = () => <span className="ml-1 text-red-500">*</span>;
 
   return (
-    <form onSubmit={onSubmit} className="container mx-auto max-w-6xl px-4 py-6">
-      <div className="overflow-x-auto bg-gray-100">
-        <div className="min-w-[1120px] flex items-start gap-2">
-          {/* LEFT: Images */}
-          <section className="sticky top-4 h-fit w-[460px] shrink-0 rounded-xl p-10 ">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
-                Hình ảnh sản phẩm <Required />
-              </h2>
-              <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                <Info className="h-4 w-4" /> Đăng từ {String(MIN_IMAGES).padStart(2, "0")} đến {String(MAX_IMAGES).padStart(2, "0")} hình
-              </span>
-            </div>
+    <>
+      <AIPriceChat
+        open={aiOpen}
+        onOpenChange={setAiOpen}
+        payload={aiPayload}
+        onApply={applyAiPriceToForm}
+      />
+      <AIPriceFab onClick={() => setAiOpen(true)} />
 
-            <div
-              className={`mt-3 grid cursor-pointer place-content-center rounded-lg border-2 border-dashed p-5 text-center transition
-              ${dragOver ? "border-[#0f766e] bg-teal-50" : "bg-white"}`}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={onDrop}
-              onClick={() => fileRef.current?.click()}
-            >
-              <div className="flex flex-col items-center gap-2 text-gray-500">
-                <div className="grid h-16 w-16 place-content-center rounded-full border border-teal-200 bg-teal-50">
-                  <ImageIcon className="h-8 w-8 text-teal-600" />
-                </div>
-                <div className="font-medium">Kéo thả ảnh vào đây hoặc bấm để chọn</div>
-                <div className="text-xs">Hỗ trợ JPG/PNG, tối đa 6MB/ảnh</div>
+      <form onSubmit={onSubmit} className="container mx-auto max-w-6xl px-4 py-6">
+        <div className="overflow-x-auto bg-gray-100">
+          <div className="min-w-[1120px] flex items-start gap-2">
+            {/* LEFT: Images */}
+            <section className="sticky top-4 h-fit w-[460px] shrink-0 rounded-xl p-10 ">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">
+                  Hình ảnh sản phẩm <Required />
+                </h2>
+                <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                  <Info className="h-4 w-4" /> Đăng từ {String(MIN_IMAGES).padStart(2, "0")} đến {String(MAX_IMAGES).padStart(2, "0")} hình
+                </span>
               </div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(e) => addFiles(e.target.files)}
-              />
-            </div>
 
-            {imgs.length > 0 && (
-              <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
-                {imgs.map((it, i) => (
-                  <figure key={i} className="relative isolate overflow-hidden rounded-md border bg-white">
-                    <img src={it.url} alt={`img-${i}`} className="aspect-square w-full object-cover" />
-                    <div className="absolute left-1 top-1 z-20 flex gap-1">
+              <div
+                className={`mt-3 grid cursor-pointer place-content-center rounded-lg border-2 border-dashed p-5 text-center transition
+              ${dragOver ? "border-[#0f766e] bg-teal-50" : "bg-white"}`}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={onDrop}
+                onClick={() => fileRef.current?.click()}
+              >
+                <div className="flex flex-col items-center gap-2 text-gray-500">
+                  <div className="grid h-16 w-16 place-content-center rounded-full border border-teal-200 bg-teal-50">
+                    <ImageIcon className="h-8 w-8 text-teal-600" />
+                  </div>
+                  <div className="font-medium">Kéo thả ảnh vào đây hoặc bấm để chọn</div>
+                  <div className="text-xs">Hỗ trợ JPG/PNG, tối đa 6MB/ảnh</div>
+                </div>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => addFiles(e.target.files)}
+                />
+              </div>
+
+              {imgs.length > 0 && (
+                <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
+                  {imgs.map((it, i) => (
+                    <figure key={i} className="relative isolate overflow-hidden rounded-md border bg-white">
+                      <img src={it.url} alt={`img-${i}`} className="aspect-square w-full object-cover" />
+                      <div className="absolute left-1 top-1 z-20 flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setCover(i)}
+                          className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs shadow-sm
+                          ${it.cover ? "bg-[#0f766e] text-white" : "border bg-white/95 text-gray-700"}`}
+                          title="Đặt ảnh bìa"
+                        >
+                          <Star className={`h-3.5 w-3.5 ${it.cover ? "fill-white" : ""}`} /> Bìa
+                        </button>
+                      </div>
                       <button
                         type="button"
-                        onClick={() => setCover(i)}
-                        className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs shadow-sm
-                          ${it.cover ? "bg-[#0f766e] text-white" : "border bg-white/95 text-gray-700"}`}
-                        title="Đặt ảnh bìa"
+                        onClick={() => removeImg(i)}
+                        title="Xóa"
+                        className="absolute right-1 top-1 z-20 grid h-7 w-7 place-content-center rounded border bg-white/95 text-gray-700 shadow-sm hover:bg-red-50 hover:text-red-600"
                       >
-                        <Star className={`h-3.5 w-3.5 ${it.cover ? "fill-white" : ""}`} /> Bìa
+                        <Trash2 className="h-4 w-4" />
                       </button>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeImg(i)}
-                      title="Xóa"
-                      className="absolute right-1 top-1 z-20 grid h-7 w-7 place-content-center rounded border bg-white/95 text-gray-700 shadow-sm hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </figure>
-                ))}
-              </div>
-            )}
-
-            <div className="mt-3 text-xs text-gray-600">
-              Đã chọn <b>{imgs.length}</b> / {MAX_IMAGES} hình
-              {imgs.length < MIN_IMAGES && (
-                <span className="ml-2 text-red-600">• Cần tối thiểu {MIN_IMAGES} hình</span>
+                    </figure>
+                  ))}
+                </div>
               )}
-            </div>
-          </section>
 
-          {/* RIGHT: Form */}
-          <section className="isolate flex-1 bg-white p-4 ">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="flex flex-col gap-1">
-                <Label>Danh mục<Required /></Label>
-                <Select
-                  value={form.category}
-                  onValueChange={(v) => setForm((f) => ({ ...f, category: v as Category }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn danh mục" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="vehicle">Xe điện</SelectItem>
-                    <SelectItem value="battery">Pin điện</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="mt-3 text-xs text-gray-600">
+                Đã chọn <b>{imgs.length}</b> / {MAX_IMAGES} hình
+                {imgs.length < MIN_IMAGES && (
+                  <span className="ml-2 text-red-600">• Cần tối thiểu {MIN_IMAGES} hình</span>
+                )}
               </div>
+            </section>
 
-              {isVehicle ? (
-                <>
-                  {/* Loại xe */}
-                  <div className="flex flex-col gap-1">
-                    <Label>Loại xe<Required /></Label>
-                    <Select value={selectedCategoryId} onValueChange={(v) => setSelectedCategoryId(v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn loại xe" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {vehicleCategories.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+            {/* RIGHT: Form */}
+            <section className="isolate flex-1 bg-white p-4 ">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="flex flex-col gap-1">
+                  <Label>Danh mục<Required /></Label>
+                  <Select
+                    value={form.category}
+                    onValueChange={(v) => setForm((f) => ({ ...f, category: v as Category }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn danh mục" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="vehicle">Xe điện</SelectItem>
+                      <SelectItem value="battery">Pin điện</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  {/* Hãng xe */}
-                  {selectedCategoryId && (
+                {isVehicle ? (
+                  <>
+                    {/* Loại xe */}
                     <div className="flex flex-col gap-1">
-                      <Label>Hãng xe<Required /></Label>
-                      <Select value={selectedBrandId} onValueChange={(v) => setSelectedBrandId(v)}>
+                      <Label>Loại xe<Required /></Label>
+                      <Select value={selectedCategoryId} onValueChange={(v) => setSelectedCategoryId(v)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Chọn loại xe" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {vehicleCategories.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Hãng xe */}
+                    {selectedCategoryId && (
+                      <div className="flex flex-col gap-1">
+                        <Label>Hãng xe<Required /></Label>
+                        <Select value={selectedBrandId} onValueChange={(v) => setSelectedBrandId(v)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chọn hãng" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {vehicleBrands.map((b) => (
+                              <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Dòng xe */}
+                    {selectedCategoryId && selectedBrandId && (
+                      <div className="flex flex-col gap-1">
+                        <Label>Dòng xe<Required /></Label>
+                        <Select
+                          value={selectedModelId}
+                          onValueChange={(v) => setSelectedModelId(v)}
+                          disabled={models.length === 0}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chọn dòng" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {models.map((m) => (
+                              <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Phiên bản */}
+                    {selectedCategoryId && selectedBrandId && selectedModelId && (
+                      <div className="flex flex-col gap-1">
+                        <Label>Phiên bản<Required /></Label>
+                        <Select
+                          value={selectedVersionId}
+                          onValueChange={(v) => setSelectedVersionId(v)}
+                          disabled={versions.length === 0}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chọn phiên bản" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {versions.map((v) => (
+                              <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {/* Hãng pin */}
+                    <div className="flex flex-col gap-1">
+                      <Label>Hãng pin<Required /></Label>
+                      <Select
+                        value={form.brandId || ""}
+                        onValueChange={(v) => setForm((f) => ({ ...f, brandId: v }))}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Chọn hãng" />
                         </SelectTrigger>
                         <SelectContent>
-                          {vehicleBrands.map((b) => (
+                          {batteryBrands.map((b) => (
                             <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                  )}
 
-                  {/* Dòng xe */}
-                  {selectedCategoryId && selectedBrandId && (
+                    {/* Loại pin */}
                     <div className="flex flex-col gap-1">
-                      <Label>Dòng xe<Required /></Label>
+                      <Label>Loại pin<Required /></Label>
                       <Select
-                        value={selectedModelId}
-                        onValueChange={(v) => setSelectedModelId(v)}
-                        disabled={models.length === 0}
+                        value={form.batteryTypeId || ""}
+                        onValueChange={(v) => setForm((f) => ({ ...f, batteryTypeId: v }))}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Chọn dòng" />
+                          <SelectValue placeholder="Chọn loại pin" />
                         </SelectTrigger>
                         <SelectContent>
-                          {models.map((m) => (
-                            <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                          {batteryTypes.map((t) => (
+                            <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                  )}
-
-                  {/* Phiên bản */}
-                  {selectedCategoryId && selectedBrandId && selectedModelId && (
-                    <div className="flex flex-col gap-1">
-                      <Label>Phiên bản<Required /></Label>
-                      <Select
-                        value={selectedVersionId}
-                        onValueChange={(v) => setSelectedVersionId(v)}
-                        disabled={versions.length === 0}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Chọn phiên bản" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {versions.map((v) => (
-                            <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  {/* Hãng pin */}
-                  <div className="flex flex-col gap-1">
-                    <Label>Hãng pin<Required /></Label>
-                    <Select
-                      value={form.brandId || ""}
-                      onValueChange={(v) => setForm((f) => ({ ...f, brandId: v }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn hãng" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {batteryBrands.map((b) => (
-                          <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Loại pin */}
-                  <div className="flex flex-col gap-1">
-                    <Label>Loại pin<Required /></Label>
-                    <Select
-                      value={form.batteryTypeId || ""}
-                      onValueChange={(v) => setForm((f) => ({ ...f, batteryTypeId: v }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn loại pin" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {batteryTypes.map((t) => (
-                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="mt-4 grid grid-cols-3 gap-4">
-              {isVehicle ? (
-                <>
-                  <div className="flex flex-col gap-1">
-                    <Label>Năm sản xuất<Required /></Label>
-                    <Input
-                      inputMode="numeric"
-                      value={form.year || ""}
-                      onChange={(e) => setForm((f) => ({ ...f, year: e.target.value.replace(/\D/g, "") }))}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <Label>Số km đã đi (km)<Required /></Label>
-                    <Input
-                      inputMode="numeric"
-                      value={form.mileageKm || ""}
-                      onChange={(e) => setForm((f) => ({ ...f, mileageKm: e.target.value.replace(/[^\d]/g, "") }))}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <Label>Sức khỏe pin (%)<Required /></Label>
-                    <Input
-                      inputMode="numeric"
-                      value={form.batteryHealthPercent || ""}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, batteryHealthPercent: e.target.value.replace(/[^\d]/g, "") }))
-                      }
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="flex flex-col gap-1">
-                    <Label>Dung lượng (kWh)<Required /></Label>
-                    <Input
-                      inputMode="decimal"
-                      value={form.capacityKwh || ""}
-                      onChange={(e) => setForm((f) => ({ ...f, capacityKwh: e.target.value.replace(/[^\d.]/g, "") }))}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <Label>Sức khỏe pin (%)<Required /></Label>
-                    <Input
-                      inputMode="numeric"
-                      value={form.healthPercent || ""}
-                      onChange={(e) => setForm((f) => ({ ...f, healthPercent: e.target.value.replace(/[^\d]/g, "") }))}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <Label>Điện áp (V)<Required /></Label>
-                    <Input
-                      inputMode="numeric"
-                      value={form.voltageV || ""}
-                      onChange={(e) => setForm((f) => ({ ...f, voltageV: e.target.value.replace(/[^\d]/g, "") }))}
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="mt-6">
-              <h3 className="mb-2 font-semibold text-gray-800">Tiêu đề tin & mô tả</h3>
-
-              <div className="flex flex-col gap-1">
-                <Label>Tiêu đề<Required /></Label>
-                <Input
-                  maxLength={MAX_TITLE}
-                  placeholder="VD: VinFast VF8 bản Plus 2023"
-                  value={form.title}
-                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                />
-                <div className="text-xs text-gray-500">{titleLeft}/50 kí tự</div>
-              </div>
-
-              <div className="mt-3 flex flex-col gap-1">
-                <Label>Mô tả</Label>
-                <Textarea
-                  maxLength={MAX_DESC}
-                  rows={6}
-                  placeholder={`- Tình trạng, bảo hành\n- Lý do bán, thời gian sử dụng\n- Phụ kiện đi kèm…`}
-                  value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                />
-                <div className="text-xs text-gray-500">{descLeft}/1500 kí tự</div>
-              </div>
-
-              {/* ---- GIÁ + AI gợi ý ---- */}
-              <div className="mt-4 flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <Label>Giá (VND)<Required /></Label>
-
-                  <TooltipProvider delayDuration={150}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          onClick={onSuggestPrice}
-                          disabled={aiLoading}
-                          className={[
-                            "relative overflow-hidden",
-                            "rounded-full px-4 h-9",
-                            "border border-transparent",
-                            "bg-white/90 dark:bg-neutral-900/90",
-                            "shadow-sm hover:shadow-md transition",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500",
-                            "disabled:opacity-60 disabled:cursor-not-allowed",
-                          ].join(" ")}
-                        >
-                          <span
-                            aria-hidden
-                            className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-transparent"
-                            style={{
-                              background:
-                                "linear-gradient(135deg,#24a19433,#24a19400 40%,#24a19433)",
-                            }}
-                          />
-                          <span className="absolute inset-[1px] rounded-full bg-emerald-50/60 dark:bg-emerald-900/20" />
-                          <span className="relative z-10 flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-medium">
-                            {aiLoading ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                Đang gợi ý...
-                              </>
-                            ) : (
-                              <>
-                                <Sparkles className="h-4 w-4" />
-                                Gợi ý giá (AI)
-                              </>
-                            )}
-                          </span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-sm">
-                        Dùng AI ước tính giá dựa trên hãng/dòng/phiên bản, năm, ODO, sức khỏe pin…
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-
-                <Input
-                  placeholder="VD: 400.000.000"
-                  inputMode="numeric"
-                  value={form.price}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    const formatted = formatVNDInput(v);
-                    setForm((f) => ({ ...f, price: formatted }));
-                  }}
-                />
-                {aiReason && (
-                  <div className="text-xs text-slate-600 mt-1">
-                    <span className="font-medium text-[#246f67]">AI giải thích:</span> {aiReason}
-                  </div>
+                  </>
                 )}
               </div>
-            </div>
 
-            {/* Địa chỉ */}
-            <AddressPicker
-              addr={addr}
-              addressDetail={form.addressDetail}
-              onAddressDetailChange={(v) => setForm((f) => ({ ...f, addressDetail: v }))}
-            />
+              <div className="mt-4 grid grid-cols-3 gap-4">
+                {isVehicle ? (
+                  <>
+                    <div className="flex flex-col gap-1">
+                      <Label>Năm sản xuất<Required /></Label>
+                      <Input
+                        inputMode="numeric"
+                        value={form.year || ""}
+                        onChange={(e) => setForm((f) => ({ ...f, year: e.target.value.replace(/\D/g, "") }))}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Label>Số km đã đi (km)<Required /></Label>
+                      <Input
+                        inputMode="numeric"
+                        value={form.mileageKm || ""}
+                        onChange={(e) => setForm((f) => ({ ...f, mileageKm: e.target.value.replace(/[^\d]/g, "") }))}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Label>Sức khỏe pin (%)<Required /></Label>
+                      <Input
+                        inputMode="numeric"
+                        value={form.batteryHealthPercent || ""}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, batteryHealthPercent: e.target.value.replace(/[^\d]/g, "") }))
+                        }
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex flex-col gap-1">
+                      <Label>Dung lượng (kWh)<Required /></Label>
+                      <Input
+                        inputMode="decimal"
+                        value={form.capacityKwh || ""}
+                        onChange={(e) => setForm((f) => ({ ...f, capacityKwh: e.target.value.replace(/[^\d.]/g, "") }))}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Label>Sức khỏe pin (%)<Required /></Label>
+                      <Input
+                        inputMode="numeric"
+                        value={form.healthPercent || ""}
+                        onChange={(e) => setForm((f) => ({ ...f, healthPercent: e.target.value.replace(/[^\d]/g, "") }))}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Label>Điện áp (V)<Required /></Label>
+                      <Input
+                        inputMode="numeric"
+                        value={form.voltageV || ""}
+                        onChange={(e) => setForm((f) => ({ ...f, voltageV: e.target.value.replace(/[^\d]/g, "") }))}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
 
-            {/* Actions */}
-            <div className="mt-6 flex flex-wrap justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => window.history.back()}>
-                Quay lại
-              </Button>
-              <Button
-                type="submit"
-                disabled={!canSubmit || submitting}
-                className="!bg-[#0f766e] !hover:bg-[#0e6a64]"
-              >
-                {submitting ? "Đang đăng..." : "Đăng tin"}
-              </Button>
-            </div>
-          </section>
+              <div className="mt-6">
+                <h3 className="mb-2 font-semibold text-gray-800">Tiêu đề tin & mô tả</h3>
+
+                <div className="flex flex-col gap-1">
+                  <Label>Tiêu đề<Required /></Label>
+                  <Input
+                    maxLength={MAX_TITLE}
+                    placeholder="VD: VinFast VF8 bản Plus 2023"
+                    value={form.title}
+                    onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                  />
+                  <div className="text-xs text-gray-500">{titleLeft}/50 kí tự</div>
+                </div>
+
+                <div className="mt-3 flex flex-col gap-1">
+                  <Label>Mô tả</Label>
+                  <Textarea
+                    maxLength={MAX_DESC}
+                    rows={6}
+                    placeholder={`- Tình trạng, bảo hành\n- Lý do bán, thời gian sử dụng\n- Phụ kiện đi kèm…`}
+                    value={form.description}
+                    onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                  />
+                  <div className="text-xs text-gray-500">{descLeft}/1500 kí tự</div>
+                </div>
+
+                {/* ---- GIÁ (nhập tay hoặc bấm AI ở góc) ---- */}
+                <div className="mt-4 flex flex-col gap-1">
+                  <div className="flex items-center justify-between">
+                    <Label>Giá (VND)<Required /></Label>
+                  </div>
+
+                  <Input
+                    placeholder="VD: 400.000.000"
+                    inputMode="numeric"
+                    value={form.price}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      const formatted = formatVNDInput(v);
+                      setForm((f) => ({ ...f, price: formatted }));
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Địa chỉ */}
+              <AddressPicker
+                addr={addr}
+                addressDetail={form.addressDetail}
+                onAddressDetailChange={(v) => setForm((f) => ({ ...f, addressDetail: v }))}
+              />
+
+              {/* Actions */}
+              <div className="mt-6 flex flex-wrap justify-end gap-3">
+                <Button type="button" variant="outline" onClick={() => window.history.back()}>
+                  Quay lại
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!canSubmit || submitting}
+                  className="!bg-[#0f766e] !hover:bg-[#0e6a64]"
+                >
+                  {submitting ? "Đang đăng..." : "Đăng tin"}
+                </Button>
+              </div>
+            </section>
+          </div>
         </div>
-      </div>
-    </form>
+      </form>
+    </>
   );
 }
