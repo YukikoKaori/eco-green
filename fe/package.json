@@ -10,15 +10,12 @@
     "dev:product": "npm run dev --workspace apps/product-web",
     "dev:management": "npm run dev --workspace apps/management-web",
     "dev:staff": "npm run dev --workspace apps/staff-web",
-
     "build:product": "npm run build --workspace apps/product-web",
     "build:management": "npm run build --workspace apps/management-web",
     "build:staff": "npm run build --workspace apps/staff-web",
-
     "preview:product": "npm run preview --workspace apps/product-web",
     "preview:management": "npm run preview --workspace apps/management-web",
     "preview:staff": "npm run preview --workspace apps/staff-web",
-
     "lint": "eslint \"apps/**/*.{ts,tsx}\"",
     "typecheck": "tsc -b"
   },
@@ -27,9 +24,12 @@
     "@types/react": "^19.1.14",
     "@types/react-dom": "^19.1.9",
     "eslint": "^9.35.0",
+    "gh-pages": "^6.1.1",
     "globals": "^16.4.0",
     "typescript": "^5.5.0",
-    "typescript-eslint": "^8.43.0",
-    "gh-pages": "^6.1.1"
+    "typescript-eslint": "^8.43.0"
+  },
+  "dependencies": {
+    "@radix-ui/react-slider": "^1.3.6"
   }
 }
