@@ -1,105 +1,37 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
-import api from "@/lib/axios";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, ChevronRight, MapPin, Phone, Clock, MessageCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Phone, Clock, CheckCircle2 } from "lucide-react";
 import LikeButton from "@/listings/components/LikeButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { toast } from "sonner";
 import ReportAbuse from "@/listings/report/ReportAbuse";
 
-/* ----------------------------- Types ----------------------------- */
-type ProductImage = {
-  id?: string;
-  imageUrl?: string;
-  isPrimary?: boolean;
-  position?: number | null;
-};
+import {
+  fetchProductDetail,
+  fetchVehicleCatalog,
+  fetchSimilarVehicles,
+  fetchSimilarBatteries,
+  createPurchaseRequest,
+  type ProductDetailDTO,
+  type VehicleCatalogEnvelope,
+  type NormalizedSimilarItem,
+} from "@/api/productDetail";
 
-type VehicleCatalog = {
-  id: string;
-  year?: number | string | null;
-  type?: string | null;
-  color?: string | null;
-  rangeKm?: number | null;
-  batteryCapacityKwh?: number | null;
-  powerHp?: number | null;
-  topSpeedKmh?: number | null;
-  acceleration0100s?: number | null;
-  acceleration0to100s?: number | null;
-  weightKg?: number | null;
-  grossWeightKg?: number | null;
-  lengthMm?: number | null;
-  widthMm?: number | null;
-  heightMm?: number | null;
-};
-
-type ProductDetailDTO = {
-  id: string;
-  title: string;
-  description?: string | null;
-  type?: "VEHICLE" | "BATTERY" | string;
-  productImagesList?: ProductImage[];
-  price?: number | string | null;
-  createdAt?: string | null;
-  sellerId?: string | null;
-  sellerName?: string | null;
-  sellerPhone?: string | null;
-  status?: string | null;
-  city?: string | null;
-  district?: string | null;
-  ward?: string | null;
-  brandName?: string | null;
-  modelName?: string | null;
-  version?: string | null;
-  seats?: number | null;
-  color?: string | null;
-  odometerKm?: number | null;
-  batteryCapacityKwh?: number | null;
-  topSpeedKmh?: number | null;
-  zeroTo100?: number | null;
-  year?: number | string | null;
-  isWishlisted?: boolean;
-};
-
-type VehicleCatalogEnvelope = {
-  productTitle?: string;
-  productPrice?: number;
-  productStatus?: string;
-  brandName?: string;
-  brandLogoUrl?: string;
-  modelName?: string;
-  versionName?: string;
-  categoryName?: string;
-  mileageKm?: number;
-  batteryHealthPercent?: number;
-  hasRegistration?: boolean | null;
-  hasInsurance?: boolean | null;
-  warrantyMonths?: number | null;
-  vehicleCatalog: VehicleCatalog;
-};
-
-/* Similar item types */
-type SimilarItemRaw = {
-  productId: string;
-  tittle: string; // BE field
-  price: number;
-  brandName?: string;
-  modelName?: string;
-  images?: string;
-};
-type NormalizedSimilarItem = {
-  id: string;
-  title: string;
-  price: number;
-  brandName?: string | null;
-  modelName?: string | null;
-  image?: string | null;
-};
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 /* --------------------------- Helpers ---------------------------- */
 function timeAgoVi(iso?: string | null) {
@@ -132,22 +64,13 @@ function currencyVND(v?: number | string | null) {
   if (!Number.isFinite(n)) return String(v);
   return n.toLocaleString("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
 }
-
-function hasNum(n: number | null | undefined) {
-  return typeof n === "number" && Number.isFinite(n);
-}
-
-function normalizeSimilar(list: SimilarItemRaw[] | unknown): NormalizedSimilarItem[] {
-  if (!Array.isArray(list)) return [];
-  return list.map((x) => ({
-    id: (x as SimilarItemRaw).productId,
-    title: (x as SimilarItemRaw).tittle ?? "",
-    price: Number((x as SimilarItemRaw).price ?? 0),
-    brandName: (x as SimilarItemRaw).brandName ?? null,
-    modelName: (x as SimilarItemRaw).modelName ?? null,
-    image: (x as SimilarItemRaw).images ?? null,
-  }));
-}
+const hasNum = (n: number | null | undefined) => typeof n === "number" && Number.isFinite(n);
+const toNumberPrice = (v?: number | string | null): number | null => {
+  if (v == null) return null;
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  const n = Number(v.replaceAll(".", "").replaceAll(",", ""));
+  return Number.isFinite(n) ? n : null;
+};
 
 /* ============================== Page ============================== */
 export default function ProductDetail() {
@@ -163,18 +86,22 @@ export default function ProductDetail() {
   const [err, setErr] = useState<string | null>(null);
   const [showPhone, setShowPhone] = useState(false);
 
-  /* Similar state */
   const [similar, setSimilar] = useState<NormalizedSimilarItem[]>([]);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
+
+  // Mua
+  const [openConfirm, setOpenConfirm] = useState(false);
+  const [openSuccess, setOpenSuccess] = useState(false);
+  const [offerPrice, setOfferPrice] = useState<number | "">("");
+  const [buyerMessage, setBuyerMessage] = useState("");
+  const [buying, setBuying] = useState(false);
 
   const liked = useMemo(() => (id ? isLiked(id) : false), [id, isLiked]);
 
   // images
   const imgs = useMemo(() => {
     const list = (prod?.productImagesList ?? []).filter(Boolean);
-    if (!list.length) {
-      return [{ imageUrl: "https://via.placeholder.com/1200x675?text=No+Image" }];
-    }
+    if (!list.length) return [{ imageUrl: "https://via.placeholder.com/1200x675?text=No+Image" }];
     return [...list].sort(
       (a, b) => Number(!!b.isPrimary) - Number(!!a.isPrimary) || (a.position ?? 0) - (b.position ?? 0)
     );
@@ -184,7 +111,7 @@ export default function ProductDetail() {
   const prev = () => setIdx((p) => (p - 1 + imgs.length) % imgs.length);
   const next = () => setIdx((p) => (p + 1) % imgs.length);
 
-  // fetch APIs
+  // fetch data
   useEffect(() => {
     let off = false;
     (async () => {
@@ -192,41 +119,31 @@ export default function ProductDetail() {
         setLoading(true);
         setErr(null);
 
-        const pRes = await api.get<ProductDetailDTO>(`/product/search/${id}`);
-        if (!off) {
-          setProd(pRes.data);
-          if (user) refresh().catch(() => {});
-        }
+        const p = await fetchProductDetail(id);
+        if (off) return;
+        setProd(p);
+        if (user) refresh().catch(() => {});
 
-        // vehicle catalog (nếu là xe)
-        if (pRes.data?.type?.toUpperCase() === "VEHICLE") {
-          try {
-            const cRes = await api.get<VehicleCatalogEnvelope>(`/vehicle/catalog/${id}`);
-            if (!off) setCatalog(cRes.data);
-          } catch {
-            /* ignore */
-          }
+        if (p?.type?.toUpperCase() === "VEHICLE") {
+          fetchVehicleCatalog(id)
+            .then((c) => !off && setCatalog(c))
+            .catch(() => {});
         } else {
-          if (!off) setCatalog(null);
+          setCatalog(null);
         }
 
-        // ===== Similar listings (Vehicle/Battery) =====
-        try {
-          setLoadingSimilar(true);
-          if (pRes.data?.type?.toUpperCase() === "VEHICLE") {
-            const sRes = await api.get<SimilarItemRaw[]>(`/vehicle/${id}/similar`);
-            if (!off) setSimilar(normalizeSimilar(sRes.data));
-          } else if (pRes.data?.type?.toUpperCase() === "BATTERY") {
-            const sRes = await api.get<SimilarItemRaw[]>(`/battery/${id}/similar`);
-            if (!off) setSimilar(normalizeSimilar(sRes.data));
-          } else {
-            if (!off) setSimilar([]);
-          }
-        } catch {
-          if (!off) setSimilar([]);
-        } finally {
-          if (!off) setLoadingSimilar(false);
-        }
+        // Similar
+        setLoadingSimilar(true);
+        const similarPromise =
+          p?.type?.toUpperCase() === "VEHICLE"
+            ? fetchSimilarVehicles(id)
+            : p?.type?.toUpperCase() === "BATTERY"
+            ? fetchSimilarBatteries(id)
+            : Promise.resolve<NormalizedSimilarItem[]>([]);
+        similarPromise
+          .then((s) => !off && setSimilar(s))
+          .catch(() => !off && setSimilar([]))
+          .finally(() => !off && setLoadingSimilar(false));
       } catch (e: any) {
         if (!off) setErr(e?.response?.data?.message || "Không tải được sản phẩm.");
       } finally {
@@ -248,6 +165,45 @@ export default function ProductDetail() {
     }
     await toggle(id);
   }
+
+  // Mở dialog mua
+  const handleOpenBuy = () => {
+    if (!id) return;
+    if (!user) {
+      const nextUrl = encodeURIComponent(loc.pathname + loc.search + loc.hash);
+      nav(`/login?next=${nextUrl}`);
+      toast.info("Vui lòng đăng nhập để gửi yêu cầu mua.");
+      return;
+    }
+    const p = toNumberPrice(prod?.price ?? catalog?.productPrice ?? null);
+    setOfferPrice(p ?? "");
+    setOpenConfirm(true);
+  };
+
+  // Xác nhận mua
+  const handleConfirmBuy = async () => {
+    if (!id) return;
+    const numberPrice = typeof offerPrice === "number" ? offerPrice : toNumberPrice(offerPrice);
+    if (!numberPrice || numberPrice <= 0) {
+      toast.error("Giá đề nghị không hợp lệ.");
+      return;
+    }
+    setBuying(true);
+    try {
+      await createPurchaseRequest({
+        productId: id,
+        offeredPrice: numberPrice,
+        buyerMessage: buyerMessage?.trim() || undefined,
+      });
+      setOpenConfirm(false);
+      setOpenSuccess(true);
+      toast.success("Đã gửi yêu cầu mua.");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Gửi yêu cầu thất bại.");
+    } finally {
+      setBuying(false);
+    }
+  };
 
   if (loading)
     return (
@@ -284,8 +240,6 @@ export default function ProductDetail() {
       ? `${prod.odometerKm ?? catalog?.mileageKm} km`
       : null;
   const metaLine = [metaYear, metaKm].filter(Boolean).join(" · ");
-
-  const zeroTo100 = prod.zeroTo100 ?? c?.acceleration0to100s ?? c?.acceleration0100s ?? null;
 
   /* ------------------------------ UI ------------------------------ */
   return (
@@ -441,20 +395,17 @@ export default function ProductDetail() {
               <Separator className="my-4" />
 
               <div className="grid grid-cols-2 gap-2">
+                {/* Nút Mua */}
                 <Button
-                  variant="outline"
-                  className="!border-slate-300"
-                  onClick={() => {
-                    const to = prod.sellerId ?? prod.sellerPhone ?? prod.sellerName ?? "";
-                    nav(`/chat?to=${encodeURIComponent(String(to))}`);
-                  }}
+                  className="!bg-[#246f67] hover:bg-[#1f5f58] text-white"
+                  onClick={handleOpenBuy}
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Chat
+                  Mua
                 </Button>
 
                 <Button
-                  className="!bg-[#00C4B4] hover:bg-[#00a99d] text-white"
+                  variant="outline"
+                  className="!border-slate-300"
                   onClick={() => setShowPhone((s) => !s)}
                 >
                   <Phone className="w-4 h-4 mr-2" />
@@ -512,6 +463,80 @@ export default function ProductDetail() {
           </CardContent>
         </Card>
       )}
+
+      {/* ============== Dialog XÁC NHẬN MUA ============== */}
+      <Dialog open={openConfirm} onOpenChange={setOpenConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận mua sản phẩm</DialogTitle>
+            <DialogDescription>
+              Gửi yêu cầu mua đến người bán. Họ sẽ nhận email và liên hệ lại với bạn.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div>
+              <label className="text-sm text-slate-600">Giá đề nghị (VND)</label>
+              <Input
+                type="number"
+                min={0}
+                value={offerPrice}
+                onChange={(e) => setOfferPrice(e.target.value === "" ? "" : Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label className="text-sm text-slate-600">Lời nhắn cho người bán (tuỳ chọn)</label>
+              <Textarea
+                placeholder="Tôi muốn mua xe này, thanh toán qua chuyển khoản…"
+                value={buyerMessage}
+                onChange={(e) => setBuyerMessage(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenConfirm(false)}>Huỷ</Button>
+            <Button
+              className="text-white"
+              style={{ backgroundColor: "#246f67" }}
+              onClick={handleConfirmBuy}
+              disabled={buying}
+            >
+              {buying ? "Đang gửi..." : "Xác nhận mua"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ============== Dialog THÀNH CÔNG ============== */}
+      <Dialog open={openSuccess} onOpenChange={setOpenSuccess}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="sr-only">Đã gửi yêu cầu đến người bán</DialogTitle>
+          </DialogHeader>
+
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="w-6 h-6 text-emerald-600 mt-0.5" />
+            <div>
+              <div className="text-lg font-semibold">Đã gửi yêu cầu đến người bán</div>
+              <p className="text-slate-600 mt-1">
+                Vui lòng đợi phản hồi. Bạn có thể theo dõi trong mục quản lý.
+              </p>
+              <div className="mt-3 flex gap-2">
+                <Button variant="outline" onClick={() => setOpenSuccess(false)}>Đóng</Button>
+                <Button
+                  className="text-white"
+                  style={{ backgroundColor: "#246f67" }}
+                  onClick={() => { setOpenSuccess(false); nav("/post/manage"); }}
+                >
+                  Về quản lý tin
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

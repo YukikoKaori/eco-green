@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Menu, Heart, PlusCircle, Search } from "lucide-react";
+import { Menu, Heart, PlusCircle, Search, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,8 +10,14 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import UserMenu from "../user/UserMenu";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import {
+  listSellerPurchaseRequests,
+  type PurchaseRequestDTO,
+} from "@/api/productDetail";
 
 const mainNav = [
   { label: "EcoGreen", to: "/" },
@@ -20,10 +26,61 @@ const mainNav = [
   { label: "EcoBlog", to: "/blog" },
 ];
 
+const READ_KEY = "eg_read_requests_ids";
+
 export default function Navbar() {
   const { user } = useAuth();
   const nav = useNavigate();
   const [keyword, setKeyword] = useState("");
+
+  const [openNoti, setOpenNoti] = useState(false);
+  const [loadingNoti, setLoadingNoti] = useState(false);
+  const [requests, setRequests] = useState<PurchaseRequestDTO[]>([]);
+  const readIdsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(READ_KEY);
+      if (raw) readIdsRef.current = new Set(JSON.parse(raw));
+    } catch {}
+  }, []);
+
+  const saveReadIds = () => {
+    try {
+      sessionStorage.setItem(READ_KEY, JSON.stringify(Array.from(readIdsRef.current)));
+    } catch {}
+  };
+
+  const loadNoti = async () => {
+    if (!user) return;
+    setLoadingNoti(true);
+    try {
+      const res = await listSellerPurchaseRequests({ page: 0, size: 20 });
+      setRequests(res?.content ?? []);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Không tải được thông báo giao dịch.");
+    } finally {
+      setLoadingNoti(false);
+    }
+  };
+
+  const markAsRead = (id: string) => {
+    if (!readIdsRef.current.has(id)) {
+      readIdsRef.current.add(id);
+      saveReadIds();
+    }
+  };
+
+  const onOpenChange = (v: boolean) => {
+    if (v && user) loadNoti();
+    if (!user && v) {
+      setOpenNoti(false);
+      nav(`/login?next=${encodeURIComponent(location.pathname + location.search + location.hash)}`);
+      toast.info("Vui lòng đăng nhập để xem thông báo.");
+      return;
+    }
+    setOpenNoti(v);
+  };
 
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -84,6 +141,7 @@ export default function Navbar() {
             </Link>
           </div>
 
+          {/* Search (desktop) */}
           <div className="hidden md:flex flex-1 justify-center">
             <form
               onSubmit={handleSearch}
@@ -105,7 +163,90 @@ export default function Navbar() {
             </form>
           </div>
 
+          {/* Actions */}
           <div className="ml-auto flex items-center gap-2">
+            <Popover open={openNoti} onOpenChange={onOpenChange}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon"
+                  className="hidden sm:flex !bg-white"
+                  aria-label="Thông báo"
+                  title="Thông báo giao dịch"
+                >
+                  <Bell className="w-4 h-4 text-teal-700" />
+                </Button>
+              </PopoverTrigger>
+
+              <PopoverContent
+                side="bottom"
+                align="end"
+                sideOffset={10}
+                className="
+                  p-0 w-[420px] max-h-[70vh]
+                  overflow-y-auto             /* chỉ để auto, không overscroll-behavior */
+                  rounded-2xl border border-teal-200 bg-white shadow-xl
+                  focus-visible:outline-none focus-visible:ring-0
+                "
+              >
+                {/* Header */}
+                <div
+                  className="sticky top-0 z-10 px-4 py-3 rounded-t-2xl text-white"
+                  style={{ background: "linear-gradient(90deg,#246f67 0%,#01c5a7 100%)" }}
+                >
+                  <div className="text-lg font-semibold">Thông Báo</div>
+                  <div className="mt-2 flex items-center gap-2 text-xs">
+                    <span className="px-2 py-0.5 rounded-full bg-white/20 backdrop-blur">Hoạt động</span>
+                    <span className="px-2 py-0.5 rounded-full bg-white/10">Tin tức</span>
+                  </div>
+                </div>
+
+                {loadingNoti ? (
+                  <div className="px-4 py-6 text-sm text-slate-600">Đang tải…</div>
+                ) : requests.length === 0 ? (
+                  <div className="px-4 py-6 text-sm text-slate-600">Chưa có thông báo giao dịch nào.</div>
+                ) : (
+                  <ul className="px-3 pb-3">
+                    {requests.map((r) => {
+                      const isRead = readIdsRef.current.has(r.id);
+                      return (
+                        <li
+                          key={r.id}
+                          className={`rounded-xl border border-teal-100 m-2 p-3 shadow-sm transition bg-teal-50/40 hover:bg-teal-50 ${
+                            isRead ? "opacity-60" : "opacity-100"
+                          }`}
+                        >
+                          <div className="font-semibold text-slate-800">
+                            Yêu cầu mua – {r.productTitle}
+                          </div>
+                          <div className="mt-1 text-sm text-slate-700">
+                            Người mua: <b>{r.buyerName}</b>
+                          </div>
+                          <div className="text-sm text-slate-700">
+                            Giá đề nghị: <b>{(r.offeredPrice ?? 0).toLocaleString("vi-VN")} đ</b>
+                          </div>
+
+                          <div className="mt-3">
+                            <Link
+                              to={`/seller/purchase-requests/${r.id}`}
+                              state={{ request: r }}
+                              className="inline-flex items-center gap-1 rounded-sm px-3 py-1 !text-sm bg-[#246f67] text-white"
+                              onClick={() => {
+                                setOpenNoti(false);
+                                markAsRead(r.id);
+                              }}
+                            >
+                              Xem chi tiết
+                            </Link>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </PopoverContent>
+            </Popover>
+
             <Button
               type="button"
               size="icon"

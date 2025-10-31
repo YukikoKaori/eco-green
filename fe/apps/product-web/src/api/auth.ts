@@ -58,14 +58,23 @@ const compact = (obj: Record<string, any>) => {
   const out: Record<string, any> = {};
   for (const [k, v] of Object.entries(obj)) {
     if (v === undefined) continue;
-    if (typeof v === "string" && v.trim() === "") continue; // bỏ string rỗng
+    if (typeof v === "string" && v.trim() === "") continue;
     out[k] = v;
   }
   return out;
 };
 
-export async function loginApi(payload: { phone: string; password: string }) {
-  const { data } = await api.post<LoginResponse>("/auth/login", payload);
+export async function loginApi(payload: {
+  phone: string;
+  password: string;
+  recaptchaToken?: string; 
+}) {
+  const body = {
+    phone: payload.phone,
+    password: payload.password,
+    recaptchaToken: payload.recaptchaToken ?? "",
+  };
+  const { data } = await api.post<LoginResponse>("/auth/login", body);
   return unwrap<LoginResult>(data);
 }
 
@@ -92,11 +101,11 @@ export async function getMe(opts?: { signal?: AbortSignal }) {
 }
 
 export type UpdateMePayload = Partial<{
-  fullName: string; 
-  phone: string;    
+  fullName: string;
+  phone: string;
   address: string;
   email: string | null;
-  dateOfBirth: string | null; 
+  dateOfBirth: string | null;
   avatarUrl: string | null;
   taxCode: string | null;
   gender: "MALE" | "FEMALE" | "OTHER" | string;
@@ -105,9 +114,7 @@ export type UpdateMePayload = Partial<{
 
 function buildUpdatePayload(body: UpdateMePayload) {
   const payload: Record<string, any> = { ...body };
-
   if (payload.gender) payload.gender = String(payload.gender).toUpperCase();
-
   return compact(payload);
 }
 

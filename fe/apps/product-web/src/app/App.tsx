@@ -20,6 +20,7 @@ import VehicleListPage from "@/pages/listingEV/VehicleListPage";
 import BatteryListPage from "@/pages/listingEV/BatteryListPage";
 import SearchResults from "@/pages/search/SearchResults";
 import VNPayReturn from "@/pages/payment/VNPayReturn";
+import PurchaseRequestDetail from "@/pages/purchase/PurchaseRequestDetail";
 
 export default function App() {
   return (
@@ -34,7 +35,8 @@ export default function App() {
         <Route path="/account/wishlist" element={<WishlistPage />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route path="/search" element={<SearchResults />} />
-         <Route path="/payment/vnpay-return" element={<VNPayReturn />} />
+        <Route path="/payment/vnpay-return" element={<VNPayReturn />} />
+
         <Route
           path="/postnotice"
           element={
@@ -46,6 +48,7 @@ export default function App() {
         <Route path="/post/notice/:id" element={<Navigate to="/postnotice" replace />} />
 
         <Route path="/profile/:username" element={<ProfilePublicPage />} />
+
         <Route
           path="/post/new"
           element={
@@ -76,6 +79,15 @@ export default function App() {
           <Route path="account" element={<AccountPage />} />
           <Route path="social" element={<SocialPage />} />
         </Route>
+
+        <Route
+          path="/seller/purchase-requests/:id"
+          element={
+            <PrivateRoute>
+              <PurchaseRequestDetail />
+            </PrivateRoute>
+          }
+        />
 
         <Route
           path="/login"
