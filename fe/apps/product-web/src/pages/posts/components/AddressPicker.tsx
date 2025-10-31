@@ -29,8 +29,7 @@ export default function AddressPicker({ addr, addressDetail, onAddressDetailChan
     "h-10 w-full rounded-md border bg-white px-3 !text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500/50";
 
   return (
-    <section className="mt-6 rounded-xl border bg-white p-4">
-      <h3 className="mb-3 text-base font-semibold text-gray-800">Địa chỉ</h3>
+    <section className="mt-2 rounded-xl border bg-white p-4">
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3 lg:grid-cols-2">
         {/* Province */}
@@ -112,7 +111,7 @@ export default function AddressPicker({ addr, addressDetail, onAddressDetailChan
 
         {/* Address detail (optional) */}
         <div className="flex flex-col gap-1 md:col-span-2 lg:col-span-4">
-          <Label className="text-[13px] text-gray-700">Địa chỉ chi tiết</Label>
+          <LabelReq>Địa chỉ chi tiết</LabelReq>
           <input
             className="h-10 w-full rounded-md border bg-white px-3 text-sm shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50"
             placeholder="Số nhà, đường…"

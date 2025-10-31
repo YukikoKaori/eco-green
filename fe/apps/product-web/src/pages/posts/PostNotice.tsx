@@ -82,7 +82,7 @@ export default function PostNotice() {
     try {
       const raw = localStorage.getItem("last_post_created");
       if (raw) created = JSON.parse(raw);
-    } catch {}
+    } catch { }
   }
 
   const params = new URLSearchParams(location.search);
@@ -171,8 +171,8 @@ export default function PostNotice() {
         opt?.price != null
           ? opt.price
           : pkg?.dailyPrice && opt?.durationDays
-          ? pkg.dailyPrice * opt.durationDays
-          : 0;
+            ? pkg.dailyPrice * opt.durationDays
+            : 0;
       sum += addonPrice;
       if (opt) lines.push(`${addonName} (${opt.name}): ${currency(addonPrice)}`);
     }
@@ -312,11 +312,11 @@ export default function PostNotice() {
               </div>
               <Badge className="mt-2 bg-slate-200 text-slate-700 hover:bg-slate-200">
                 {statusText === "PENDING_REVIEW" ? "Đợi duyệt" :
-                 statusText === "APPROVED" ? "Đã duyệt" :
-                 statusText === "REJECTED" ? "Bị từ chối" :
-                 statusText === "DRAFT" ? "Tin nháp" :
-                 statusText === "PENDING_PAYMENT" ? "Chờ thanh toán" :
-                 statusText || "Không rõ"}
+                  statusText === "APPROVED" ? "Đã duyệt" :
+                    statusText === "REJECTED" ? "Bị từ chối" :
+                      statusText === "DRAFT" ? "Tin nháp" :
+                        statusText === "PENDING_PAYMENT" ? "Chờ thanh toán" :
+                          statusText || "Không rõ"}
               </Badge>
             </div>
           </div>
@@ -348,47 +348,59 @@ export default function PostNotice() {
             {/* Gói ưu tiên / nổi bật */}
             <div className="rounded-lg border p-3 bg-slate-50 md:col-span-2">
               <div className="text-sm text-[#246f67] font-semibold mb-2">Mua thêm dịch vụ bán nhanh hơn</div>
-              <div className="grid sm:grid-cols-2 gap-3">
+              <div className="grid sm:grid-cols-2 gap-3 text-sm">
                 {/* PRIORITY */}
-                <div className="border rounded-lg p-3 bg-white">
+                <div className="border rounded-xl p-3 bg-white">
                   <div className="flex items-center justify-between">
                     <label className="inline-flex items-center gap-2 text-sm">
                       <input
                         type="radio"
-                        className="accent-[#246f67] "
+                        className="accent-[#246f67]"
                         checked={addon === "PRIORITY"}
                         onChange={() => {
                           setAddon("PRIORITY");
-                          const def = priorityPkg?.options.find((o) => o.isDefault) || priorityPkg?.options[0];
+                          const def =
+                            priorityPkg?.options.find((o) => o.isDefault) ||
+                            priorityPkg?.options[0];
                           setAddonOptionId(def?.id ?? null);
                         }}
                       />
                       <span className="font-semibold">{VI_LABEL.PRIORITY}</span>
                     </label>
+
                     <span className="text-xs text-slate-500">
                       {priorityPkg?.dailyPrice ? `${currency(priorityPkg.dailyPrice)}/ngày` : ""}
                     </span>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {(priorityPkg?.options ?? []).map((o) => (
-                      <Button
-                        key={o.id}
-                        size="sm"
-                        variant={addon === "PRIORITY" && addonOptionId === o.id ? "default" : "outline"}
-                        className={addon === "PRIORITY" && addonOptionId === o.id ? COLOR.primary : ""}
-                        onClick={() => {
-                          setAddon("PRIORITY");
-                          setAddonOptionId(o.id);
-                        }}
-                      >
-                        {o.name} {o.price != null ? `• ${currency(o.price)}` : ""}
-                      </Button>
-                    ))}
+
+                  <div className="mt-2 space-y-2">
+                    {(priorityPkg?.options ?? []).map((o) => {
+                      const active = addon === "PRIORITY" && addonOptionId === o.id;
+                      const cls = active
+                        ? "bg-[#E9F7F5] text-[#008377] border border-[#b8e5df]"
+                        : "bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100";
+                      return (
+                        <button
+                          key={o.id}
+                          type="button"
+                          onClick={() => {
+                            setAddon("PRIORITY");
+                            setAddonOptionId(o.id);
+                          }}
+                          className={`w-full text-left px-4 py-2 rounded-xl text-sm transition ${cls}`}
+                        >
+                          <span className="font-medium">{o.name}</span>
+                          {o.price != null && (
+                            <span className="ml-2 opacity-80">• {currency(o.price)}</span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
                 {/* SPECIAL */}
-                <div className="border rounded-lg p-3 bg-white">
+                <div className="border rounded-xl p-3 bg-white">
                   <div className="flex items-center justify-between">
                     <label className="inline-flex items-center gap-2 text-sm">
                       <input
@@ -397,31 +409,43 @@ export default function PostNotice() {
                         checked={addon === "SPECIAL"}
                         onChange={() => {
                           setAddon("SPECIAL");
-                          const def = specialPkg?.options.find((o) => o.isDefault) || specialPkg?.options[0];
+                          const def =
+                            specialPkg?.options.find((o) => o.isDefault) ||
+                            specialPkg?.options[0];
                           setAddonOptionId(def?.id ?? null);
                         }}
                       />
                       <span className="font-semibold">{VI_LABEL.SPECIAL}</span>
                     </label>
+
                     <span className="text-xs text-slate-500">
                       {specialPkg?.dailyPrice ? `${currency(specialPkg.dailyPrice)}/ngày` : ""}
                     </span>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {(specialPkg?.options ?? []).map((o) => (
-                      <Button
-                        key={o.id}
-                        size="sm"
-                        variant={addon === "SPECIAL" && addonOptionId === o.id ? "default" : "outline"}
-                        className={addon === "SPECIAL" && addonOptionId === o.id ? COLOR.primary : ""}
-                        onClick={() => {
-                          setAddon("SPECIAL");
-                          setAddonOptionId(o.id);
-                        }}
-                      >
-                        {o.name} {o.price != null ? `• ${currency(o.price)}` : ""}
-                      </Button>
-                    ))}
+
+                  <div className="mt-2 space-y-2">
+                    {(specialPkg?.options ?? []).map((o) => {
+                      const active = addon === "SPECIAL" && addonOptionId === o.id;
+                      const cls = active
+                        ? "bg-[#FFF5F8] text-[#d4205b] border border-[#ffd4e2]"
+                        : "bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100";
+                      return (
+                        <button
+                          key={o.id}
+                          type="button"
+                          onClick={() => {
+                            setAddon("SPECIAL");
+                            setAddonOptionId(o.id);
+                          }}
+                          className={`w-full text-left px-4 py-2 rounded-xl text-sm transition ${cls}`}
+                        >
+                          <span className="font-medium">{o.name}</span>
+                          {o.price != null && (
+                            <span className="ml-2 opacity-80">• {currency(o.price)}</span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
