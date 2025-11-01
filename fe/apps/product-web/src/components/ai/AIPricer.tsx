@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { X, Sparkles, Loader2, ExternalLink, RefreshCcw, Bot, Info } from "lucide-react";
+import { X, Sparkles, Loader2, ExternalLink, Bot, Info, Type, FileText } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,12 +7,12 @@ import { suggestPrice } from "@/api/aiPricing";
 
 type Payload = {
   title?: string;
-  brand?: string;
+  brandName?: string;
   modelName?: string;
   versionName?: string;
-  batteryHealth?: string;
-  mileageKm?: string;
-  manufactureYear?: string;
+  batteryHealth?: string | number;
+  mileageKm?: string | number;
+  manufactureYear?: string | number;
 };
 
 export default function AIPriceChat({
@@ -21,7 +21,7 @@ export default function AIPriceChat({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   payload: Payload;
-  onApply: (priceVnd: number) => void;
+  onApply: (p: { priceVnd?: number; title?: string; description?: string }) => void;
 }) {
   const [loading, setLoading] = useState(false);
   const [reason, setReason] = useState("");
@@ -30,26 +30,32 @@ export default function AIPriceChat({
   const [value, setValue] = useState(0);
   const [error, setError] = useState("");
 
-  const cleanDigits = (s: string) => (s || "").replace(/[^\d]/g, "");
+  const [sugTitle, setSugTitle] = useState<string>("");
+  const [sugDesc, setSugDesc] = useState<string>("");
+
+  const cleanDigits = (s: string | number) => String(s ?? "").replace(/[^\d]/g, "");
   const fmt = (n: number) => n.toLocaleString("vi-VN");
   const step = useMemo(() => {
     const span = Math.max(1, range.max - range.min);
     return Math.min(5_000_000, Math.max(500_000, Math.round(span / 100)));
   }, [range]);
-
-  function parsePriceRange(s: string) {
-    const m = (s || "").split("-").map((x) => Number(cleanDigits(x))).filter(Boolean);
-    if (m.length >= 2) return { min: m[0], max: m[1] };
-    if (m.length === 1) return { min: m[0], max: m[0] };
-    return { min: 0, max: 0 };
-  }
   const roundTo = (n: number, stepN = 1_000_000) => Math.round(n / stepN) * stepN;
+
+  function parseVndRange(s: string | undefined) {
+    if (!s) return undefined;
+    const m = s.match(/([\d.]+)\s*[~\-–]\s*([\d.]+)\s*VND/i);
+    if (!m) return undefined;
+    const min = parseInt(m[1].replace(/\./g, ""), 10);
+    const max = parseInt(m[2].replace(/\./g, ""), 10);
+    if (Number.isFinite(min) && Number.isFinite(max)) return { min, max };
+    return undefined;
+  }
 
   const hasAnyInput = useMemo(
     () =>
       !!(
-        (payload.title && payload.title.trim()) ||
-        payload.brand ||
+        (payload.title && String(payload.title).trim()) ||
+        payload.brandName ||
         payload.modelName ||
         payload.versionName ||
         payload.batteryHealth ||
@@ -66,6 +72,8 @@ export default function AIPriceChat({
       setSources([]);
       setRange({ min: 0, max: 0 });
       setValue(0);
+      setSugTitle("");
+      setSugDesc("");
       setError("Nhập thông tin để AI gợi ý cho bạn.");
       return;
     }
@@ -74,16 +82,27 @@ export default function AIPriceChat({
     setLoading(true);
     setReason("");
     setSources([]);
+    setSugTitle("");
+    setSugDesc("");
     try {
-      const res = await suggestPrice(payload, { timeout: 60000 });
-      const { min, max } = parsePriceRange(String(res?.price ?? ""));
+      const res = await suggestPrice(payload as any, { timeout: 60000 });
+
+      // Khoảng giá
+      const r = (res as any)?.priceRange ?? parseVndRange(String((res as any)?.price ?? ""));
+      const min = r?.min ?? 0;
+      const max = r?.max ?? min;
       const _min = roundTo(min);
       const _max = roundTo(max || min);
       if (_min <= 0) setError("AI chưa trả về khoảng giá hợp lệ.");
       setRange({ min: _min, max: Math.max(_min, _max) });
       setValue(_min > 0 ? _min : 0);
-      if (res?.reason) setReason(res.reason);
-      if (Array.isArray(res?.sources)) setSources(res.sources);
+
+      // Lý do
+      if ((res as any)?.reason) setReason((res as any).reason);
+      if (Array.isArray((res as any)?.sources)) setSources((res as any).sources);
+
+      setSugTitle(typeof (res as any)?.title === "string" ? (res as any).title : "");
+      setSugDesc(typeof (res as any)?.description === "string" ? (res as any).description : "");
     } catch (e: any) {
       setError(e?.code === "ECONNABORTED" ? "AI phản hồi chậm. Thử lại sau." : "Không gọi được AI gợi ý giá.");
     } finally {
@@ -107,7 +126,7 @@ export default function AIPriceChat({
               <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-300/40 to-transparent" />
               <div className="flex items-center gap-2">
                 <img src="/images/eco-bot.png" alt="EcoAI" className="w-7 h-7 object-contain" draggable="false" />
-                <div className="font-semibold text-[#14b8a6]">EcoAI gợi ý giá tốt</div>
+                <div className="font-semibold text-[#14b8a6]">Đăng nhanh với EcoAI</div>
               </div>
               <button
                 onClick={() => onOpenChange(false)}
@@ -122,7 +141,7 @@ export default function AIPriceChat({
             <div className="p-4 space-y-4 overflow-y-auto">
               {/* chips tóm tắt */}
               <div className="flex flex-wrap gap-2 text-xs">
-                {payload.brand && <span className="rounded-full bg-zinc-50 text-slate-700 border border-emerald-200/40 px-2.5 py-1">Hãng: {payload.brand}</span>}
+                {payload.brandName && <span className="rounded-full bg-zinc-50 text-slate-700 border border-emerald-200/40 px-2.5 py-1">Hãng: {payload.brandName}</span>}
                 {payload.modelName && <span className="rounded-full bg-zinc-50 text-slate-700 border border-emerald-200/40 px-2.5 py-1">Dòng: {payload.modelName}</span>}
                 {payload.versionName && <span className="rounded-full bg-zinc-50 text-slate-700 border border-emerald-200/40 px-2.5 py-1">Phiên bản: {payload.versionName}</span>}
                 {payload.manufactureYear && <span className="rounded-full bg-zinc-50 text-slate-700 border border-emerald-200/40 px-2.5 py-1">Năm: {payload.manufactureYear}</span>}
@@ -137,7 +156,7 @@ export default function AIPriceChat({
               {/* Trạng thái */}
               {loading && (
                 <div className="rounded-xl border border-zinc-200 bg-white p-3 text-slate-700 flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-slate-500" />
+                  <Loader2 className="w-4 h-4 animate-spin text-sm text-slate-500" />
                   Đang phân tích dữ liệu…
                 </div>
               )}
@@ -151,6 +170,7 @@ export default function AIPriceChat({
 
               {range.min > 0 && !loading && !error && (
                 <>
+                  {/* Khoảng giá */}
                   <div className="rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
                     <div className="mb-2 flex items-center gap-2 text-[#14b8a6] font-semibold">
                       <Bot className="w-4 h-4" /> Khoảng giá đề xuất
@@ -183,6 +203,26 @@ export default function AIPriceChat({
                       <div className="text-2xl font-extrabold text-[#14b8a6] tracking-tight">{fmt(value)} đ</div>
                     </div>
                   </div>
+
+                  {/* ✅ Tiêu đề gợi ý */}
+                  {sugTitle && (
+                    <div className="rounded-xl border border-zinc-200 bg-white p-3 text-slate-700">
+                      <div className="flex items-center gap-2 text-[#14b8a6] font-semibold mb-1">
+                        <Type className="w-4 h-4" /> Tiêu đề gợi ý
+                      </div>
+                      <div className="text-sm">{sugTitle}</div>
+                    </div>
+                  )}
+
+                  {/* ✅ Mô tả gợi ý */}
+                  {sugDesc && (
+                    <div className="rounded-xl border border-zinc-200 bg-white p-3 text-slate-700">
+                      <div className="flex items-center gap-2 text-[#14b8a6] font-semibold mb-1">
+                        <FileText className="w-4 h-4" /> Mô tả gợi ý
+                      </div>
+                      <div className="whitespace-pre-wrap text-sm leading-6">{sugDesc}</div>
+                    </div>
+                  )}
 
                   {!!reason && (
                     <div className="rounded-xl border border-zinc-200 bg-white p-3 text-sm text-slate-700">
@@ -217,14 +257,18 @@ export default function AIPriceChat({
                 variant="outline"
                 className="border-zinc-300 text-[#14b8a6] hover:bg-zinc-100"
                 onClick={run}
+                disabled={loading}                 // ✅ chặn spam khi đang phân tích
               >
                 <Sparkles className="w-4 h-4 mr-2 text-[#14b8a6]" /> Gợi ý lại
               </Button>
               <Button
                 size="sm"
                 className="!bg-[#14b8a6] text-white hover:bg-slate-800"
-                disabled={!value || value <= 0}
-                onClick={() => { onApply(value); onOpenChange(false); }}
+                disabled={loading || !value || value <= 0}   // ✅ chặn khi loading/không có giá
+                onClick={() => {
+                  onApply({ priceVnd: value, title: sugTitle, description: sugDesc }); // ✅ áp dụng đủ 3 trường
+                  onOpenChange(false);
+                }}
               >
                 Áp dụng
               </Button>

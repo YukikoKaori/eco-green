@@ -26,8 +26,10 @@ import {
   type Brand,
   type OptionItem,
 } from "@/api/PostApi";
+
 import AIPriceChat from "@/components/ai/AIPricer";
 import AIPriceFab from "@/components/ai/AIPriceFab";
+import AINudgeDialog, { wasAINudgeDismissed } from "@/components/ai/AINudgeDialog";
 
 type Category = "vehicle" | "battery";
 type ImgItem = { file: File; url: string; cover?: boolean };
@@ -48,7 +50,7 @@ type FormState = {
   mileageKm?: string;
   batteryHealthPercent?: string;
 
-  brandId?: string; 
+  brandId?: string;
 };
 
 const MAX_IMAGES = 10;
@@ -104,8 +106,15 @@ export default function PostNew() {
   const [selectedModelId, setSelectedModelId] = useState<string>("");
   const [selectedVersionId, setSelectedVersionId] = useState<string>("");
 
-  /* ==== AI (Chat + Floating Button) ==== */
   const [aiOpen, setAiOpen] = useState(false);
+  //popup
+  const [showAINudge, setShowAINudge] = useState(false);
+  useEffect(() => {
+    if (!wasAINudgeDismissed()) {
+      const t = setTimeout(() => setShowAINudge(true), 500);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
   function findNameById<T extends { id: string; name: string }>(list: T[], id?: string) {
     return (list.find((x) => x.id === id)?.name ?? "").trim();
@@ -118,7 +127,7 @@ export default function PostNew() {
 
     return {
       title: form.title || undefined,
-      brand: brandName || undefined,
+      brandName: brandName || undefined,
       modelName: findNameById(models, selectedModelId) || undefined,
       versionName: findNameById(versions, selectedVersionId) || undefined,
       batteryHealth: isVehicle ? (form.batteryHealthPercent || undefined) : (form.healthPercent || undefined),
@@ -142,11 +151,18 @@ export default function PostNew() {
     selectedVersionId,
   ]);
 
-  const applyAiPriceToForm = (priceVnd: number) => {
-    setForm((f) => ({ ...f, price: formatVNDInput(priceVnd) }));
-    toast.success("Đã chèn giá bạn chọn từ AI.");
+  // lấy mô tả với tiêu đề từ AI
+  const applyAiToForm = (p: { priceVnd?: number; title?: string; description?: string }) => {
+    setForm((f) => ({
+      ...f,
+      ...(p.title ? { title: p.title } : {}),
+      ...(p.description ? { description: p.description } : {}),
+      ...(p.priceVnd ? { price: formatVNDInput(p.priceVnd) } : {}),
+    }));
+    toast.success("Đã áp dụng gợi ý AI.");
   };
 
+  /* ==== Effects ==== */
   useEffect(() => {
     (async () => {
       try {
@@ -169,6 +185,9 @@ export default function PostNew() {
     if (imgs.length && !imgs.some((i) => i.cover)) {
       setImgs((arr) => arr.map((it, idx) => ({ ...it, cover: idx === 0 })));
     }
+    return () => {
+      imgs.forEach((i) => URL.revokeObjectURL(i.url));
+    };
   }, [imgs.length]);
 
   useEffect(() => {
@@ -244,13 +263,15 @@ export default function PostNew() {
   const canSubmit = useMemo(() => {
     if (imgs.length < MIN_IMAGES) return false;
     if (!form.title || !form.price) return false;
+    if (!form.description?.trim()) return false;            
+    if (!form.addressDetail?.trim()) return false;          
     if (parseVNDToNumber(form.price) <= 0) return false;
     if (!provinceCode || !districtCode || !wardCode) return false;
 
     if (isVehicle) {
       if (!selectedCategoryId) return false;
       if (!selectedBrandId) return false;
-      if (!selectedModelId || !selectedVersionId) return false;
+      if (!selectedModelId) return false; 
       if (!form.year || !form.mileageKm || !form.batteryHealthPercent) return false;
     } else {
       if (!form.brandId) return false;
@@ -268,7 +289,6 @@ export default function PostNew() {
     selectedCategoryId,
     selectedBrandId,
     selectedModelId,
-    selectedVersionId,
   ]);
 
   const pickFiles = () => fileRef.current?.click();
@@ -327,7 +347,7 @@ export default function PostNew() {
         | import("@/api/PostApi").BatteryPostResponse;
 
       if (isVehicle) {
-        const data: VehiclePostData = {
+        const baseData = {
           title: form.title,
           description: form.description,
           price: priceVND,
@@ -337,9 +357,12 @@ export default function PostNew() {
           mileageKm: Number(form.mileageKm),
           modelId: selectedModelId,
           year: Number(form.year),
-          versionId: selectedVersionId,
           categoryId: selectedCategoryId,
         };
+        const data: VehiclePostData = {
+          ...(baseData as VehiclePostData),
+          ...(selectedVersionId ? { versionId: selectedVersionId } : {}),
+        } as any;
         created = await postVehicle(data, orderedFiles, imagesMeta);
       } else {
         const data: BatteryPostData = {
@@ -378,13 +401,40 @@ export default function PostNew() {
 
   const Required = () => <span className="ml-1 text-red-500">*</span>;
 
+  const brandNameForNudge = useMemo(() => {
+    return isVehicle
+      ? findNameById(vehicleBrands, selectedBrandId)
+      : findNameById(batteryBrands, form.brandId);
+  }, [isVehicle, vehicleBrands, selectedBrandId, batteryBrands, form.brandId]);
+
+  const nudgeFields = useMemo(() => ({
+    brandName: brandNameForNudge || undefined,
+    modelName: findNameById(models, selectedModelId) || undefined,
+    versionName: findNameById(versions, selectedVersionId) || undefined, 
+    year: form.year || undefined,
+    mileageKm: form.mileageKm || undefined,
+    batteryHealth: (isVehicle ? form.batteryHealthPercent : form.healthPercent) || undefined,
+    batteryTypeId: form.batteryTypeId || undefined,
+    capacityKwh: form.capacityKwh || undefined,
+    voltageV: form.voltageV || undefined,
+  }), [
+    brandNameForNudge, models, selectedModelId, versions, selectedVersionId,
+    form.year, form.mileageKm, form.batteryHealthPercent, form.healthPercent,
+    form.batteryTypeId, form.capacityKwh, form.voltageV, isVehicle
+  ]);
+
   return (
     <>
+      <AINudgeDialog 
+        open={showAINudge}
+        onOpenChange={setShowAINudge}
+        fields={nudgeFields}
+      />
       <AIPriceChat
         open={aiOpen}
         onOpenChange={setAiOpen}
         payload={aiPayload}
-        onApply={applyAiPriceToForm}
+        onApply={applyAiToForm}
       />
       <AIPriceFab onClick={() => setAiOpen(true)} />
 
@@ -394,7 +444,7 @@ export default function PostNew() {
             {/* LEFT: Images */}
             <section className="sticky top-4 h-fit w-[460px] shrink-0 rounded-xl p-10 ">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">
+                <h2 className="text-lg font-semibold text-[#0f766e]">
                   Hình ảnh sản phẩm <Required />
                 </h2>
                 <span className="inline-flex items-center gap-1 text-xs text-gray-500">
@@ -468,7 +518,7 @@ export default function PostNew() {
             <section className="isolate flex-1 bg-white p-4 ">
               <div className="grid grid-cols-3 gap-4">
                 <div className="flex flex-col gap-1">
-                  <Label>Danh mục<Required /></Label>
+                  <Label className="text-[#0f766e]">Danh mục<Required /></Label>
                   <Select
                     value={form.category}
                     onValueChange={(v) => setForm((f) => ({ ...f, category: v as Category }))}
@@ -487,7 +537,7 @@ export default function PostNew() {
                   <>
                     {/* Loại xe */}
                     <div className="flex flex-col gap-1">
-                      <Label>Loại xe<Required /></Label>
+                      <Label className="text-[#0f766e]">Loại xe<Required /></Label>
                       <Select value={selectedCategoryId} onValueChange={(v) => setSelectedCategoryId(v)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Chọn loại xe" />
@@ -503,7 +553,7 @@ export default function PostNew() {
                     {/* Hãng xe */}
                     {selectedCategoryId && (
                       <div className="flex flex-col gap-1">
-                        <Label>Hãng xe<Required /></Label>
+                        <Label className="text-[#0f766e]">Hãng xe<Required /></Label>
                         <Select value={selectedBrandId} onValueChange={(v) => setSelectedBrandId(v)}>
                           <SelectTrigger>
                             <SelectValue placeholder="Chọn hãng" />
@@ -520,7 +570,7 @@ export default function PostNew() {
                     {/* Dòng xe */}
                     {selectedCategoryId && selectedBrandId && (
                       <div className="flex flex-col gap-1">
-                        <Label>Dòng xe<Required /></Label>
+                        <Label className="text-[#0f766e]">Dòng xe<Required /></Label>
                         <Select
                           value={selectedModelId}
                           onValueChange={(v) => setSelectedModelId(v)}
@@ -538,17 +588,17 @@ export default function PostNew() {
                       </div>
                     )}
 
-                    {/* Phiên bản */}
+                    {/* Phiên bản (KHÔNG bắt buộc) */}
                     {selectedCategoryId && selectedBrandId && selectedModelId && (
                       <div className="flex flex-col gap-1">
-                        <Label>Phiên bản<Required /></Label>
+                        <Label className="text-[#0f766e]">Phiên bản</Label>
                         <Select
                           value={selectedVersionId}
                           onValueChange={(v) => setSelectedVersionId(v)}
                           disabled={versions.length === 0}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Chọn phiên bản" />
+                            <SelectValue placeholder="Không bắt buộc" />
                           </SelectTrigger>
                           <SelectContent>
                             {versions.map((v) => (
@@ -563,7 +613,7 @@ export default function PostNew() {
                   <>
                     {/* Hãng pin */}
                     <div className="flex flex-col gap-1">
-                      <Label>Hãng pin<Required /></Label>
+                      <Label className="text-[#0f766e]">Hãng pin<Required /></Label>
                       <Select
                         value={form.brandId || ""}
                         onValueChange={(v) => setForm((f) => ({ ...f, brandId: v }))}
@@ -581,7 +631,7 @@ export default function PostNew() {
 
                     {/* Loại pin */}
                     <div className="flex flex-col gap-1">
-                      <Label>Loại pin<Required /></Label>
+                      <Label className="text-[#0f766e]">Loại pin<Required /></Label>
                       <Select
                         value={form.batteryTypeId || ""}
                         onValueChange={(v) => setForm((f) => ({ ...f, batteryTypeId: v }))}
@@ -604,7 +654,7 @@ export default function PostNew() {
                 {isVehicle ? (
                   <>
                     <div className="flex flex-col gap-1">
-                      <Label>Năm sản xuất<Required /></Label>
+                      <Label className="text-[#0f766e]">Năm sản xuất<Required /></Label>
                       <Input
                         inputMode="numeric"
                         value={form.year || ""}
@@ -612,7 +662,7 @@ export default function PostNew() {
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <Label>Số km đã đi (km)<Required /></Label>
+                      <Label className="text-[#0f766e]">Số km đã đi (km)<Required /></Label>
                       <Input
                         inputMode="numeric"
                         value={form.mileageKm || ""}
@@ -620,7 +670,7 @@ export default function PostNew() {
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <Label>Sức khỏe pin (%)<Required /></Label>
+                      <Label className="text-[#0f766e]">Sức khỏe pin (%)<Required /></Label>
                       <Input
                         inputMode="numeric"
                         value={form.batteryHealthPercent || ""}
@@ -633,7 +683,7 @@ export default function PostNew() {
                 ) : (
                   <>
                     <div className="flex flex-col gap-1">
-                      <Label>Dung lượng (kWh)<Required /></Label>
+                      <Label className="text-[#0f766e]">Dung lượng (kWh)<Required /></Label>
                       <Input
                         inputMode="decimal"
                         value={form.capacityKwh || ""}
@@ -641,7 +691,7 @@ export default function PostNew() {
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <Label>Sức khỏe pin (%)<Required /></Label>
+                      <Label className="text-[#0f766e]">Sức khỏe pin (%)<Required /></Label>
                       <Input
                         inputMode="numeric"
                         value={form.healthPercent || ""}
@@ -649,7 +699,7 @@ export default function PostNew() {
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <Label>Điện áp (V)<Required /></Label>
+                      <Label className="text-[#0f766e]">Điện áp (V)<Required /></Label>
                       <Input
                         inputMode="numeric"
                         value={form.voltageV || ""}
@@ -661,21 +711,22 @@ export default function PostNew() {
               </div>
 
               <div className="mt-6">
-                <h3 className="mb-2 font-semibold text-gray-800">Tiêu đề tin & mô tả</h3>
+                <h3 className="mb-2 font-semibold text-[#0f766e]">Tiêu đề tin & mô tả</h3>
 
                 <div className="flex flex-col gap-1">
-                  <Label>Tiêu đề<Required /></Label>
+                  <Label className="text-[#0f766e]">Tiêu đề<Required /></Label>
                   <Input
                     maxLength={MAX_TITLE}
                     placeholder="VD: VinFast VF8 bản Plus 2023"
                     value={form.title}
                     onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                   />
-                  <div className="text-xs text-gray-500">{titleLeft}/50 kí tự</div>
                 </div>
 
+                <div className="mt-1 text-xs text-gray-500">{titleLeft}/50 kí tự</div>
+
                 <div className="mt-3 flex flex-col gap-1">
-                  <Label>Mô tả</Label>
+                  <Label className="text-[#0f766e]">Mô tả<Required /></Label>
                   <Textarea
                     maxLength={MAX_DESC}
                     rows={6}
@@ -683,13 +734,14 @@ export default function PostNew() {
                     value={form.description}
                     onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   />
-                  <div className="text-xs text-gray-500">{descLeft}/1500 kí tự</div>
                 </div>
+
+                <div className="text-xs text-gray-500">{descLeft}/1500 kí tự</div>
 
                 {/* ---- GIÁ (nhập tay hoặc bấm AI ở góc) ---- */}
                 <div className="mt-4 flex flex-col gap-1">
                   <div className="flex items-center justify-between">
-                    <Label>Giá (VND)<Required /></Label>
+                    <Label className="text-[#0f766e]">Giá (VND)<Required /></Label>
                   </div>
 
                   <Input
@@ -706,11 +758,14 @@ export default function PostNew() {
               </div>
 
               {/* Địa chỉ */}
-              <AddressPicker
-                addr={addr}
-                addressDetail={form.addressDetail}
-                onAddressDetailChange={(v) => setForm((f) => ({ ...f, addressDetail: v }))}
-              />
+              <div className="mt-2">
+                <h3 className="mb-2 font-semibold text-[#0f766e]">Địa chỉ <Required/></h3>
+                <AddressPicker
+                  addr={addr}
+                  addressDetail={form.addressDetail}
+                  onAddressDetailChange={(v) => setForm((f) => ({ ...f, addressDetail: v }))}
+                />
+              </div>
 
               {/* Actions */}
               <div className="mt-6 flex flex-wrap justify-end gap-3">

@@ -6,7 +6,7 @@ export default memo(function AIPriceFab({ onClick }: { onClick: () => void }) {
       id="eco-ai-fab"
       type="button"
       onClick={onClick}
-      aria-label="EcoAI gợi ý giá phù hợp"
+      aria-label="EcoGreen AI"
       className="fixed right-4 bottom-6 z-[60] p-0 bg-transparent outline-none border-0 group
                  focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
       style={{ background: "transparent", border: 0, boxShadow: "none" }}
@@ -38,7 +38,8 @@ export default memo(function AIPriceFab({ onClick }: { onClick: () => void }) {
             background: "transparent",
             border: 0,
             boxShadow: "none",
-            filter: "drop-shadow(0 0 5px rgba(43, 184, 137, 0.84)) drop-shadow(0 0 16px rgba(43, 219, 199, 0.35))",
+            filter:
+              "drop-shadow(0 0 5px rgba(43, 184, 137, 0.84)) drop-shadow(0 0 16px rgba(43, 219, 199, 0.35))",
           }}
         />
         <span
@@ -56,13 +57,12 @@ export default memo(function AIPriceFab({ onClick }: { onClick: () => void }) {
       <div
         className="mx-auto mt-1 w-max rounded-full px-3 py-1 text-xs font-medium text-white shadow-lg select-none"
         style={{
-          background:
-            "linear-gradient(90deg, #0ea5e9, #22c55e, #14b8a6, #0ea5e9)",
+          background: "linear-gradient(90deg, #0ea5e9, #22c55e, #14b8a6, #0ea5e9)",
           backgroundSize: "300% 100%",
           animation: "ecoGradientFlow 3s linear infinite",
         }}
       >
-        Gợi ý giá EcoAI
+        Đăng nhanh với EcoAI
       </div>
       <style>{`
         @keyframes ecoShimmer {

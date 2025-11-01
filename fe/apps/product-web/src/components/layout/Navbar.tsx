@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Menu, Heart, PlusCircle, Search } from "lucide-react";
+import { Menu, Heart, PlusCircle, Search, Bell, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,10 +10,17 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import "@/styles/Navbar.css";
 import UserMenu from "@/components/user/UserMenu";
 import { useAuth } from "@/contexts/AuthContext";
 import { searchProductsByName } from "@/api/search";
+import { toast } from "sonner";
+import {
+  listSellerPurchaseRequests,
+  respondPurchaseRequest,
+  type PurchaseRequestDTO,
+} from "@/api/productDetail";
 
 const mainNav = [
   { label: "EcoGreen", to: "/" },
@@ -28,16 +35,64 @@ export default function Navbar() {
   const { user } = useAuth();
   const nav = useNavigate();
 
+  /* ===== Popover Thông báo ===== */
+  const [openNoti, setOpenNoti] = useState(false);
+  const [loadingNoti, setLoadingNoti] = useState(false);
+  const [requests, setRequests] = useState<PurchaseRequestDTO[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const loadNoti = async () => {
+    if (!user) return;
+    setLoadingNoti(true);
+    try {
+      const res = await listSellerPurchaseRequests({ page: 0, size: 20 });
+      setRequests(res?.content ?? []);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Không tải được thông báo giao dịch.");
+    } finally {
+      setLoadingNoti(false);
+    }
+  };
+
+  const onOpenChange = (v: boolean) => {
+    if (v && user) loadNoti();
+    if (!user && v) {
+      setOpenNoti(false);
+      nav(`/login?next=${encodeURIComponent(location.pathname + location.search + location.hash)}`);
+      toast.info("Vui lòng đăng nhập để xem thông báo.");
+      return;
+    }
+    setOpenNoti(v);
+  };
+
+  const handleRespond = async (id: string, accept: boolean) => {
+    setBusy(id);
+    try {
+      const updated = await respondPurchaseRequest({
+        requestId: id,
+        accept,
+        responseMessage: accept
+          ? "Đồng ý bán với giá bạn đề xuất. Vui lòng ký hợp đồng."
+          : "Xin lỗi, tôi không đồng ý bán.",
+      });
+      setRequests((prev) => prev.map((r) => (r.id === id ? updated : r)));
+      toast.success(accept ? "Đã đồng ý – hợp đồng đã được gửi qua email." : "Đã từ chối yêu cầu.");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Thao tác thất bại.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   useEffect(() => {
-    const THRESHOLD = 60;
-    const HYST = 12;
+    const THRESHOLD = 60, HYST = 12;
     let ticking = false;
     const onScroll = () => {
       const y = window.scrollY;
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(() => {
-        setIsScrolled(prev => (prev ? y > THRESHOLD - HYST : y > THRESHOLD + HYST));
+        setIsScrolled((prev) => (prev ? y > THRESHOLD - HYST : y > THRESHOLD + HYST));
         ticking = false;
       });
     };
@@ -49,7 +104,7 @@ export default function Navbar() {
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const q = keyword.trim();
-    try { if (q) await searchProductsByName(q); } catch {}
+    try { if (q) await searchProductsByName(q); } catch { }
     nav(`/search?keyword=${encodeURIComponent(q)}`);
   };
 
@@ -60,7 +115,6 @@ export default function Navbar() {
     >
       {/* TOP BAR */}
       <div style={{ height: "var(--nav-h)" }} className="w-full flex items-center gap-4 px-3 sm:px-4">
-        {/* Drawer (mobile) */}
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="text-black md:hidden">
@@ -82,31 +136,18 @@ export default function Navbar() {
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                size="icon"
-                className="hidden md:inline-flex bg-white/90 text-teal-700"
-                aria-label="Danh mục"
-              >
+              <Button size="icon" className="hidden md:inline-flex bg-white/90 text-teal-700" aria-label="Danh mục">
                 <Menu className="w-5 h-5" />
               </Button>
             </DropdownMenuTrigger>
-
-            <DropdownMenuContent
-              align="start"
-              sideOffset={8}
-              className="min-w-[180px] z-[12010] max-h-[70vh] overflow-auto"
-            >
+            <DropdownMenuContent align="start" sideOffset={8} className="min-w-[180px] z-[12010] max-h-[70vh] overflow-auto">
               <DropdownMenuItem asChild><Link to="/xe-dien" className="w-full">Xe điện</Link></DropdownMenuItem>
               <DropdownMenuItem asChild><Link to="/pin-dien" className="w-full">Pin điện</Link></DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
           <Link to="/" className="inline-flex items-center">
-            <img
-              src="/images/logo-name.png"
-              alt="EcoGreen"
-              className="w-[92px] md:w-[132px] h-auto object-contain"
-            />
+            <img src="/images/logo-name.png" alt="EcoGreen" className="w-[92px] md:w-[132px] h-auto object-contain" />
             <span className="sr-only">ECOGREEN</span>
           </Link>
         </div>
@@ -120,8 +161,7 @@ export default function Navbar() {
                   key={it.to}
                   to={it.to}
                   className={({ isActive }) =>
-                    `relative font-medium ml-5 transition-colors ${
-                      isActive ? "text-[#124f47] font-bold" : "text-[#246f67] opacity-70 hover:text-yellow-300"
+                    `relative font-medium ml-5 transition-colors ${isActive ? "text-[#124f47] font-bold" : "text-[#246f67] opacity-70 hover:text-yellow-300"
                     }`
                   }
                 >
@@ -130,10 +170,7 @@ export default function Navbar() {
               ))}
             </nav>
           ) : (
-            <form
-              onSubmit={handleSearch}
-              className="flex items-center gap-2 bg-white rounded-lg px-3 shadow w-full max-w-xl"
-            >
+            <form onSubmit={handleSearch} className="flex items-center gap-2 bg-white rounded-lg px-3 shadow w-full max-w-xl">
               <Search className="w-4 h-4 text-gray-500" />
               <Input
                 placeholder="Tìm sản phẩm..."
@@ -145,8 +182,7 @@ export default function Navbar() {
                 type="submit"
                 className="!h-7 !px-3 !text-[14px] text-white
                            !bg-gradient-to-r from-[#246f67] to-[#2ba195]
-                           hover:from-[#1e5c55] hover:to-[#238678]"
-              >
+                           hover:from-[#1e5c55] hover:to-[#238678]">
                 Tìm kiếm
               </Button>
             </form>
@@ -155,6 +191,85 @@ export default function Navbar() {
 
         {/* Actions */}
         <div className="ml-auto flex items-center gap-2">
+          <Popover open={openNoti} onOpenChange={onOpenChange}>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                size="icon"
+                className="hidden sm:flex bg-white"
+                aria-label="Thông báo"
+                title="Thông báo giao dịch"
+              >
+                <Bell className="w-4 h-4 text-teal-700" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              sideOffset={10}
+              className="eg-noti p-0 w-[420px] max-h-[70vh] z-[20000] rounded-2xl border-teal-200 bg-white shadow-xl"
+            >
+              <div className="sticky top-0 z-10 px-4 py-3 rounded-t-2xl text-white"
+                style={{ background: "linear-gradient(90deg,#246f67 0%,#01c5a7 100%)" }}>
+                <div className="text-lg font-semibold">Thông Báo</div>
+                <div className="mt-2 flex items-center gap-2 text-xs">
+                  <span className="px-2 py-0.5 rounded-full bg-white/20 backdrop-blur">Hoạt động</span>
+                  <span className="px-2 py-0.5 rounded-full bg-white/10">Tin tức</span>
+                </div>
+              </div>
+
+              {loadingNoti ? (
+                <div className="px-4 py-6 text-sm text-slate-600">Đang tải…</div>
+              ) : requests.length === 0 ? (
+                <div className="px-4 py-6 text-sm text-slate-600">Chưa có thông báo giao dịch nào.</div>
+              ) : (
+                <ul className="px-3 pb-3">
+                  {requests.map((r) => (
+                    <li
+                      key={r.id}
+                      className="rounded-xl border border-teal-100 bg-teal-50/40 hover:bg-teal-50 transition m-2 p-3 shadow-sm"
+                    >
+                      <div className="font-semibold text-slate-800">
+                        Yêu cầu mua – {r.productTitle}
+                      </div>
+
+                      <div className="mt-1 text-sm text-slate-700">
+                        Người mua: <b>{r.buyerName}</b> 
+                      </div>
+                      <div className="text-sm text-slate-700">
+                        Giá đề nghị: <b>{(r.offeredPrice ?? 0).toLocaleString("vi-VN")} đ</b>
+                      </div>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+
+                        {(r as any).contractUrl && r.contractStatus === "SENT" && (
+                          <a
+                            href={(r as any).contractUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs underline text-teal-700 ml-1"
+                          >
+                            Mở hợp đồng
+                          </a>
+                        )}
+                      </div>
+                      <div className="mt-3">
+                        <Link
+                          to={`/seller/purchase-requests/${r.id}`}
+                          state={{ request: r }}  
+                          className="inline-flex items-center gap-1 rounded-sm px-3 py-1 !text-sm
+                       bg-[#246f67] text-white"
+                          onClick={() => setOpenNoti(false)}
+                        >
+                          Xem chi tiết
+                        </Link>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </PopoverContent>
+          </Popover>
+
           <Button
             type="button"
             size="icon"

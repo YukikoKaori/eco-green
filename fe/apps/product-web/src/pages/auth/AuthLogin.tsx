@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Phone, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { loginApi, oauthUrls, getMe } from "@/api/auth";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/lib/axios";
+import ReCAPTCHA from "react-google-recaptcha";
 
 export default function AuthLogin() {
   const [showPw, setShowPw] = useState(false);
@@ -14,6 +15,11 @@ export default function AuthLogin() {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+
+  const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY as string | undefined;
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
+
   const nav = useNavigate();
   const { setUser } = useAuth();
 
@@ -23,6 +29,7 @@ export default function AuthLogin() {
 
     const p = phone.trim();
     const pw = password;
+
     if (!/^\d{9,11}$/.test(p)) {
       setError("Số điện thoại không hợp lệ (9–11 chữ số).");
       return;
@@ -32,14 +39,24 @@ export default function AuthLogin() {
       return;
     }
 
+    if (siteKey && !captchaToken) {
+      setError("Vui lòng xác nhận reCAPTCHA trước khi đăng nhập.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const res = await loginApi({ phone: p, password: pw });
+      const res = await loginApi({
+        phone: p,
+        password: pw,
+        ...(siteKey ? { recaptchaToken: captchaToken! } : {}),
+      });
 
       const tokenRaw = res.token;
       if (!tokenRaw) throw new Error("Không tìm thấy token trong phản hồi.");
+
       const bare = tokenRaw.startsWith("Bearer ") ? tokenRaw.slice(7) : tokenRaw;
 
       const store = remember ? localStorage : sessionStorage;
@@ -67,11 +84,16 @@ export default function AuthLogin() {
         { remember: remember ? "local" : "session" }
       );
 
+      recaptchaRef.current?.reset();
+      setCaptchaToken(null);
+
       nav("/");
     } catch (err: any) {
-      const msg =
-        err?.response?.data?.message || err?.message || "Đăng nhập thất bại";
+      const msg = err?.response?.data?.message || err?.message || "Đăng nhập thất bại";
       setError(msg);
+
+      recaptchaRef.current?.reset();
+      setCaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -94,9 +116,7 @@ export default function AuthLogin() {
       }}
     >
       <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white/95 shadow-lg p-8">
-        <div className="text-center text-3xl font-bold text-[#0f766e] mb-6">
-          Đăng nhập
-        </div>
+        <div className="text-center text-3xl font-bold text-[#0f766e] mb-6">Đăng nhập</div>
 
         {error && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -151,6 +171,21 @@ export default function AuthLogin() {
               </button>
             </div>
           </label>
+
+          {siteKey && (
+            <div className="pt-1">
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                sitekey={siteKey}
+                onChange={(v) => setCaptchaToken(v)}
+                onExpired={() => setCaptchaToken(null)}
+                onErrored={() => {
+                  recaptchaRef.current?.reset();
+                  setCaptchaToken(null);
+                }}
+              />
+            </div>
+          )}
 
           {/* Options */}
           <div className="flex items-center justify-between bg-white">

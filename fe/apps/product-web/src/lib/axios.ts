@@ -10,7 +10,7 @@ if (!BASE_URL || !/^https?:\/\//.test(BASE_URL)) {
 const api = axios.create({
   baseURL: BASE_URL,
   withCredentials: false,
-  timeout: 15000,
+  timeout: 60000,
 });
 
 function getToken() {
