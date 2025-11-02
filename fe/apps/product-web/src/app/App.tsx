@@ -21,6 +21,7 @@ import BatteryListPage from "@/pages/listingEV/BatteryListPage";
 import SearchResults from "@/pages/search/SearchResults";
 import VNPayReturn from "@/pages/payment/VNPayReturn";
 import PurchaseRequestDetail from "@/pages/purchase/PurchaseRequestDetail";
+import RecentViewsPage from "@/pages/history/RecentViewsPage";
 
 export default function App() {
   return (
@@ -88,7 +89,14 @@ export default function App() {
             </PrivateRoute>
           }
         />
-
+        <Route
+          path="/history/views"
+          element={
+            <PrivateRoute>
+              <RecentViewsPage />
+            </PrivateRoute>
+          }
+        />
         <Route
           path="/login"
           element={

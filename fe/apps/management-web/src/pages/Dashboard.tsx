@@ -1,31 +1,97 @@
+import { useEffect, useMemo, useState } from "react";
 import StatsCard from "@/components/StatsCard";
 import { DollarSign, Users, Car, Battery } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
+import {
+  ResponsiveContainer,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  BarChart,
+  Bar,
+} from "recharts";
+import {
+  getApprovalRate,
+  getMemberCount,
+  getRevenueSeriesByYear,
+} from "@/api/stats";
 
-const COLORS = ["#065f46", "#0f766e", "#1cbd82ff", "#5ad3b3ff"];
+const BRAND = "#246f67";
+const fmtVnd = (n: number) => new Intl.NumberFormat("vi-VN").format(n) + "đ";
+const formatTickShort = (n: number) => {
+  if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
+  if (n >= 1_000_000)     return (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+  if (n >= 1_000)         return (n / 1_000).toFixed(1).replace(/\.0$/, "") + "k";
+  return String(n);
+};
 
-const revenue = [
-  { m: "01", v: 210 }, { m: "02", v: 230 }, { m: "03", v: 220 },
-  { m: "04", v: 260 }, { m: "05", v: 255 }, { m: "06", v: 290 },
-];
-
-const growth = [
-  { m: "01", xe: 10, pin: 6 },
-  { m: "02", xe: 12, pin: 8 },
-  { m: "03", xe: 11, pin: 7 },
-  { m: "04", xe: 14, pin: 9 },
-  { m: "05", xe: 15, pin: 10 },
-  { m: "06", xe: 17, pin: 12 },
-];
+function msToNextMidnight() {
+  const now = new Date();
+  const next = new Date(now);
+  next.setDate(now.getDate() + 1);
+  next.setHours(0, 0, 0, 0);
+  return next.getTime() - now.getTime();
+}
 
 export default function Dashboard() {
-  const stats = [
-    { title: "Doanh thu", value: "2,450,000,000đ", delta: "+6%", icon: DollarSign },
-    { title: "Bài đăng mới", value: 156, delta: "+5%", icon: Car },
-    { title: "Người dùng mới", value: 1_234, delta: "+3%", icon: Users },
-    { title: "Tỉ lệ duyệt", value: "94.2%", delta: "+0.4%", icon: Battery },
-  ];
+  const [year, setYear] = useState<number>(new Date().getFullYear());
+
+  const [yearRevenue, setYearRevenue] = useState(0);
+  const [monthRevenue, setMonthRevenue] = useState(0);
+  const [monthly, setMonthly] = useState<Array<{ m: string; v: number }>>([]);
+
+  const [memberCount, setMemberCount] = useState(0);
+  const [approveRate, setApproveRate] = useState<number | null>(null);
+  const [approveStats, setApproveStats] =
+    useState<{ approved: number; rejected: number; total: number } | null>(null);
+
+  // Tự cập nhật năm lúc 00:00
+  useEffect(() => {
+    const t = setTimeout(() => setYear(new Date().getFullYear()), msToNextMidnight());
+    return () => clearTimeout(t);
+  }, [year]);
+
+  useEffect(() => {
+    (async () => {
+      const now = new Date();
+      const mm = now.getMonth() + 1;
+      const series = await getRevenueSeriesByYear(year);
+      setMonthly(series);
+
+      // tính doanh thu
+      setYearRevenue(series.reduce((s, x) => s + x.v, 0));
+      setMonthRevenue(series.find(x => Number(x.m) === mm)?.v ?? 0);
+
+      // Tỉ lệ duyệt & tổng member
+      try {
+        const rate = await getApprovalRate();
+        setApproveRate(rate.rate * 100);
+        setApproveStats({ approved: rate.approved, rejected: rate.rejected, total: rate.total });
+      } catch {}
+
+      try { setMemberCount(await getMemberCount("MEMBER")); } catch { setMemberCount(0); }
+    })();
+  }, [year]);
+
+  const stats = useMemo(() => ([
+    { title: `Doanh thu năm ${year}`, value: yearRevenue, icon: DollarSign, format: fmtVnd },
+    {
+      title: `Doanh thu tháng này (${String(new Date().getMonth() + 1).padStart(2, "0")}/${year})`,
+      value: monthRevenue, icon: Car, format: fmtVnd
+    },
+    { title: "Thành viên (MEMBER)", value: memberCount, icon: Users },
+    {
+      title: "Tỉ lệ duyệt",
+      value: approveRate == null ? "--" : Number(approveRate),
+      delta: approveStats ? `A:${approveStats.approved} / R:${approveStats.rejected}` : "",
+      icon: Battery,
+      format: (n: number) => n.toFixed(2) + "%"
+    },
+  ]), [year, yearRevenue, monthRevenue, memberCount, approveRate, approveStats]);
+
+  const growth: Array<{ m: string; xe: number; pin: number }> = [];
+  const monthlyTotal = monthly.reduce((s, x) => s + x.v, 0);
 
   return (
     <div className="space-y-5">
@@ -34,63 +100,32 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <Card className="xl:col-span-2 border rounded-xl bg-white p-4">
-          <div className="text-sm font-medium text-gray-700 mb-3">Doanh thu theo tháng</div>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={revenue}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="m" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="v" stroke="#0f766e" strokeWidth={2} dot={false} />
-              </LineChart>
+        <Card className="xl:col-span-2 border rounded-2xl bg-white p-4">
+          <div className="text-[15px] font-semibold mb-3" style={{ color: BRAND }}>
+            Doanh thu theo tháng ({year})
+          </div>
+
+          <div className="w-full" style={{ minWidth: 320 }}>
+            <ResponsiveContainer width="100%" height={224}>
+              <BarChart data={monthly}>
+                <CartesianGrid stroke="#e5f3f0" strokeDasharray="3 3" />
+                <XAxis dataKey="m" tick={{ fill: "#5b6b67" }} />
+                <YAxis tickFormatter={formatTickShort} tick={{ fill: "#5b6b67" }} />
+                <Tooltip
+                  contentStyle={{ borderRadius: 12, borderColor: "#d4ece7" }}
+                  formatter={(v: any) => fmtVnd(Number(v))}
+                  labelFormatter={(label) => `Tháng ${label}`}
+                />
+                <Bar dataKey="v" radius={[6, 6, 0, 0]} fill={BRAND} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
-        </Card>
 
-        <div className="grid grid-cols-1 gap-4">
-
-          <Card className="border rounded-xl bg-white p-4">
-            <div className="text-sm font-medium text-gray-700 mb-3">Tăng trưởng theo ngành hàng</div>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={growth}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="m" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="xe" stackId="a" fill="#0f766e"/>
-                  <Bar dataKey="pin" stackId="a" fill="#0f766e" />
-                </BarChart>
-              </ResponsiveContainer>
+          {monthlyTotal === 0 && (
+            <div className="text-xs text-gray-500 mt-2">
+              Không có dữ liệu theo tháng cho năm {year}.
             </div>
-          </Card>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <Card className="xl:col-span-2 border rounded-xl bg-white p-4">
-          <div className="text-sm font-medium text-gray-700 mb-3">Thao tác nhanh</div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {["Duyệt bài mới", "Quản lý thương hiệu", "Gửi thông báo", "Xuất báo cáo",
-              "Quản lý người dùng", "Quản lý giao dịch", "Cài đặt hệ thống", "Tạo tài khoản staff"]
-              .map((t) => (
-                <div key={t} className="border rounded-lg p-3 hover:bg-emerald-50 cursor-pointer text-sm">
-                  {t}
-                </div>
-              ))}
-          </div>
-        </Card>
-
-        <Card className="border rounded-xl bg-white p-4">
-          <div className="text-sm font-medium text-gray-700 mb-3">Hoạt động gần đây</div>
-          <ul className="space-y-2 text-sm text-gray-700">
-            <li>• 5 bài đăng mới chờ duyệt</li>
-            <li>• 2 giao dịch đã hoàn tất</li>
-            <li>• 1 tài khoản bị báo cáo</li>
-            <li>• 3 pin được cập nhật thông số</li>
-          </ul>
+          )}
         </Card>
       </div>
     </div>

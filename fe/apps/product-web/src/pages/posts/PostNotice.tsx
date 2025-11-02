@@ -253,7 +253,7 @@ export default function PostNotice() {
       if (!shownTotal) {
         setFreeEligible(true);
         setStatusText("PENDING_REVIEW");
-        toast.success("Tin được đăng MIỄN PHÍ cho lần đầu. Hệ thống sẽ duyệt sớm.");
+        toast.success("Bạn được đăng tin miễn phí cho lần đầu tiên. Hệ thống sẽ duyệt sớm.");
         nav("/post/manage", { replace: true });
         return;
       }

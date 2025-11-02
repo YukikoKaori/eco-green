@@ -385,7 +385,6 @@ export default function PostNew() {
       );
 
       const productId = (created as any).productId;
-      toast.success("Đăng tin thành công!");
       nav(`/postnotice?productId=${encodeURIComponent(productId)}`, {
         replace: true,
         state: { created, type: isVehicle ? "vehicle" : "battery", productId },

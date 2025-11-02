@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { addRecentView } from "@/api/recent";
 
 /* --------------------------- Helpers ---------------------------- */
 function timeAgoVi(iso?: string | null) {
@@ -111,6 +112,20 @@ export default function ProductDetail() {
   const prev = () => setIdx((p) => (p - 1 + imgs.length) % imgs.length);
   const next = () => setIdx((p) => (p + 1) % imgs.length);
 
+  const postedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!id || !user) return;
+    if (postedRef.current === id) return; 
+    postedRef.current = id;
+
+    (async () => {
+      try {
+        await addRecentView(id); 
+      } catch {
+      }
+    })();
+  }, [id, user]);
+
   // fetch data
   useEffect(() => {
     let off = false;
@@ -166,7 +181,6 @@ export default function ProductDetail() {
     await toggle(id);
   }
 
-  // Mở dialog mua
   const handleOpenBuy = () => {
     if (!id) return;
     if (!user) {
@@ -463,8 +477,6 @@ export default function ProductDetail() {
           </CardContent>
         </Card>
       )}
-
-      {/* ============== Dialog XÁC NHẬN MUA ============== */}
       <Dialog open={openConfirm} onOpenChange={setOpenConfirm}>
         <DialogContent>
           <DialogHeader>
@@ -509,7 +521,6 @@ export default function ProductDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* ============== Dialog THÀNH CÔNG ============== */}
       <Dialog open={openSuccess} onOpenChange={setOpenSuccess}>
         <DialogContent>
           <DialogHeader>

@@ -24,7 +24,6 @@ const SECTIONS: Section[] = [
   ]},
   { title: "Dịch vụ trả phí", items: [
     { to: "/orders", label: "Lịch sử giao dịch", icon: <History className="w-4 h-4" /> },
-    { to: "/store", label: "Cửa hàng/Chuyên trang", icon: <Store className="w-4 h-4" /> },
   ]},
   { title: "Khác", items: [
     { to: "/account/profile", label: "Cài đặt tài khoản", icon: <Settings className="w-4 h-4" /> },

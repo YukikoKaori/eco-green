@@ -65,8 +65,17 @@ const compact = (obj: Record<string, any>) => {
   return out;
 };
 
-export async function loginApi(payload: { phone: string; password: string }) {
-  const { data } = await api.post<LoginResponse>("/auth/login", payload);
+export async function loginApi(payload: {
+  phone: string;
+  password: string;
+  recaptchaToken?: string;
+}) {
+  const body = compact({
+    phone: payload.phone,
+    password: payload.password,
+    recaptchaToken: payload.recaptchaToken,
+  });
+  const { data } = await api.post<LoginResponse>("/auth/login", body);
   return unwrap<LoginResult>(data);
 }
 
@@ -74,11 +83,15 @@ export async function registerApi(payload: {
   fullName: string;
   phone: string;
   password: string;
+  recaptchaToken?: string;
 }) {
-  const { data } = await api.post<ApiEnvelope<UserProfile>>(
-    "/auth/register",
-    payload
-  );
+  const body = compact({
+    fullName: payload.fullName,
+    phone: payload.phone,
+    password: payload.password,
+    recaptchaToken: payload.recaptchaToken,
+  });
+  const { data } = await api.post<ApiEnvelope<UserProfile>>("/auth/register", body);
   return unwrap<UserProfile>(data);
 }
 
@@ -91,7 +104,6 @@ export const oauthUrls = {
   google: `${import.meta.env.VITE_API_URL}/auth/google`,
   facebook: `${import.meta.env.VITE_API_URL}/auth/facebook`,
 };
-
 
 export async function getMe(opts?: { signal?: AbortSignal }) {
   const { data } = await api.get<UserProfile | ApiEnvelope<UserProfile>>(

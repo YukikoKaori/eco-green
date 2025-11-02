@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import {
   LayoutDashboard,
   FileText,
-  Clock3,
   Eye,
   Users,
   UserRound,
@@ -39,6 +38,10 @@ export default function Sidebar() {
     () => pathname.startsWith("/users") || pathname.startsWith("/staffs"),
     [pathname]
   );
+  const isTransactionsActive = useMemo(
+    () => pathname.startsWith("/transactions"),
+    [pathname]
+  );
   const isSettingsActive = useMemo(
     () => pathname.startsWith("/settings"),
     [pathname]
@@ -46,6 +49,7 @@ export default function Sidebar() {
 
   const [openPosts, setOpenPosts] = useState(isPostsActive);
   const [openAccounts, setOpenAccounts] = useState(isAccountsActive);
+  const [openTransactions, setOpenTransactions] = useState(isTransactionsActive);
   const [openSettings, setOpenSettings] = useState(isSettingsActive);
 
   return (
@@ -79,7 +83,7 @@ export default function Sidebar() {
               <span className="truncate">Tổng quan</span>
             </NavLink>
 
-            {/* Quản lý bài đăng (group) */}
+            {/* Quản lý bài đăng */}
             <button
               type="button"
               onClick={() => setOpenPosts((v) => !v)}
@@ -121,10 +125,7 @@ export default function Sidebar() {
               <NavLink
                 to="/reports/count"
                 className={({ isActive }) =>
-                  [
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                    isActive ? linkActive : linkIdle,
-                  ].join(" ")
+                  [linkBase, isActive ? linkActive : linkIdle].join(" ")
                 }
                 aria-label="Các khiếu nại"
               >
@@ -133,6 +134,7 @@ export default function Sidebar() {
               </NavLink>
             </div>
 
+            {/* Quản lý tài khoản */}
             <button
               type="button"
               onClick={() => setOpenAccounts((v) => !v)}
@@ -163,10 +165,7 @@ export default function Sidebar() {
               <NavLink
                 to="/users"
                 className={({ isActive }) =>
-                  [
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                    isActive ? linkActive : linkIdle,
-                  ].join(" ")
+                  [linkBase, isActive ? linkActive : linkIdle].join(" ")
                 }
                 aria-label="Người dùng"
               >
@@ -177,10 +176,7 @@ export default function Sidebar() {
               <NavLink
                 to="/staffs"
                 className={({ isActive }) =>
-                  [
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                    isActive ? linkActive : linkIdle,
-                  ].join(" ")
+                  [linkBase, isActive ? linkActive : linkIdle].join(" ")
                 }
                 aria-label="Nhân viên"
               >
@@ -190,18 +186,59 @@ export default function Sidebar() {
             </div>
 
             {/* Quản lý giao dịch */}
-            <NavLink
-              to="/transactions"
-              className={({ isActive }) =>
-                [linkBase, isActive ? linkActive : linkIdle].join(" ")
-              }
-              aria-label="Quản lý giao dịch"
+            <button
+              type="button"
+              onClick={() => setOpenTransactions((v) => !v)}
+              className={[groupBtn, isTransactionsActive ? linkActive : linkIdle].join(" ")}
+              aria-expanded={openTransactions}
+              aria-controls="menu-transactions"
             >
-              <DollarSign className="h-4 w-4" />
-              <span className="truncate">Quản lý giao dịch</span>
-            </NavLink>
+              <span className="inline-flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                <span className="truncate text-sm">Quản lý giao dịch</span>
+              </span>
+              <ChevronDown
+                className={[
+                  "h-4 w-4 transition-transform",
+                  openTransactions ? "rotate-180" : "",
+                ].join(" ")}
+              />
+            </button>
 
-            {/* Cài đặt */}
+            <div
+              id="menu-transactions"
+              className={[
+                "overflow-hidden pl-9 pr-1",
+                openTransactions ? "max-h-40 py-1" : "max-h-0",
+                "transition-[max-height,padding] duration-300 ease-in-out",
+              ].join(" ")}
+            >
+              {/* Hợp đồng điện tử */}
+              <NavLink
+                to="/transactions/contracts"
+                className={({ isActive }) =>
+                  [linkBase, isActive ? linkActive : linkIdle].join(" ")
+                }
+                aria-label="Hợp đồng điện tử"
+              >
+                <FileText className="h-4 w-4" />
+                <span className="truncate">Hợp đồng điện tử</span>
+              </NavLink>
+
+              {/*  Hoa hồng đăng tin */}
+              <NavLink
+                to="/transactions/commissions"
+                className={({ isActive }) =>
+                  [linkBase, isActive ? linkActive : linkIdle].join(" ")
+                }
+                aria-label="Hoa hồng đăng tin"
+              >
+                <DollarSign className="h-4 w-4" />
+                <span className="truncate">Hoa hồng đăng tin</span>
+              </NavLink>
+            </div>
+
+            {/* Cài đặt*/}
             <button
               type="button"
               onClick={() => setOpenSettings((v) => !v)}
@@ -232,10 +269,7 @@ export default function Sidebar() {
               <NavLink
                 to="/profile"
                 className={({ isActive }) =>
-                  [
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                    isActive ? linkActive : linkIdle,
-                  ].join(" ")
+                  [linkBase, isActive ? linkActive : linkIdle].join(" ")
                 }
                 aria-label="Hồ sơ cá nhân"
               >
@@ -246,10 +280,7 @@ export default function Sidebar() {
               <NavLink
                 to="/password"
                 className={({ isActive }) =>
-                  [
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                    isActive ? linkActive : linkIdle,
-                  ].join(" ")
+                  [linkBase, isActive ? linkActive : linkIdle].join(" ")
                 }
                 aria-label="Đổi mật khẩu"
               >

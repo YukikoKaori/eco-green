@@ -13,6 +13,8 @@ import ReportStatsPage from "@/pages/ReportStatsPage";
 import RejectedPostsPage from "@/pages/RejectedPostsPage";
 import StaffPostsManagePage from "@/pages/PostsManagePage";
 import ReviewDetailPage from "@/pages/ReviewDetailPage";
+import Contracts from "@/pages/transactions/Contracts";
+import Commissions from "@/pages/transactions/Commissions";
 export default function App() {
   return (
     <Routes>
@@ -34,6 +36,9 @@ export default function App() {
           <Route path="/reports/count" element={<ReportStatsPage />} />
           <Route path="/posts/moderate" element={<StaffPostsManagePage />} />
           <Route path="/posts/review/:id" element={<ReviewDetailPage />} />
+          <Route path="/transactions/contracts" element={<Contracts />} />
+          <Route path="/transactions/commissions" element={<Commissions />} />
+
           {/* Cài đặt */}
           <Route path="profile" element={<ProfilePage />} />
           <Route path="password" element={<AccountPage />} />

@@ -124,8 +124,6 @@ export default function Navbar() {
               <DropdownMenuContent align="start" sideOffset={8} className="z-[13000]">
                 <DropdownMenuItem asChild><Link to="/xe-dien">Xe điện</Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link to="/pin-dien">Pin điện</Link></DropdownMenuItem>
-                <DropdownMenuItem>Phụ kiện</DropdownMenuItem>
-                <DropdownMenuItem>Dịch vụ</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
