@@ -115,7 +115,7 @@ export default function AuthLogin() {
         backgroundPosition: "center",
       }}
     >
-      <div className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white/95 shadow-lg p-8">
+      <div className="relative w-full max-w-md rounded-xl border border-gray-200 !bg-white/95 shadow-lg p-8 py-2">
         <div className="text-center text-3xl font-bold text-[#0f766e] mb-6">Đăng nhập</div>
 
         {error && (
@@ -137,7 +137,7 @@ export default function AuthLogin() {
                 inputMode="tel"
                 pattern="[0-9]{9,11}"
                 autoComplete="tel"
-                placeholder="VD: 0987654321"
+                placeholder="Vui lòng nhập số điện thoại"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="h-10 border-0 shadow-none focus-visible:ring-0"

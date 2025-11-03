@@ -81,3 +81,21 @@
   width: 0;
   height: 0;
 }
+.navbar *:not(input):not(textarea):not([contenteditable="true"]):not([role="textbox"]) {
+  caret-color: transparent;
+}
+
+.navbar :where(a, button, .nav-overlay span, .nav-overlay div, nav, .eg-noti, .eg-noti *) {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.navbar input,
+.navbar textarea,
+.navbar [role="textbox"],
+.navbar .eg-noti input,
+.navbar .eg-noti textarea {
+  caret-color: auto;
+  -webkit-user-select: text;
+  user-select: text;
+}

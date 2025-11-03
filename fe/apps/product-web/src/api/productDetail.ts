@@ -55,7 +55,7 @@ export type ProductDetailDTO = {
 
 export type VehicleCatalogEnvelope = {
   productTitle?: string;
-  productPrice?: number;
+  productPrice?: number | string | null; 
   productStatus?: string;
   brandName?: string;
   brandLogoUrl?: string;
@@ -72,8 +72,8 @@ export type VehicleCatalogEnvelope = {
 
 export type SimilarItemRaw = {
   productId: string;
-  tittle: string; // theo BE
-  price: number;
+  tittle: string; 
+  price: number | string; 
   brandName?: string;
   modelName?: string;
   images?: string;
@@ -89,16 +89,28 @@ export type NormalizedSimilarItem = {
 };
 
 /* ----------------------------- Helpers ----------------------------- */
+function parseNumberLoose(v: unknown): number {
+  if (typeof v === "number") return Number.isFinite(v) ? v : NaN;
+  if (typeof v === "string") {
+    const n = Number(v.replace(/[^\d.-]/g, ""));
+    return Number.isFinite(n) ? n : NaN;
+  }
+  return NaN;
+}
+
 export function normalizeSimilar(list: SimilarItemRaw[] | unknown): NormalizedSimilarItem[] {
   if (!Array.isArray(list)) return [];
-  return list.map((x) => ({
-    id: (x as SimilarItemRaw).productId,
-    title: (x as SimilarItemRaw).tittle ?? "",
-    price: Number((x as SimilarItemRaw).price ?? 0),
-    brandName: (x as SimilarItemRaw).brandName ?? null,
-    modelName: (x as SimilarItemRaw).modelName ?? null,
-    image: (x as SimilarItemRaw).images ?? null,
-  }));
+  return list.map((x) => {
+    const obj = x as SimilarItemRaw;
+    return {
+      id: obj.productId,
+      title: obj.tittle ?? "",
+      price: parseNumberLoose(obj.price) || 0,
+      brandName: obj.brandName ?? null,
+      modelName: obj.modelName ?? null,
+      image: obj.images ?? null,
+    };
+  });
 }
 
 /* ------------------------------- APIs ------------------------------- */
@@ -132,7 +144,7 @@ export type PurchaseRequestDTO = {
   id: string;
   productId: string;
   productTitle?: string;
-  productPrice?: number;
+  productPrice?: number | string | null;
 
   buyerId?: string;
   buyerName?: string;
@@ -144,10 +156,10 @@ export type PurchaseRequestDTO = {
   sellerEmail?: string;
   sellerPhone?: string | null;
 
-  offeredPrice: number;
+  offeredPrice: number | string; 
   buyerMessage?: string | null;
 
-  status: "PENDING" | "APPROVED" | "REJECTED";
+  status: "PENDING" | "APPROVED" | "REJECTED" | "CONTRACT_SENT" | string;
   contractStatus?: "SENT" | "SIGNED" | "CANCELLED" | null;
   contractUrl?: string | null;
 

@@ -93,6 +93,7 @@ export default function ProductDetail() {
   // Mua
   const [openConfirm, setOpenConfirm] = useState(false);
   const [openSuccess, setOpenSuccess] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("Đã gửi yêu cầu đến người bán");
   const [offerPrice, setOfferPrice] = useState<number | "">("");
   const [buyerMessage, setBuyerMessage] = useState("");
   const [buying, setBuying] = useState(false);
@@ -115,12 +116,12 @@ export default function ProductDetail() {
   const postedRef = useRef<string | null>(null);
   useEffect(() => {
     if (!id || !user) return;
-    if (postedRef.current === id) return; 
+    if (postedRef.current === id) return;
     postedRef.current = id;
 
     (async () => {
       try {
-        await addRecentView(id); 
+        await addRecentView(id);
       } catch {
       }
     })();
@@ -189,6 +190,11 @@ export default function ProductDetail() {
       toast.info("Vui lòng đăng nhập để gửi yêu cầu mua.");
       return;
     }
+    // Chặn người bán tự mua tin của mình
+    if (user.id && prod?.sellerId && user.id === prod.sellerId) {
+      toast.info("Bạn đang là người bán của tin này.");
+      return;
+    }
     const p = toNumberPrice(prod?.price ?? catalog?.productPrice ?? null);
     setOfferPrice(p ?? "");
     setOpenConfirm(true);
@@ -209,11 +215,22 @@ export default function ProductDetail() {
         offeredPrice: numberPrice,
         buyerMessage: buyerMessage?.trim() || undefined,
       });
+      setSuccessMsg("Đã gửi yêu cầu đến người bán");
       setOpenConfirm(false);
       setOpenSuccess(true);
       toast.success("Đã gửi yêu cầu mua.");
+      setBuyerMessage("");
+      setOfferPrice("");
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Gửi yêu cầu thất bại.");
+      const msg = e?.response?.data?.message || "Gửi yêu cầu thất bại.";
+      if (/đã gửi yêu cầu mua/i.test(msg)) {
+        setSuccessMsg("Bạn đã gửi yêu cầu cho sản phẩm này. Vui lòng chờ người bán phản hồi.");
+        setOpenConfirm(false);
+        setOpenSuccess(true);
+        toast.info(msg);
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setBuying(false);
     }
@@ -518,34 +535,6 @@ export default function ProductDetail() {
               {buying ? "Đang gửi..." : "Xác nhận mua"}
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={openSuccess} onOpenChange={setOpenSuccess}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="sr-only">Đã gửi yêu cầu đến người bán</DialogTitle>
-          </DialogHeader>
-
-          <div className="flex items-start gap-3">
-            <CheckCircle2 className="w-6 h-6 text-emerald-600 mt-0.5" />
-            <div>
-              <div className="text-lg font-semibold">Đã gửi yêu cầu đến người bán</div>
-              <p className="text-slate-600 mt-1">
-                Vui lòng đợi phản hồi. Bạn có thể theo dõi trong mục quản lý.
-              </p>
-              <div className="mt-3 flex gap-2">
-                <Button variant="outline" onClick={() => setOpenSuccess(false)}>Đóng</Button>
-                <Button
-                  className="text-white"
-                  style={{ backgroundColor: "#246f67" }}
-                  onClick={() => { setOpenSuccess(false); nav("/post/manage"); }}
-                >
-                  Về quản lý tin
-                </Button>
-              </div>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
     </div>

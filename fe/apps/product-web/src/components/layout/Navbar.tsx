@@ -286,7 +286,7 @@ export default function Navbar() {
               <Link to="/post/manage">Quản lý tin</Link>
             </Button>
           ) : (
-            <Button asChild className="hidden md:flex text-[#246f67] bg-white">
+            <Button asChild className="hidden md:flex text-[#246f67] !bg-white">
               <Link to="/login">Đăng nhập</Link>
             </Button>
           )}
@@ -304,7 +304,7 @@ export default function Navbar() {
           <div className="mx-auto max-w-5xl px-4">
             <div className="w-full flex justify-center py-1">
               <span className="text-[#246f67] text-2xl md:text-3xl lg:text-[30px] font-bold tracking-wide drop-shadow leading-tight text-center mt-14">
-                "Đăng tin dễ – Chốt đơn nhanh!"
+                "Đăng tin dễ – Chốt đơn nhanh"
               </span>
             </div>
             <div className="mx-auto max-w-4xl px-0 py-1 flex justify-center">

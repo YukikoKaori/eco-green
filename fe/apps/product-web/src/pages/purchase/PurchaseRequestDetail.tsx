@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,44 +12,46 @@ import {
   listSellerPurchaseRequests,
 } from "@/api/productDetail";
 
-function currencyVND(n?: number | null) {
+function parseNumberLoose(v?: number | string | null): number | null {
+  if (v == null) return null;
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  const n = Number(String(v).replace(/[^\d.-]/g, ""));
+  return Number.isFinite(n) ? n : null;
+}
+function currencyVND(v?: number | string | null) {
+  const n = parseNumberLoose(v);
   if (n == null) return "--";
-  return Number(n).toLocaleString("vi-VN") + " đ";
+  return n.toLocaleString("vi-VN") + " đ";
 }
 
 export default function PurchaseRequestDetail() {
   const { id = "" } = useParams();
-  const loc = useLocation() as any;
+  const loc = useLocation() as { state?: { request?: PurchaseRequestDTO } };
   const nav = useNavigate();
-
-  // nhận sẵn dữ liệu nếu đi từ popover
-  const passed: PurchaseRequestDTO | undefined = loc?.state?.request;
-
+  const passed = loc?.state?.request;
   const [data, setData] = useState<PurchaseRequestDTO | null>(passed ?? null);
-  const [loading, setLoading] = useState(!passed);
+  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
-  // fallback: nếu refresh trang hoặc vào thẳng link -> lấy từ list và tìm theo id
   useEffect(() => {
-    if (passed) return;
     let off = false;
     (async () => {
       try {
         setLoading(true);
         const res = await listSellerPurchaseRequests({ page: 0, size: 50 });
         const found = res?.content?.find((x) => x.id === id) || null;
-        if (!off) setData(found);
-        if (!found) toast.error("Không tìm thấy yêu cầu mua.");
+        if (!off) {
+          setData(found ? { ...(passed ?? {}), ...found } : passed ?? null);
+          if (!found && !passed) toast.error("Không tìm thấy yêu cầu mua.");
+        }
       } catch (e: any) {
         toast.error(e?.response?.data?.message || "Không tải được dữ liệu.");
       } finally {
         if (!off) setLoading(false);
       }
     })();
-    return () => {
-      off = true;
-    };
-  }, [id, passed]);
+    return () => { off = true; };
+  }, [id]); 
 
   const onRespond = async (accept: boolean) => {
     if (!data) return;
@@ -92,6 +94,9 @@ export default function PurchaseRequestDetail() {
     );
   }
 
+  const contractUrl =
+    typeof (data as any).contractUrl === "string" ? (data as any).contractUrl : undefined;
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="mb-4">
@@ -105,7 +110,9 @@ export default function PurchaseRequestDetail() {
       <Card className="mb-4">
         <CardContent className="p-4">
           <div className="text-lg font-semibold">{data.productTitle}</div>
-          <div className="text-red-600 text-sm">Giá tin đăng: {currencyVND(data.productPrice)}</div>
+          <div className="text-red-600 text-sm">
+            Giá tin đăng: {currencyVND(data.productPrice ?? null)}
+          </div>
 
           <Separator className="my-3" />
 
@@ -118,14 +125,20 @@ export default function PurchaseRequestDetail() {
 
             <div>
               <div className="font-semibold text-[#246f67] mb-1">Thông tin giao dịch</div>
-              <div>Giá đề nghị: <b className="text-[#d4205b]">{currencyVND(data.offeredPrice)}</b></div>
-              <div>Trạng thái: <span className="px-2 py-0.5 rounded-full border text-xs ml-1">{data.status}</span></div>
+              <div>Giá đề nghị: <b className="text-[#d4205b]">
+                {currencyVND(data.offeredPrice as any)}
+              </b></div>
+              <div>Trạng thái: <span className="px-2 py-0.5 rounded-full border text-xs ml-1">
+                {data.status}
+              </span></div>
               {data.contractStatus && (
-                <div>Hợp đồng: <span className="px-2 py-0.5 rounded-full border text-xs ml-1">{data.contractStatus}</span></div>
+                <div>Hợp đồng: <span className="px-2 py-0.5 rounded-full border text-xs ml-1">
+                  {data.contractStatus}
+                </span></div>
               )}
-              {(data as any).contractUrl && data.contractStatus === "SENT" && (
+              {contractUrl && data.contractStatus === "SENT" && (
                 <div className="mt-1">
-                  <a href={(data as any).contractUrl} target="_blank" rel="noreferrer" className="text-teal-700 underline">
+                  <a href={contractUrl} target="_blank" rel="noreferrer" className="text-teal-700 underline">
                     Mở hợp đồng Eversign
                   </a>
                 </div>

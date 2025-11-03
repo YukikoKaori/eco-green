@@ -186,16 +186,31 @@ button:focus-visible {
   padding: 0 !important; 
   background: transparent;
 }
-
-/* Không cho sinh thanh cuộn ngang ngoài ý muốn */
 html, body, #root {
   max-width: 100%;
   overflow-x: hidden;
 }
-
-/* Radix/shadcn khi lock scroll sẽ thêm padding-right cho body.
-   Với stable gutter ở trên thì padding này thường = 0,
-   nhưng giữ dòng sau để đảm bảo không tạo tràn ngang. */
 body[data-scroll-locked] {
   width: 100%;
+}
+*:not(input):not(textarea):not([contenteditable="true"]):not([role="textbox"]):not(iframe) {
+  caret-color: transparent;
+}
+
+input,
+textarea,
+[role="textbox"],
+[contenteditable="true"] {
+  caret-color: auto;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+body :where(button, a, label, span, div) {
+  -webkit-user-select: none;
+  user-select: none;
+}
+form :where(input, textarea, [role="textbox"], [contenteditable="true"]) {
+  -webkit-user-select: text;
+  user-select: text;
 }
