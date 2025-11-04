@@ -58,6 +58,7 @@ const compact = (obj: Record<string, any>) => {
   const out: Record<string, any> = {};
   for (const [k, v] of Object.entries(obj)) {
     if (v === undefined) continue;
+    if (v === null) { out[k] = null; continue; }
     if (typeof v === "string" && v.trim() === "") continue;
     out[k] = v;
   }
@@ -67,7 +68,7 @@ const compact = (obj: Record<string, any>) => {
 export async function loginApi(payload: {
   phone: string;
   password: string;
-  recaptchaToken?: string; 
+  recaptchaToken?: string;
 }) {
   const body = {
     phone: payload.phone,
@@ -106,7 +107,8 @@ export type UpdateMePayload = Partial<{
   address: string;
   email: string | null;
   dateOfBirth: string | null;
-  avatarUrl: string | null;
+  avatarUrl: string | null;   
+  avatarFile: File | null;    
   taxCode: string | null;
   gender: "MALE" | "FEMALE" | "OTHER" | string;
   nationalId: string | null;
@@ -118,15 +120,53 @@ function buildUpdatePayload(body: UpdateMePayload) {
   return compact(payload);
 }
 
-export async function updateMe(body: UpdateMePayload) {
-  const finalBody = buildUpdatePayload(body);
-  const { data } = await api.patch<UserProfile | ApiEnvelope<UserProfile>>("/profile/me/update", finalBody);
-  return normalizeUser(unwrap<UserProfile>(data));
+function appendIfPresent(fd: FormData, key: string, val: unknown) {
+  if (val === undefined || val === null) return;
+  if (typeof val === "string" && val.trim() === "") return;
+  fd.append(key, val as any);
 }
 
-export async function changePassword(payload: { currentPassword: string; newPassword: string }) {
-  const { data } = await api.post<ApiEnvelope<unknown>>("/users/change-password", payload);
-  return data;
+function buildFormData(body: UpdateMePayload) {
+  const fd = new FormData();
+
+  appendIfPresent(fd, "fullName", body.fullName);
+  appendIfPresent(fd, "phone", body.phone);
+  appendIfPresent(fd, "address", body.address);
+  appendIfPresent(fd, "email", body.email ?? undefined);
+  appendIfPresent(fd, "dateOfBirth", body.dateOfBirth ?? undefined);
+  appendIfPresent(fd, "taxCode", body.taxCode ?? undefined);
+  appendIfPresent(fd, "nationalId", body.nationalId ?? undefined);
+
+  if (body.gender !== undefined) {
+    appendIfPresent(fd, "gender", String(body.gender).toUpperCase());
+  }
+  if (body.avatarFile instanceof File) {
+    fd.append("avatarUrl", body.avatarFile);
+  } else if (body.avatarUrl !== undefined && body.avatarUrl !== null && body.avatarUrl !== "") {
+    fd.append("avatarUrl", body.avatarUrl);
+  }
+
+  return fd;
+}
+
+export async function updateMe(body: UpdateMePayload) {
+  const hasFile = body.avatarFile instanceof File;
+
+  if (hasFile) {
+    const form = buildFormData(body);
+    const { data } = await api.patch<UserProfile | ApiEnvelope<UserProfile>>(
+      "/profile/me/update",
+      form
+    );
+    return normalizeUser(unwrap<UserProfile>(data));
+  }
+
+  const finalBody = buildUpdatePayload(body);
+  const { data } = await api.patch<UserProfile | ApiEnvelope<UserProfile>>(
+    "/profile/me/update",
+    finalBody
+  );
+  return normalizeUser(unwrap<UserProfile>(data));
 }
 
 export async function uploadAvatar(file: File) {

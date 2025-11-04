@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { getMe, updateMe, uploadAvatar, UserProfile } from "@/api/auth";
+import { getMe, updateMe, UserProfile } from "@/api/auth";
 import { useAuth } from "@/contexts/AuthContext";
 
 const DEFAULT_AVATAR = "/images/avatar-default.png";
@@ -17,7 +17,8 @@ type Profile = {
   taxCode: string;
   gender: "male" | "female" | "other" | "";
   birthday: string;
-  avatarDataUrl?: string;
+  avatarFile?: File | null;    
+  avatarPreview?: string;     
   nationalId: string;
 };
 
@@ -32,7 +33,8 @@ const toProfile = (u: UserProfile | null): Profile => {
     taxCode: u?.taxCode ?? "",
     gender,
     birthday: u?.dateOfBirth ? u.dateOfBirth.substring(0, 10) : "",
-    avatarDataUrl: u?.avatarUrl ?? "",
+    avatarPreview: u?.avatarUrl ?? "",
+    avatarFile: null,
     nationalId: u?.nationalId ?? "",
   };
 };
@@ -66,7 +68,7 @@ export default function ProfilePage() {
   const idRe = /^(?:\d{9}|\d{12}|[A-Z0-9]{8,9})$/i;
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   const validatePhone = (v: string) =>
-    !v ? undefined : phoneRe.test(v) ? undefined : "Số điện thoại không hợp lệ (VD: 0981234567 hoặc +84981234567)";
+    !v ? undefined : phoneRe.test(v) ? undefined : "Số điện thoại không hợp lệ";
   const validateId = (v: string) =>
     !v ? undefined : idRe.test(v) ? undefined : "CCCD/CMND 9 hoặc 12 số, hoặc hộ chiếu 8-9 ký tự (A-Z,0-9)";
   const validateEmail = (v: string) =>
@@ -115,6 +117,7 @@ export default function ProfilePage() {
 
   const fileRef = useRef<HTMLInputElement | null>(null);
   const onPickAvatar = () => fileRef.current?.click();
+
   const onFileChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -122,15 +125,9 @@ export default function ProfilePage() {
     if (file.size > 2 * 1024 * 1024) return alert("Ảnh tối đa 2MB.");
 
     const reader = new FileReader();
-    reader.onload = () => setProfile((p) => (p ? { ...p, avatarDataUrl: String(reader.result || "") } : p));
+    reader.onload = () =>
+      setProfile((p) => (p ? { ...p, avatarPreview: String(reader.result || ""), avatarFile: file } : p));
     reader.readAsDataURL(file);
-
-    try {
-      const url = await uploadAvatar(file);
-      setProfile((p) => (p ? { ...p, avatarDataUrl: url } : p));
-    } catch (err: any) {
-      alert(err?.response?.data?.message || "Tải ảnh thất bại");
-    }
   };
 
   const onSubmit: React.FormEventHandler = async (e) => {
@@ -150,11 +147,12 @@ export default function ProfilePage() {
       setSubmitting(true);
 
       const updated = await updateMe({
-        fullName: profile.name,                         
+        fullName: profile.name,
         address: profile.address || undefined,
         email: profile.email || null,
         dateOfBirth: profile.birthday ? profile.birthday : null,
-        avatarUrl: profile.avatarDataUrl ? profile.avatarDataUrl : null,
+        avatarFile: profile.avatarFile ?? undefined,
+        avatarUrl: profile.avatarFile ? undefined : (profile.avatarPreview === "" ? null : undefined),
         taxCode: profile.taxCode || null,
         gender: profile.gender ? profile.gender.toUpperCase() : undefined,
         nationalId: profile.nationalId ? profile.nationalId : null,
@@ -195,7 +193,7 @@ export default function ProfilePage() {
         <div className="flex items-center gap-4">
           <Avatar className="h-20 w-20 ring-2 ring-[#2ba195]/30 overflow-hidden">
             <AvatarImage
-              src={profile.avatarDataUrl || DEFAULT_AVATAR}
+              src={profile.avatarPreview || DEFAULT_AVATAR}
               alt="avatar"
               className="object-cover"
               onError={(e) => ((e.currentTarget as HTMLImageElement).src = DEFAULT_AVATAR)}
@@ -210,12 +208,12 @@ export default function ProfilePage() {
               Tải ảnh
             </Button>
             <input ref={fileRef} type="file" accept="image/*" onChange={onFileChange} className="!hidden" />
-            {profile.avatarDataUrl && (
+            {(profile.avatarPreview || "") !== "" && (
               <Button
                 type="button"
                 variant="ghost"
                 className="!shadow-sm !bg-white"
-                onClick={() => setProfile((p) => (p ? { ...p, avatarDataUrl: "" } : p))}
+                onClick={() => setProfile((p) => (p ? { ...p, avatarPreview: "", avatarFile: null } : p))}
               >
                 Xóa ảnh
               </Button>
@@ -335,7 +333,7 @@ export default function ProfilePage() {
                 setErrors((er) => ({ ...er, nationalId: validateId(v) }));
               }}
               onBlur={(e) => setErrors((er) => ({ ...er, nationalId: validateId(e.target.value.trim()) }))}
-              placeholder="VD: 0790xxxxxxx / B1234567"
+              placeholder="Nhập số CCCD hoặc CMND"
               aria-invalid={!!errors.nationalId}
               className={errors.nationalId ? "ring-2 ring-red-400 focus-visible:ring-red-400" : ""}
             />
@@ -379,7 +377,6 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* Submit */}
       <div className="pt-1">
         <Button
           type="submit"

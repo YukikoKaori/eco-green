@@ -22,6 +22,8 @@ import SearchResults from "@/pages/search/SearchResults";
 import VNPayReturn from "@/pages/payment/VNPayReturn";
 import PurchaseRequestDetail from "@/pages/purchase/PurchaseRequestDetail";
 import RecentViewsPage from "@/pages/history/RecentViewsPage";
+import OrdersPage from "@/pages/transaction/OrdersPage";
+
 
 export default function App() {
   return (
@@ -37,7 +39,14 @@ export default function App() {
         <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route path="/search" element={<SearchResults />} />
         <Route path="/payment/vnpay-return" element={<VNPayReturn />} />
-
+        <Route
+          path="/orders"
+          element={
+            <PrivateRoute>
+              <OrdersPage />
+            </PrivateRoute>
+          }
+        />
         <Route
           path="/postnotice"
           element={
