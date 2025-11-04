@@ -1,49 +1,49 @@
 import { useEffect, useMemo, useState } from "react";
-import api from "@/lib/axios";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, DollarSign, Download, Search } from "lucide-react";
+import { Loader2, DollarSign, Download, Search, CreditCard } from "lucide-react";
 import * as XLSX from "xlsx";
+import { fetchCommissions, type CommissionItem, type PageResp } from "@/api/transactions";
 
-type CommissionItem = {
-  paymentId?: string;
-  createdAt?: string;      
-  amount?: number;         
-  paymentMethod?: string;  
-  packageName?: string;    
-  durationDays?: number | null;
-  productId?: string;
-  productName?: string;
-};
+/* modern select (shadcn) */
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 const fmtVnd = (n: number) => new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "đ";
 
 export default function Commissions() {
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+
   const [rows, setRows] = useState<CommissionItem[]>([]);
+  const [meta, setMeta] = useState<Omit<PageResp<any>, "items"> | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
-  // filters
   const [q, setQ] = useState("");
   const [method, setMethod] = useState<string>("ALL");
   const [from, setFrom] = useState<string>("");
   const [to, setTo] = useState<string>("");
 
-  async function load() {
+  async function load(p = page, s = size) {
     try {
       setLoading(true);
       setErr(null);
-      const r = await api.get<CommissionItem[]>("/transactions/show");
-      setRows(Array.isArray(r.data) ? r.data : []);
+      const data = await fetchCommissions(p, s);
+      setRows(data.items || []);
+      const { items, ...m } = data;
+      setMeta(m);
     } catch (e: any) {
       setErr(e?.response?.data?.message || e?.message || "Tải dữ liệu thất bại");
     } finally {
       setLoading(false);
     }
   }
-  useEffect(() => { load(); }, []);
+
+  useEffect(() => { load(page, size); /* eslint-disable-line */ }, [page, size]);
 
   const filtered = useMemo(() => {
     const key = q.trim().toLowerCase();
@@ -53,7 +53,7 @@ export default function Commissions() {
     return rows.filter((r) => {
       if (method !== "ALL" && (r.paymentMethod || "").toUpperCase() !== method) return false;
 
-      const textHit = !key || [r.paymentId, r.packageName, r.productName, r.paymentMethod]
+      const textHit = !key || [r.paymentId, r.packageName, r.productName, r.paymentMethod, r.productId]
         .filter(Boolean).some(v => String(v).toLowerCase().includes(key));
       if (!textHit) return false;
 
@@ -76,15 +76,15 @@ export default function Commissions() {
 
   function exportExcel() {
     const data = filtered.map((x, i) => ({
-      STT: i + 1,
+      STT: i + 1 + (meta?.page ?? 0) * (meta?.size ?? 10),
+      "ID Sản phẩm": x.productId || "",
+      "Tên sản phẩm": x.productName || "",
       "Mã thanh toán": x.paymentId || "",
-      "Thời gian": x.createdAt ? x.createdAt.replace("T"," ").slice(0,19) : "",
+      "Thời gian": x.createdAt ? x.createdAt.replace("T", " ").slice(0, 19) : "",
       "Số tiền": Number(x.amount || 0),
       "Phương thức": x.paymentMethod || "",
       "Gói": x.packageName || "",
       "Số ngày": x.durationDays ?? "",
-      "ID Sản phẩm": x.productId || "",
-      "Tên sản phẩm": x.productName || "",
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const amountCol = Object.keys(data[0] || {}).indexOf("Số tiền");
@@ -99,6 +99,17 @@ export default function Commissions() {
     XLSX.utils.book_append_sheet(wb, ws, "HoaHong");
     XLSX.writeFile(wb, `hoa-hong-dang-tin.xlsx`);
   }
+
+  const totalPages = meta?.totalPages ?? 1;
+  const canPrev = (meta?.page ?? 0) > 0;
+  const canNext = (meta?.page ?? 0) < (totalPages - 1);
+  const pages12 = useMemo(() => {
+    const tp = totalPages;
+    const arr: number[] = [];
+    if (tp >= 1) arr.push(0); // trang 1
+    if (tp >= 2) arr.push(1); // trang 2
+    return arr;
+  }, [totalPages]);
 
   return (
     <div className="p-4 md:p-6 space-y-4">
@@ -115,27 +126,47 @@ export default function Commissions() {
             </div>
           </div>
           <Badge variant="secondary" className="text-[#246f67]">
-            Tổng: {fmtVnd(totalAmount)}
+            Tổng: {meta?.totalElements ?? 0}
           </Badge>
         </div>
       </div>
 
       {/* Toolbar */}
       <Card className="p-3 border rounded-xl">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
           <div className="md:col-span-2">
             <label className="text-xs text-slate-500">Tìm kiếm</label>
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Mã thanh toán / gói / sản phẩm…" className="pl-8" />
+              <Input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="ID SP / tên SP / mã TT / gói…"
+                className="pl-8"
+              />
             </div>
           </div>
+
+          {/* modern method select */}
           <div>
             <label className="text-xs text-slate-500">Phương thức</label>
-            <select className="h-9 w-full rounded border px-2" value={method} onChange={(e) => setMethod(e.target.value)}>
-              {methods.map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
+            <Select value={method} onValueChange={setMethod}>
+              <SelectTrigger className="h-9 w-full rounded-xl border-slate-200 shadow-sm data-[state=open]:ring-2 data-[state=open]:ring-emerald-200">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-slate-500" />
+                  <SelectValue placeholder="Tất cả" />
+                </div>
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-slate-200 shadow-md">
+                {methods.map((m) => (
+                  <SelectItem key={m} value={m} className="cursor-pointer">
+                    {m === "ALL" ? "Tất cả" : m}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
           <div>
             <label className="text-xs text-slate-500">Từ ngày</label>
             <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
@@ -144,12 +175,11 @@ export default function Commissions() {
             <label className="text-xs text-slate-500">Đến ngày</label>
             <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
           </div>
-        </div>
-        <div className="mt-3 flex gap-2">
-          <Button variant="outline" onClick={load}>Làm mới</Button>
-          <Button className="!bg-[#246f67] hover:bg-emerald-700" onClick={exportExcel}>
-            <Download className="h-4 w-4 mr-1" /> Xuất Excel
-          </Button>
+          <div className="mt-6 flex gap-2">
+            <Button className="!bg-[#246f67] hover:bg-emerald-700" onClick={exportExcel}>
+              <Download className="h-4 w-4 mr-1" /> Xuất Excel
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -160,20 +190,20 @@ export default function Commissions() {
           <table className="w-full text-sm">
             <thead className="bg-slate-50 sticky top-0 z-10">
               <tr className="text-[#246f67]">
-                <Th>#</Th>
+                {/* BỎ CỘT # — ĐƯA ID & TÊN SP RA TRƯỚC */}
+                <Th className="w-[120px]">ID SP</Th>
+                <Th className="min-w-[220px]">Tên sản phẩm</Th>
                 <Th>Mã thanh toán</Th>
                 <Th className="min-w-[160px]">Thời gian</Th>
                 <Th className="text-right pr-3">Số tiền</Th>
                 <Th>Phương thức</Th>
                 <Th>Gói</Th>
                 <Th className="text-center">Ngày</Th>
-                <Th>ID SP</Th>
-                <Th>Tên sản phẩm</Th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {loading && (
-                <tr><Td colSpan={9}>
+                <tr><Td colSpan={8}>
                   <div className="flex items-center gap-2 text-slate-500 py-6">
                     <Loader2 className="h-4 w-4 animate-spin" /> Đang tải…
                   </div>
@@ -181,30 +211,63 @@ export default function Commissions() {
               )}
 
               {!loading && filtered.length === 0 && (
-                <tr><Td colSpan={9} className="py-8 text-center text-slate-500">Không có dữ liệu.</Td></tr>
+                <tr><Td colSpan={8} className="py-8 text-center text-slate-500">Không có dữ liệu.</Td></tr>
               )}
 
               {!loading && filtered.map((r, i) => (
-                <tr key={r.paymentId || i} className="hover:bg-emerald-50/40">
-                  <Td className="tabular-nums">{i + 1}</Td>
+                <tr key={r.paymentId || `${r.productId}-${i}`} className="hover:bg-emerald-50/40">
+                  <Td className="tabular-nums">{r.productId || "-"}</Td>
+                  <Td className="truncate">{r.productName || "-"}</Td>
                   <Td className="font-medium">{r.paymentId}</Td>
-                  <Td className="tabular-nums">{r.createdAt ? r.createdAt.slice(0,19).replace("T"," ") : "-"}</Td>
+                  <Td className="tabular-nums">{r.createdAt ? r.createdAt.slice(0, 19).replace("T", " ") : "-"}</Td>
                   <Td className="text-right tabular-nums pr-3">{fmtVnd(Number(r.amount || 0))}</Td>
                   <Td>{r.paymentMethod || "-"}</Td>
                   <Td>{r.packageName || "-"}</Td>
                   <Td className="text-center">{r.durationDays ?? "-"}</Td>
-                  <Td className="tabular-nums">{r.productId || "-"}</Td>
-                  <Td className="truncate">{r.productName || "-"}</Td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        {/* Footer tổng */}
-        <div className="flex items-center justify-end p-3 border-t bg-slate-50 text-sm">
-          <span className="text-[#246f67] font-medium">Tổng tiền:</span>
-          <span className="ml-2 font-semibold">{fmtVnd(totalAmount)}</span>
+        {/* Footer tổng + pagination 1 . 2 trước / sau */}
+        <div className="flex items-center justify-end gap-2 p-3 border-t bg-slate-50 text-sm">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="!text-[#246f67]"
+              onClick={() => setPage(p => Math.max(0, p - 1))}
+              disabled={(meta?.page ?? 0) <= 0}
+            >
+              Trước
+            </Button>
+
+            {useMemo(() => {
+              const tp = totalPages;
+              const arr: number[] = [];
+              if (tp >= 1) arr.push(0);
+              if (tp >= 2) arr.push(1);
+              return arr;
+            }, [totalPages]).map((pi) => (
+              <Button
+                key={pi}
+                variant={(meta?.page ?? 0) === pi ? "default" : "outline"}
+                onClick={() => setPage(pi)}
+                className="w-10 !text-[#246f67]"
+              >
+                {pi + 1}
+              </Button>
+            ))}
+
+            <Button
+              variant="outline"
+              className="!text-[#246f67]"
+              onClick={() => setPage(p => Math.min((totalPages - 1), p + 1))}
+              disabled={(meta?.page ?? 0) >= (totalPages - 1)}
+            >
+              Sau
+            </Button>
+          </div>
         </div>
       </div>
     </div>

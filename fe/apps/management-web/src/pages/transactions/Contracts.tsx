@@ -1,44 +1,39 @@
 import { useEffect, useMemo, useState } from "react";
-import api from "@/lib/axios";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, FileText, Download, ExternalLink, Search } from "lucide-react";
 import * as XLSX from "xlsx";
-
-type ContractItem = {
-  title?: string;
-  sellerName?: string;
-  buyerName?: string;
-  signedAt?: string;     
-  contractUrl?: string; 
-};
+import { fetchContractsHistory, type ContractItem, type PageResp } from "@/api/transactions";
 
 export default function Contracts() {
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+
   const [rows, setRows] = useState<ContractItem[]>([]);
+  const [meta, setMeta] = useState<Omit<PageResp<any>, "items"> | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-
-  // filters
   const [q, setQ] = useState("");
   const [from, setFrom] = useState<string>("");
   const [to, setTo] = useState<string>("");
 
-  async function load() {
+  async function load(p = page, s = size) {
     try {
       setLoading(true);
       setErr(null);
-      const r = await api.get<ContractItem[] | ContractItem>("/staff/product/transaction/history");
-      const data = Array.isArray(r.data) ? r.data : (r.data ? [r.data] : []);
-      setRows(data);
+      const data = await fetchContractsHistory(p, s);
+      setRows(data.items || []);
+      const { items, ...m } = data;
+      setMeta(m);
     } catch (e: any) {
       setErr(e?.response?.data?.message || e?.message || "Tải dữ liệu thất bại");
     } finally {
       setLoading(false);
     }
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(page, size); /* eslint-disable-line */ }, [page, size]);
 
   const filtered = useMemo(() => {
     const key = q.trim().toLowerCase();
@@ -59,11 +54,22 @@ export default function Contracts() {
     });
   }, [rows, q, from, to]);
 
-  const totalContracts = filtered.length;
+  const totalContracts = meta?.totalElements ?? filtered.length;
+  const totalPages = meta?.totalPages ?? 1;
+  const canPrev = (meta?.page ?? 0) > 0;
+  const canNext = (meta?.page ?? 0) < (totalPages - 1);
+
+  const pages12 = useMemo(() => {
+    const tp = totalPages;
+    const arr: number[] = [];
+    if (tp >= 1) arr.push(0); // trang 1
+    if (tp >= 2) arr.push(1); // trang 2
+    return arr;
+  }, [totalPages]);
 
   function exportExcel() {
     const data = filtered.map((x, i) => ({
-      STT: i + 1,
+      STT: i + 1 + (meta?.page ?? 0) * (meta?.size ?? 10),
       "Tiêu đề": x.title || "",
       "Người bán": x.sellerName || "",
       "Người mua": x.buyerName || "",
@@ -91,7 +97,7 @@ export default function Contracts() {
             </div>
           </div>
           <Badge variant="secondary" className="text-[#246f67]">
-            Tổng: {totalContracts}
+           Tổng: {totalContracts}
           </Badge>
         </div>
       </div>
@@ -115,7 +121,6 @@ export default function Contracts() {
             <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={load}>Làm mới</Button>
             <Button className="!bg-[#246f67] hover:bg-emerald-700" onClick={exportExcel}>
               <Download className="h-4 w-4 mr-1" /> Xuất Excel
             </Button>
@@ -135,7 +140,7 @@ export default function Contracts() {
                 <Th>Người bán</Th>
                 <Th>Người mua</Th>
                 <Th className="min-w-[160px]">Ký lúc</Th>
-                <Th className="w-[140px] text-right pr-3">Tệp</Th>
+                <Th className="w-[140px] text-right pr-3">Tác vụ</Th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -153,7 +158,7 @@ export default function Contracts() {
 
               {!loading && filtered.map((r, i) => (
                 <tr key={i} className="hover:bg-emerald-50/40">
-                  <Td className="tabular-nums">{i + 1}</Td>
+                  <Td className="tabular-nums">{i + 1 + (meta?.page ?? 0) * (meta?.size ?? 10)}</Td>
                   <Td className="font-medium">{r.title || "-"}</Td>
                   <Td>{r.sellerName || "-"}</Td>
                   <Td>{r.buyerName || "-"}</Td>
@@ -180,6 +185,38 @@ export default function Contracts() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination: Trước | 1 | 2 | Sau */}
+        <div className="flex items-center justify-end gap-2 p-3 border-t bg-slate-50 text-sm">
+          <Button
+            variant="outline"
+            className="!text-[#246f67]"
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={!canPrev}
+          >
+            Trước
+          </Button>
+
+          {pages12.map((pi) => (
+            <Button
+              key={pi}
+              variant={(meta?.page ?? 0) === pi ? "default" : "outline"}
+              onClick={() => setPage(pi)}
+              className="w-10 !text-[#246f67]"
+            >
+              {pi + 1}
+            </Button>
+          ))}
+
+          <Button
+            variant="outline"
+            className="!text-[#246f67]"
+            onClick={() => setPage(p => Math.min((totalPages - 1), p + 1))}
+            disabled={!canNext}
+          >
+            Sau
+          </Button>
         </div>
       </div>
     </div>
