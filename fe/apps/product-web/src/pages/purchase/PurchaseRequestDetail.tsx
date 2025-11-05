@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -11,18 +11,7 @@ import {
   respondPurchaseRequest,
   listSellerPurchaseRequests,
 } from "@/api/productDetail";
-
-function parseNumberLoose(v?: number | string | null): number | null {
-  if (v == null) return null;
-  if (typeof v === "number") return Number.isFinite(v) ? v : null;
-  const n = Number(String(v).replace(/[^\d.-]/g, ""));
-  return Number.isFinite(n) ? n : null;
-}
-function currencyVND(v?: number | string | null) {
-  const n = parseNumberLoose(v);
-  if (n == null) return "--";
-  return n.toLocaleString("vi-VN") + " đ";
-}
+import { currencyVND } from "@/utils/price"; 
 
 export default function PurchaseRequestDetail() {
   const { id = "" } = useParams();

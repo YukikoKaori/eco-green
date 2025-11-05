@@ -1,4 +1,5 @@
 import api from "@/lib/axios";
+import { parsePrice } from "@/utils/price"; 
 
 export type ProductImage = {
   id?: string;
@@ -89,15 +90,6 @@ export type NormalizedSimilarItem = {
 };
 
 /* ----------------------------- Helpers ----------------------------- */
-function parseNumberLoose(v: unknown): number {
-  if (typeof v === "number") return Number.isFinite(v) ? v : NaN;
-  if (typeof v === "string") {
-    const n = Number(v.replace(/[^\d.-]/g, ""));
-    return Number.isFinite(n) ? n : NaN;
-  }
-  return NaN;
-}
-
 export function normalizeSimilar(list: SimilarItemRaw[] | unknown): NormalizedSimilarItem[] {
   if (!Array.isArray(list)) return [];
   return list.map((x) => {
@@ -105,7 +97,7 @@ export function normalizeSimilar(list: SimilarItemRaw[] | unknown): NormalizedSi
     return {
       id: obj.productId,
       title: obj.tittle ?? "",
-      price: parseNumberLoose(obj.price) || 0,
+      price: parsePrice(obj.price) ?? 0, 
       brandName: obj.brandName ?? null,
       modelName: obj.modelName ?? null,
       image: obj.images ?? null,
