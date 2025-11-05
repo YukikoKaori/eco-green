@@ -1,6 +1,5 @@
 import api from "@/lib/axios";
 
-/* ── Types ─────────────────────────────────────────────────────────── */
 export type SearchByNameItem = {
   id: string;
   title: string;
@@ -37,7 +36,7 @@ export type SearchByNameItem = {
 
 export type SearchByNameResponse = {
   items: SearchByNameItem[];
-  page: number;          // 0-based
+  page: number;          
   size: number;
   totalElements: number;
   totalPages: number;
@@ -56,9 +55,7 @@ const toInt = (v: any, def = 0) =>
 const toBool = (v: any, def = false) =>
   typeof v === "boolean" ? v : def;
 
-/** Chuẩn hoá nhiều kiểu response của BE về 1 format thống nhất */
 const normalizeResp = (raw: any, fallbackSize = 20): SearchByNameResponse => {
-  // BE cũ có thể trả mảng thuần
   if (Array.isArray(raw)) {
     const items = raw as SearchByNameItem[];
     return {
@@ -97,7 +94,6 @@ const normalizeResp = (raw: any, fallbackSize = 20): SearchByNameResponse => {
   };
 };
 
-/* ── Search by name (kèm filter) ───────────────────────────────────── */
 export async function searchProductsByName(
   name: string,
   page = 0,
@@ -109,7 +105,7 @@ export async function searchProductsByName(
     maxPrice?: number;
     yearFrom?: number;
     yearTo?: number;
-    sort?: string; // "createdAt,desc"
+    sort?: string; 
   }
 ): Promise<SearchByNameResponse> {
   if (!name.trim()) {
@@ -136,13 +132,10 @@ export async function searchProductsByName(
   if (Number.isFinite(opts?.yearFrom)) params.yearFrom = opts!.yearFrom;
   if (Number.isFinite(opts?.yearTo)) params.yearTo = opts!.yearTo;
 
-  // BE hiện có endpoint by-name (đã hỗ trợ phân trang)
   const { data } = await api.get("/product/search/by-name", { params, signal });
   return normalizeResp(data, size);
 }
 
-/* ── Provinces (public API để filter Thành phố) ──────────────────────
-   Dùng chung approach với file vehicle bạn gửi: lấy từ FPO. */
 export async function fetchProvinces(): Promise<Province[]> {
   const r = await fetch("https://vn-public-apis.fpo.vn/provinces/getAll?limit=-1");
   const j = await r.json();

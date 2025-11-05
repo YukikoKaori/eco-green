@@ -17,8 +17,7 @@ type Section = { title: string; items: Item[] };
 
 const SECTIONS: Section[] = [
   { title: "Tiện ích", items: [
-    { to: "/saved", label: "Tin đăng đã lưu", icon: <Bookmark className="w-4 h-4" /> },
-    { to: "/search/saved", label: "Tìm kiếm đã lưu", icon: <SearchIcon className="w-4 h-4" /> },
+    { to: "/account/wishlist", label: "Tin đăng đã lưu", icon: <Bookmark className="w-4 h-4" /> },
     { to: "/history/views", label: "Lịch sử xem tin", icon: <Clock className="w-4 h-4" /> },
     { to: "/ratings", label: "Đánh giá từ tôi", icon: <Star className="w-4 h-4" /> },
   ]},
