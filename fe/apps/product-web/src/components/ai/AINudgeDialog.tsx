@@ -51,7 +51,6 @@ export default function AINudgeDialog({
   return (
     <>
       <div className="fixed inset-0 z-[70] bg-black/20 backdrop-blur-[1px]" onClick={close} />
-      {/* tăng khoảng cách với top */}
       <div className="fixed z-[71] inset-x-4 sm:inset-auto sm:right-6 sm:left-6 top-28 md:top-32">
         <div className="mx-auto max-w-3xl rounded-2xl border border-emerald-100 bg-white shadow-xl overflow-hidden">
           {/* header */}

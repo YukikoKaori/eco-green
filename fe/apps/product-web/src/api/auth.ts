@@ -175,3 +175,69 @@ export async function uploadAvatar(file: File) {
   const { data } = await api.post<{ url: string } | ApiEnvelope<{ url: string }>>("/users/avatar", form);
   return unwrap<{ url: string }>(data).url;
 }
+//product for profile
+export type MemberProduct = {
+  id: string;
+  title: string;
+  description?: string;
+  type?: "VEHICLE" | "BATTERY" | string;
+  productImagesList?: Array<{ url?: string; imageUrl?: string; isPrimary?: boolean }>;
+  price?: string | number | null;
+  conditionType?: "NEW" | "USED" | string;
+  status?: string;
+  createdAt?: string;
+
+  addressDetail?: string | null;
+  city?: string | null;
+  district?: string | null;
+  ward?: string | null;
+
+  brandName?: string | null;
+  modelName?: string | null;
+};
+
+export type MemberProductStatus = "ACTIVE" | "SOLD";
+
+function toArray<T = any>(data: any): T[] {
+  if (Array.isArray(data)) return data as T[];
+  if (Array.isArray(data?.items)) return data.items as T[];
+  if (Array.isArray(data?.content)) return data.content as T[];
+  return [];
+}
+
+export async function getMemberProducts(
+  status: MemberProductStatus,
+  opts?: { page?: number; size?: number },
+  signal?: AbortSignal
+): Promise<MemberProduct[]> {
+  const params: Record<string, any> = { status };
+  if (Number.isFinite(opts?.page)) params.page = opts!.page;
+  if (Number.isFinite(opts?.size)) params.size = opts!.size;
+
+  const { data } = await api.get<any>("/member/product", { params, signal });
+  return toArray<MemberProduct>(unwrap<any>(data));
+}
+
+export function pickProductImage(p?: MemberProduct) {
+  return (
+    p?.productImagesList?.find(x => x.isPrimary)?.imageUrl ||
+    p?.productImagesList?.[0]?.imageUrl ||
+    p?.productImagesList?.[0]?.url ||
+    "/images/placeholder.png"
+  );
+}
+
+export function formatVND(v?: string | number | null) {
+  if (v == null || v === "") return "—";
+
+  if (typeof v === "number") {
+    return Number.isFinite(v) ? Math.round(v).toLocaleString("vi-VN") + " đ" : "—";
+  }
+
+  const s = String(v).trim();
+  const digits = s.replace(/[^0-9]/g, "");
+  if (!digits) return "—";
+
+  const n = Number(digits);
+  return Number.isFinite(n) ? n.toLocaleString("vi-VN") + " đ" : "—";
+}

@@ -1,4 +1,3 @@
-// src/contexts/WishlistContext.tsx
 import { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { addWishlist, removeWishlist, fetchAllWishlistIds } from "@/api/WishlistApi";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,7 +7,7 @@ type Ctx = {
   ids: Set<string>;
   isLiked: (id: string) => boolean;
   toggle: (id: string) => Promise<boolean>;
-  refresh: () => Promise<void>; // ✅ bổ sung
+  refresh: () => Promise<void>; 
 };
 
 const WishlistContext = createContext<Ctx | null>(null);
@@ -26,7 +25,6 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refresh = useCallback(async () => {
-    // ✅ load lại từ server
     if (!user) {
       setIds(new Set());
       return;
@@ -35,12 +33,10 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       const set = await fetchAllWishlistIds();
       if (mounted.current) setIds(set);
     } catch {
-      // im lặng, tránh spam toast khi refresh nền
     }
   }, [user]);
 
   useEffect(() => {
-    // ✅ load lần đầu theo user
     if (!user) {
       setIds(new Set());
       return;
@@ -61,7 +57,6 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (ids.has(id)) {
-          // optimistic remove
           setIds((prev) => {
             const n = new Set(prev);
             n.delete(id);
@@ -96,7 +91,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
           }
         }
       },
-      refresh, // ✅ expose ra context
+      refresh,
     }),
     [ids, user, refresh]
   );

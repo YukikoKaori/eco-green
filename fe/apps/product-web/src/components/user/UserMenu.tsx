@@ -2,7 +2,7 @@ import { JSX, memo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { logoutApi } from "@/api/auth";
 import {
-  Bookmark, Search as SearchIcon, Clock, Star, History, Store,
+  Bookmark, Search as Clock, Star, History,
   Settings, HelpCircle, MessageSquare, LogOut, User, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";

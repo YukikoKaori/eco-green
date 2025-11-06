@@ -81,7 +81,7 @@ export default function PostNew() {
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  /* Form (không autosave) */
+  /* Form */
   const [form, setForm] = useState<FormState>({
     category: "vehicle",
     title: "",
@@ -587,7 +587,7 @@ export default function PostNew() {
                       </div>
                     )}
 
-                    {/* Phiên bản (KHÔNG bắt buộc) */}
+                    {/* Phiên bản */}
                     {selectedCategoryId && selectedBrandId && selectedModelId && (
                       <div className="flex flex-col gap-1">
                         <Label className="text-[#0f766e]">Phiên bản</Label>
@@ -737,7 +737,7 @@ export default function PostNew() {
 
                 <div className="text-xs text-gray-500">{descLeft}/1500 kí tự</div>
 
-                {/* ---- GIÁ (nhập tay hoặc bấm AI ở góc) ---- */}
+                {/* ---- GIÁ nhập tay hoặc bấm AI ở góc ---- */}
                 <div className="mt-4 flex flex-col gap-1">
                   <div className="flex items-center justify-between">
                     <Label className="text-[#0f766e]">Giá (VND)<Required /></Label>
