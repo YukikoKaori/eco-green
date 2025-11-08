@@ -13,7 +13,6 @@ import {
   pickProductImage,
   formatVND,
 } from "@/api/auth";
-import SellerReviews from "@/components/feedback/SellerReviews";
 
 /* ===== helpers ===== */
 function daysSince(iso?: string | null) {
@@ -180,13 +179,6 @@ export default function ProfilePublic() {
                   </ul>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/*  Đánh giá người bán */}
-          <div className="rounded-2xl bg-white shadow-sm border border-emerald-100">
-            <div className="p-5">
-              <SellerReviews sellerId={me?.id || ""} isOwner={isOwner} />
             </div>
           </div>
         </aside>

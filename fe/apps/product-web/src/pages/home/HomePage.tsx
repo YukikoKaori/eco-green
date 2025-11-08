@@ -3,14 +3,20 @@ import BannerCarousel from "@/components/ui/BannerCarousel";
 import type { ListingWithKey } from "@/listings/types";
 import KeywordSection from "@/components/ui/KeywordSection";
 import SeoAbout from "@/components/ui/SeoAbout";
-import BrandStrip, { BrandItem } from "@/components/ui/BrandStrip";
+import BrandStrip from "@/components/ui/BrandStrip";
 import ListingTabs from "@/components/ui/ListingTabs";
 import { fetchLatestListings, fetchForYouListings } from "@/listings/api/listing.api";
+import { useBrandItems } from "@/hooks/useBrandItems"; 
 
 export default function HomePage() {
   const [latest, setLatest] = useState<ListingWithKey[]>([]);
   const [forYou, setForYou] = useState<ListingWithKey[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const { items: brandItems, loading: brandLoading, error: brandErr } = useBrandItems({
+    type: "ALL",
+    buildLink: (b) => `/xe-dien?brand=${encodeURIComponent(b.name)}`,
+  });
 
   useEffect(() => {
     (async () => {
@@ -23,23 +29,13 @@ export default function HomePage() {
         setForYou(forYouRes.length ? forYouRes : latestRes);
       } catch (e) {
         console.error("Load listings failed:", e);
-        setLatest([]); setForYou([]);
+        setLatest([]);
+        setForYou([]);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
-
-  const brands: BrandItem[] = [
-    { name: "VinFast", src: "/images/vinfast.png", to: "/xe-dien?brand=VinFast" },
-    { name: "BYD", src: "/images/byd.png", to: "/xe-dien?brand=BYD" },
-    { name: "Wuling", src: "/images/wuling.png", to: "/xe-dien?brand=Wuling" },
-    { name: "Hyundai", src: "/images/hyundai.png", to: "/xe-dien?brand=Hyundai" },
-    { name: "BMW", src: "/images/bmw.png", to: "/xe-dien?brand=BMW" },
-    { name: "Audi", src: "/images/audi.png", to: "/xe-dien?brand=Audi" },
-    { name: "Porsche", src: "/images/porsche.png", to: "/xe-dien?brand=Porsche" },
-    { name: "MG", src: "/images/mg.png", to: "/xe-dien?brand=MG" },
-  ];
 
   return (
     <div className="relative w-full mb-10 mt-12">
@@ -57,7 +53,26 @@ export default function HomePage() {
           />
         </section>
 
-        <BrandStrip items={brands} />
+        {brandErr ? (
+          <div className="rounded-xl border bg-white p-4 text-red-600">
+            Không tải được danh sách hãng. Vui lòng thử lại.
+          </div>
+        ) : brandLoading ? (
+          <div className="rounded-xl border bg-white p-4 shadow-sm">
+            <div className="h-4 w-48 bg-gray-200 rounded mb-4" />
+            <div className="flex gap-12">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="min-w-[4.75rem] flex flex-col items-center">
+                  <div className="h-[72px] w-[72px] rounded-full bg-gray-100 animate-pulse" />
+                  <div className="h-3 w-16 bg-gray-100 rounded mt-2" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <BrandStrip items={brandItems} />
+        )}
+
         <section />
 
         <ListingTabs

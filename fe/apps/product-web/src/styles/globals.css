@@ -214,3 +214,5 @@ form :where(input, textarea, [role="textbox"], [contenteditable="true"]) {
   -webkit-user-select: text;
   user-select: text;
 }
+.no-scrollbar::-webkit-scrollbar { display: none; } 
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; } 

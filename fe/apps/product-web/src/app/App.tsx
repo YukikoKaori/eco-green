@@ -10,7 +10,6 @@ import SocialPage from "@/pages/account/SocialPage";
 import AuthLogin from "@/pages/auth/AuthLogin";
 import AuthRegister from "@/pages/auth/AuthRegister";
 import ProfilePublicPage from "@/pages/account/ProfilePublic";
-import SellerPublicPage from "@/pages/account/SellerPublicPage"; 
 import PrivateRoute from "@/app/PrivateRoute";
 import GuestOnlyRoute from "@/app/GuestOnlyRoute";
 import PostNew from "@/pages/posts/PostNew";
@@ -42,11 +41,7 @@ export default function App() {
         <Route path="/search" element={<SearchResults />} />
         <Route path="/payment/vnpay-return" element={<VNPayReturn />} />
         <Route path="/oauth2/popup-bridge" element={<OAuthPopupBridge />} />
-        <Route path="/seller/:sellerId" element={<SellerPublicPage />} />
         <Route path="/profile/:username" element={<ProfilePublicPage />} />
-        {/* Hoặc chuyển hẳn về route mới:
-            <Route path="/profile/:username" element={<Navigate to="/seller/:username" replace />} />
-        */}
 
         <Route
           path="/orders"
