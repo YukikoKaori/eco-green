@@ -13,6 +13,7 @@ import {
   fetchPendingByIdViaList,
   type PendingRow,
 } from "@/api/moderation";
+import { toast } from "sonner";
 
 /* ---------- constants & helpers ---------- */
 const BRAND = "#0f766e";
@@ -20,7 +21,6 @@ const BRAND = "#0f766e";
 const fmtMoney = (v: number | null | undefined) =>
   v == null ? "—" : v.toLocaleString("vi-VN") + " ₫";
 
-/** Chuẩn hoá ISO có mili-giây > 3 chữ số (VD .9046017 -> .904) để tránh Invalid Date */
 const normalizeIso = (iso?: string | null): string | null => {
   if (!iso) return null;
   return String(iso).trim().replace(/(\.\d{3})\d+/, "$1");
@@ -70,7 +70,6 @@ export default function ReviewDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
-  // F5 fallback: quét list pending để tìm id
   useEffect(() => {
     if (!id || itemFromState) return;
     let alive = true;
@@ -182,7 +181,6 @@ export default function ReviewDetailPage() {
                           : []),
                         { label: "Gói hiển thị", value: item.packageName || "—" },
                         { label: "Giá", value: fmtMoney(item.amount) },
-                        { label: "Cập nhật", value: fmtDate(item.updateAt) },
                       ]}
                     />
                   </Section>
@@ -300,8 +298,9 @@ export default function ReviewDetailPage() {
                       onClick={async () => {
                         try {
                           setSubmitting(true);
-                          const updated = await approveActive(id!); 
-                          setItem(updated);                          
+                          const updated = await approveActive(id!);
+                          setItem(updated);
+                          toast.success("Đã duyệt & kích hoạt bài đăng!"); 
                           nav("/posts/moderate?status=ACTIVE", { replace: true });
                         } finally {
                           setSubmitting(false);
@@ -320,6 +319,7 @@ export default function ReviewDetailPage() {
                         try {
                           setSubmitting(true);
                           await rejectWithReason(id!, rejectReason.trim());
+                          toast.success("Đã từ chối bài đăng."); // <<< CHỈ THÊM TOAST
                           nav("/posts/moderate?status=REJECTED", { replace: true });
                         } finally {
                           setSubmitting(false);

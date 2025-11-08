@@ -8,6 +8,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import api from "@/lib/axios";
 import ReCAPTCHA from "react-google-recaptcha";
 
+const API_URL = import.meta.env.VITE_API_URL as string; // ✅ dùng cho Google OAuth popup
+
 export default function AuthLogin() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -38,7 +40,6 @@ export default function AuthLogin() {
       setError("Vui lòng nhập mật khẩu.");
       return;
     }
-
     if (siteKey && !captchaToken) {
       setError("Vui lòng xác nhận reCAPTCHA trước khi đăng nhập.");
       return;
@@ -64,7 +65,6 @@ export default function AuthLogin() {
       api.defaults.headers.common.Authorization = `Bearer ${bare}`;
 
       const me = await getMe();
-
       setUser(
         {
           id: me.id,
@@ -91,7 +91,6 @@ export default function AuthLogin() {
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || "Đăng nhập thất bại";
       setError(msg);
-
       recaptchaRef.current?.reset();
       setCaptchaToken(null);
     } finally {
@@ -99,9 +98,65 @@ export default function AuthLogin() {
     }
   }
 
-  function onGoogle() {
-    window.location.assign(oauthUrls.google);
+  // ✅ Google OAuth bằng popup (Cách B)
+  function onGooglePopup() {
+    // FE bridge sẽ nhận token và postMessage về window.opener
+    const redirect = `${window.location.origin}/oauth2/popup-bridge`;
+    const authUrl = `${API_URL}/oauth2/authorization/google?redirect_uri=${encodeURIComponent(redirect)}`;
+
+    const w = 520, h = 640;
+    const left = window.screenX + (window.outerWidth - w) / 2;
+    const top = window.screenY + (window.outerHeight - h) / 2;
+    const popup = window.open(
+      authUrl,
+      "google_oauth",
+      `width=${w},height=${h},left=${left},top=${top},resizable,scrollbars`
+    );
+
+    function onMsg(ev: MessageEvent) {
+      if (ev.origin !== window.location.origin) return; // bảo mật origin
+      const { token, error } = ev.data || {};
+      window.removeEventListener("message", onMsg);
+      try { popup?.close(); } catch {}
+
+      if (error || !token) {
+        setError(error || "Không nhận được token từ Google");
+        return;
+      }
+
+      const bare = String(token).startsWith("Bearer ") ? String(token).slice(7) : String(token);
+      localStorage.setItem("access_token", bare);
+      api.defaults.headers.common.Authorization = `Bearer ${bare}`;
+
+      getMe()
+        .then((me) => {
+          setUser(
+            {
+              id: me.id,
+              username: me.username,
+              fullName: me.fullName,
+              email: me.email ?? "",
+              phone: me.phone,
+              status: me.status,
+              gender: me.gender,
+              dateOfBirth: me.dateOfBirth ?? null,
+              address: me.address ?? null,
+              avatarUrl: me.avatarUrl ?? null,
+              taxCode: me.taxCode ?? null,
+              nationalId: me.nationalId ?? null,
+              role: me.role,
+            },
+            { remember: "local" }
+          );
+          nav("/", { replace: true });
+        })
+        .catch(() => setError("Không lấy được thông tin tài khoản sau khi đăng nhập Google."));
+    }
+
+    window.addEventListener("message", onMsg);
   }
+
+  // Facebook có thể giữ redirect bình thường (hoặc tự làm popup tương tự)
   function onFacebook() {
     window.location.assign(oauthUrls.facebook);
   }
@@ -148,8 +203,8 @@ export default function AuthLogin() {
           {/* Password */}
           <label className="block">
             <span className="text-sm font-bold text-[#0f766e]">Mật khẩu</span>
-            <div className="mt-1 flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3">
-              <Lock className="w-4 h-4 text-gray-500" />
+            <div className="mt-2 flex itemsCenter gap-2 rounded-xl border border-gray-300 bg-white px-3">
+              <Lock className="mt-2 w-4 h-6 text-gray-500" />
               <Input
                 required
                 name="password"
@@ -230,21 +285,24 @@ export default function AuthLogin() {
 
         {/* Social Login */}
         <div className="grid gap-2 mb-5">
+          {/* ✅ Google popup */}
           <button
-            onClick={onGoogle}
+            onClick={onGooglePopup}
             type="button"
             className="!inline-flex !items-center !justify-center !gap-2 !w-full !h-10 !rounded-full !border !border-gray-200 !bg-white !text-gray-800"
           >
             <GoogleIcon className="w-5 h-5" />
-            <span>Đăng ký với Google</span>
+            <span>Đăng nhập với Google</span>
           </button>
+
+          {/* Facebook giữ như cũ, nếu muốn cũng có thể làm popup tương tự */}
           <button
             onClick={onFacebook}
             type="button"
             className="!inline-flex !items-center !justify-center !gap-2 !w-full !h-10 !rounded-full !border !border-gray-200 !bg-white !text-gray-800"
           >
             <FacebookIcon className="w-5 h-5" />
-            <span>Đăng ký với Facebook</span>
+            <span>Đăng nhập với Facebook</span>
           </button>
         </div>
       </div>

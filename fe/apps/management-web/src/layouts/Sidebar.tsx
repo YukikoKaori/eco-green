@@ -12,6 +12,7 @@ import {
   ChevronDown,
   LockKeyhole,
   ListOrdered,
+  Info, 
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -43,7 +44,7 @@ export default function Sidebar() {
     [pathname]
   );
   const isSettingsActive = useMemo(
-    () => pathname.startsWith("/settings"),
+    () => pathname.startsWith("/settings") || pathname === "/profile" || pathname === "/password",
     [pathname]
   );
 
@@ -107,7 +108,7 @@ export default function Sidebar() {
               id="menu-posts"
               className={[
                 "overflow-hidden pl-9 pr-1",
-                openPosts ? "max-h-64 py-1" : "max-h-0",
+                openPosts ? "max-h-80 py-1" : "max-h-0",
                 "transition-[max-height,padding] duration-300 ease-in-out",
               ].join(" ")}
             >
@@ -131,6 +132,18 @@ export default function Sidebar() {
               >
                 <ListOrdered className="h-4 w-4" />
                 <span className="truncate">Các khiếu nại</span>
+              </NavLink>
+
+              {/* ✅ Thông tin các hãng */}
+              <NavLink
+                to="/posts/brands"
+                className={({ isActive }) =>
+                  [linkBase, isActive ? linkActive : linkIdle].join(" ")
+                }
+                aria-label="Thông tin các hãng"
+              >
+                <Info className="h-4 w-4" />
+                <span className="truncate">Thông tin các hãng</span>
               </NavLink>
             </div>
 
@@ -213,7 +226,6 @@ export default function Sidebar() {
                 "transition-[max-height,padding] duration-300 ease-in-out",
               ].join(" ")}
             >
-              {/* Hợp đồng điện tử */}
               <NavLink
                 to="/transactions/contracts"
                 className={({ isActive }) =>
@@ -225,7 +237,6 @@ export default function Sidebar() {
                 <span className="truncate">Hợp đồng điện tử</span>
               </NavLink>
 
-              {/*  Hoa hồng đăng tin */}
               <NavLink
                 to="/transactions/commissions"
                 className={({ isActive }) =>
@@ -238,7 +249,7 @@ export default function Sidebar() {
               </NavLink>
             </div>
 
-            {/* Cài đặt*/}
+            {/* Cài đặt */}
             <button
               type="button"
               onClick={() => setOpenSettings((v) => !v)}

@@ -117,54 +117,31 @@ export type UpdateMePayload = Partial<{
 function buildUpdatePayload(body: UpdateMePayload) {
   const payload: Record<string, any> = { ...body };
   if (payload.gender) payload.gender = String(payload.gender).toUpperCase();
+  delete payload.avatarFile;
   return compact(payload);
 }
 
-function appendIfPresent(fd: FormData, key: string, val: unknown) {
-  if (val === undefined || val === null) return;
-  if (typeof val === "string" && val.trim() === "") return;
-  fd.append(key, val as any);
-}
-
+//create form data
 function buildFormData(body: UpdateMePayload) {
   const fd = new FormData();
 
-  appendIfPresent(fd, "fullName", body.fullName);
-  appendIfPresent(fd, "phone", body.phone);
-  appendIfPresent(fd, "address", body.address);
-  appendIfPresent(fd, "email", body.email ?? undefined);
-  appendIfPresent(fd, "dateOfBirth", body.dateOfBirth ?? undefined);
-  appendIfPresent(fd, "taxCode", body.taxCode ?? undefined);
-  appendIfPresent(fd, "nationalId", body.nationalId ?? undefined);
+  // data json
+  const dataJson = buildUpdatePayload(body);
+  fd.append("data", new Blob([JSON.stringify(dataJson)], { type: "application/json" }));
 
-  if (body.gender !== undefined) {
-    appendIfPresent(fd, "gender", String(body.gender).toUpperCase());
-  }
+  // file img
   if (body.avatarFile instanceof File) {
     fd.append("avatarUrl", body.avatarFile);
-  } else if (body.avatarUrl !== undefined && body.avatarUrl !== null && body.avatarUrl !== "") {
-    fd.append("avatarUrl", body.avatarUrl);
   }
 
   return fd;
 }
 
 export async function updateMe(body: UpdateMePayload) {
-  const hasFile = body.avatarFile instanceof File;
-
-  if (hasFile) {
-    const form = buildFormData(body);
-    const { data } = await api.patch<UserProfile | ApiEnvelope<UserProfile>>(
-      "/profile/me/update",
-      form
-    );
-    return normalizeUser(unwrap<UserProfile>(data));
-  }
-
-  const finalBody = buildUpdatePayload(body);
+  const form = buildFormData(body);
   const { data } = await api.patch<UserProfile | ApiEnvelope<UserProfile>>(
     "/profile/me/update",
-    finalBody
+    form
   );
   return normalizeUser(unwrap<UserProfile>(data));
 }
@@ -175,7 +152,8 @@ export async function uploadAvatar(file: File) {
   const { data } = await api.post<{ url: string } | ApiEnvelope<{ url: string }>>("/users/avatar", form);
   return unwrap<{ url: string }>(data).url;
 }
-//product for profile
+
+// ====== product for profile ======
 export type MemberProduct = {
   id: string;
   title: string;
@@ -229,15 +207,12 @@ export function pickProductImage(p?: MemberProduct) {
 
 export function formatVND(v?: string | number | null) {
   if (v == null || v === "") return "—";
-
   if (typeof v === "number") {
     return Number.isFinite(v) ? Math.round(v).toLocaleString("vi-VN") + " đ" : "—";
   }
-
   const s = String(v).trim();
   const digits = s.replace(/[^0-9]/g, "");
   if (!digits) return "—";
-
   const n = Number(digits);
   return Number.isFinite(n) ? n.toLocaleString("vi-VN") + " đ" : "—";
 }

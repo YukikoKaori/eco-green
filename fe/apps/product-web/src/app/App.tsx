@@ -1,3 +1,4 @@
+// App.tsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import LayoutCompact from "@/components/layout/LayoutCompact";
@@ -9,6 +10,7 @@ import SocialPage from "@/pages/account/SocialPage";
 import AuthLogin from "@/pages/auth/AuthLogin";
 import AuthRegister from "@/pages/auth/AuthRegister";
 import ProfilePublicPage from "@/pages/account/ProfilePublic";
+import SellerPublicPage from "@/pages/account/SellerPublicPage"; 
 import PrivateRoute from "@/app/PrivateRoute";
 import GuestOnlyRoute from "@/app/GuestOnlyRoute";
 import PostNew from "@/pages/posts/PostNew";
@@ -23,7 +25,7 @@ import VNPayReturn from "@/pages/payment/VNPayReturn";
 import PurchaseRequestDetail from "@/pages/purchase/PurchaseRequestDetail";
 import RecentViewsPage from "@/pages/history/RecentViewsPage";
 import OrdersPage from "@/pages/transaction/OrdersPage";
-
+import OAuthPopupBridge from "@/pages/auth/OAuthPopupBridge";
 
 export default function App() {
   return (
@@ -39,6 +41,13 @@ export default function App() {
         <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route path="/search" element={<SearchResults />} />
         <Route path="/payment/vnpay-return" element={<VNPayReturn />} />
+        <Route path="/oauth2/popup-bridge" element={<OAuthPopupBridge />} />
+        <Route path="/seller/:sellerId" element={<SellerPublicPage />} />
+        <Route path="/profile/:username" element={<ProfilePublicPage />} />
+        {/* Hoặc chuyển hẳn về route mới:
+            <Route path="/profile/:username" element={<Navigate to="/seller/:username" replace />} />
+        */}
+
         <Route
           path="/orders"
           element={
@@ -56,8 +65,6 @@ export default function App() {
           }
         />
         <Route path="/post/notice/:id" element={<Navigate to="/postnotice" replace />} />
-
-        <Route path="/profile/:username" element={<ProfilePublicPage />} />
 
         <Route
           path="/post/new"

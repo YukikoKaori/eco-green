@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, ChevronRight, MapPin, Phone, Clock, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Phone, Clock } from "lucide-react";
 import LikeButton from "@/listings/components/LikeButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -271,6 +271,9 @@ export default function ProductDetail() {
       ? `${prod.odometerKm ?? catalog?.mileageKm} km`
       : null;
   const metaLine = [metaYear, metaKm].filter(Boolean).join(" · ");
+  const sellerProfilePath = prod.sellerId
+    ? `/profile/${encodeURIComponent(prod.sellerId)}`
+    : undefined;
 
   /* ------------------------------ UI ------------------------------ */
   return (
@@ -409,19 +412,40 @@ export default function ProductDetail() {
             </CardContent>
           </Card>
 
+          {/* Người bán */}
           <Card>
             <CardContent className="p-4">
               <div className="text-lg font-semibold mb-2">Người bán</div>
 
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-slate-200 grid place-items-center font-semibold">
-                  {(prod.sellerName || "?").charAt(0)}
+              {/* Header người bán: nếu có username thì bọc Link để sang trang profile public */}
+              {sellerProfilePath ? (
+                <Link
+                  to={sellerProfilePath}
+                  className="flex items-center gap-3 hover:bg-emerald-50/40 rounded-lg -mx-2 px-2 py-1 transition"
+                  title="Xem trang cá nhân"
+                >
+                  <div className="h-8 w-8 rounded-full bg-slate-200 grid place-items-center font-semibold">
+                    {(prod.sellerName || "?").charAt(0)}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-[#246f67] hover:underline">
+                      {prod.sellerName || "Người bán"}
+                    </div>
+                    <div className="text-xs text-slate-500 line-clamp-1">{address || "—"}</div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </Link>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-slate-200 grid place-items-center font-semibold">
+                    {(prod.sellerName || "?").charAt(0)}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">{prod.sellerName || "Người bán"}</div>
+                    <div className="text-xs text-slate-500">{address || "—"}</div>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <div className="text-sm font-medium">{prod.sellerName || "Người bán"}</div>
-                  <div className="text-xs text-slate-500">{address || "—"}</div>
-                </div>
-              </div>
+              )}
 
               <Separator className="my-4" />
 
@@ -434,6 +458,7 @@ export default function ProductDetail() {
                   Mua
                 </Button>
 
+                {/* Hiện số điện thoại */}
                 <Button
                   variant="outline"
                   className="!border-slate-300"
@@ -442,6 +467,17 @@ export default function ProductDetail() {
                   <Phone className="w-4 h-4 mr-2" />
                   {showPhone ? (prod.sellerPhone || "Chưa có SĐT") : `Hiện số ${maskPhone(prod.sellerPhone)}`}
                 </Button>
+
+                {/* Nút sang trang cá nhân (nổi bật) nếu có username */}
+                {sellerProfilePath && (
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="col-span-2 border-emerald-200 text-emerald-800 hover:bg-emerald-50"
+                  >
+                    <Link to={sellerProfilePath}>Trang cá nhân của người bán</Link>
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -494,6 +530,8 @@ export default function ProductDetail() {
           </CardContent>
         </Card>
       )}
+
+      {/* Dialog mua */}
       <Dialog open={openConfirm} onOpenChange={setOpenConfirm}>
         <DialogContent>
           <DialogHeader>

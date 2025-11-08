@@ -10,7 +10,6 @@ type Props = {
   latest: ListingWithKey[];
   className?: string;
   pageSize?: number;
-  /** Đang tải dữ liệu? -> hiển thị skeleton đẹp hơn */
   isLoading?: boolean;
 };
 
@@ -63,7 +62,6 @@ export default function ListingTabs({
       {/* Content */}
       <div className={styles.contentContainer}>
         {isLoading ? (
-          // Skeleton grid
           <div className={styles.grid}>
             {Array.from({ length: pageSize }).map((_, i) => (
               <div key={i} className={styles.cardWrapper}>
@@ -154,8 +152,6 @@ function Tab({
     </button>
   );
 }
-
-/** Khung skeleton cho 1 card */
 function SkeletonCard() {
   return (
     <div className={cn("rounded-lg overflow-hidden shadow-sm border", "bg-background")}>

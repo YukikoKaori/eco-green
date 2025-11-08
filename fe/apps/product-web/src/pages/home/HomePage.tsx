@@ -63,7 +63,7 @@ export default function HomePage() {
         <ListingTabs
           forYou={forYou}
           latest={latest}
-          pageSize={8}
+          pageSize={12}
           className="mt-1"
           isLoading={loading}
         />

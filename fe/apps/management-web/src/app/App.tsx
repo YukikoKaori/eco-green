@@ -15,6 +15,10 @@ import StaffPostsManagePage from "@/pages/PostsManagePage";
 import ReviewDetailPage from "@/pages/ReviewDetailPage";
 import Contracts from "@/pages/transactions/Contracts";
 import Commissions from "@/pages/transactions/Commissions";
+import BrandCreatePage from "@/pages/brand/BrandCreatePage";
+import BrandsInfoPage from "@/pages/brand/BrandsInfoPage";
+import BrandEditPage from "@/pages/brand/BrandEditPage";
+
 export default function App() {
   return (
     <Routes>
@@ -31,11 +35,16 @@ export default function App() {
           <Route path="staffs" element={<StaffsPage />} />
 
           {/* Quản lý bài đăng */}
-          <Route path="posts/pending" element={<PendingPostsPage />} />
+          <Route path="/posts/pending" element={<PendingPostsPage />} />
           <Route path="/posts/rejected" element={<RejectedPostsPage />} />
           <Route path="/reports/count" element={<ReportStatsPage />} />
           <Route path="/posts/moderate" element={<StaffPostsManagePage />} />
           <Route path="/posts/review/:id" element={<ReviewDetailPage />} />
+          <Route path="/posts/brands" element={<BrandsInfoPage />} />
+          <Route path="/posts/brands/new" element={<BrandCreatePage />} />
+          <Route path="/posts/brands/:id/edit" element={<BrandEditPage />} />
+
+          {/* Quản lý giao dịch */}
           <Route path="/transactions/contracts" element={<Contracts />} />
           <Route path="/transactions/commissions" element={<Commissions />} />
 
