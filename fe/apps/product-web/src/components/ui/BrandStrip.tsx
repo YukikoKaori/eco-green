@@ -84,7 +84,7 @@ export default function BrandStrip({
         <h3 className="text-sm md:text-base font-semibold md:pl-3" style={{ color: "#0f766e" }}>{title}</h3>
         <div className="mt-2 w-full border-t border-gray-200" />
         <div
-          className="relative my-3"
+          className="relative !my-6"
           onMouseEnter={() => setShowNav(true)} onMouseLeave={() => setShowNav(false)}
           onFocus={() => setShowNav(true)} onBlur={() => setShowNav(false)}
         >
