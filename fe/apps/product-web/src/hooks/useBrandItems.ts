@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchPublicBrands } from "@/api/brands"; 
+import { fetchPublicBrands } from "@/api/brands";
 import type { BrandItem } from "@/components/ui/BrandStrip";
 
 export function useBrandItems(opts?: {
@@ -28,9 +28,7 @@ export function useBrandItems(opts?: {
   }, []);
 
   const items: BrandItem[] = useMemo(() => {
-    const filtered =
-      type === "ALL" ? rows : rows.filter(r => String(r.type).toUpperCase() === type);
-
+    const filtered = type === "ALL" ? rows : rows.filter(r => String(r.type).toUpperCase() === type);
     const byName = new Map<string, { id: string; name: string; logoUrl: string | null; type: string }>();
     for (const r of filtered) {
       const key = r.name.trim().toLowerCase();
@@ -41,10 +39,10 @@ export function useBrandItems(opts?: {
     const unique = Array.from(byName.values());
 
     return unique.map<BrandItem>(b => ({
-      id: b.id,                                
+      id: b.id,
       name: b.name,
       src: b.logoUrl || "/images/brand-placeholder.png",
-      to: buildLink ? buildLink(b) : `/search?brand=${encodeURIComponent(b.name)}`,
+      to: buildLink ? buildLink(b) : `/brands/${encodeURIComponent(b.id)}`,
     }));
   }, [rows, type, buildLink]);
 

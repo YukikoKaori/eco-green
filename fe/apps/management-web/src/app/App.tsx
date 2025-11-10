@@ -18,6 +18,7 @@ import Commissions from "@/pages/transactions/Commissions";
 import BrandCreatePage from "@/pages/brand/BrandCreatePage";
 import BrandsInfoPage from "@/pages/brand/BrandsInfoPage";
 import BrandEditPage from "@/pages/brand/BrandEditPage";
+import CreateBatteryBrand from "@/pages/brand/CreateBatteryBrand";
 
 export default function App() {
   return (
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="/posts/brands" element={<BrandsInfoPage />} />
           <Route path="/posts/brands/new" element={<BrandCreatePage />} />
           <Route path="/posts/brands/:id/edit" element={<BrandEditPage />} />
+          <Route path="/posts/battery-brands/new" element={<CreateBatteryBrand />} />
 
           {/* Quản lý giao dịch */}
           <Route path="/transactions/contracts" element={<Contracts />} />

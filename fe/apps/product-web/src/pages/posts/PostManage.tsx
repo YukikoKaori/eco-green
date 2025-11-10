@@ -188,12 +188,6 @@ export default function PostManage() {
 
           <div>
             <div className="text-xl font-semibold">{displayName}</div>
-            <Link
-              to="/store/create"
-              className="text-sm !text-[#246f67] hover:underline inline-flex items-center gap-1"
-            >
-              <span className="text-lg leading-none text-[#246f67]">＋</span> Tạo cửa hàng
-            </Link>
           </div>
         </div>
       </div>

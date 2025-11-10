@@ -6,16 +6,15 @@ import SeoAbout from "@/components/ui/SeoAbout";
 import BrandStrip from "@/components/ui/BrandStrip";
 import ListingTabs from "@/components/ui/ListingTabs";
 import { fetchLatestListings, fetchForYouListings } from "@/listings/api/listing.api";
-import { useBrandItems } from "@/hooks/useBrandItems"; 
+import { useBrandItems } from "@/hooks/useBrandItems";
 
 export default function HomePage() {
   const [latest, setLatest] = useState<ListingWithKey[]>([]);
   const [forYou, setForYou] = useState<ListingWithKey[]>([]);
   const [loading, setLoading] = useState(true);
-
   const { items: brandItems, loading: brandLoading, error: brandErr } = useBrandItems({
     type: "ALL",
-    buildLink: (b) => `/xe-dien?brand=${encodeURIComponent(b.name)}`,
+    buildLink: (b) => `/xe-dien?brand=${encodeURIComponent(b.id)}`,
   });
 
   useEffect(() => {

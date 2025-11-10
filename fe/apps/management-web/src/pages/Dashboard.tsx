@@ -18,6 +18,8 @@ import {
 } from "@/api/stats";
 
 const BRAND = "#246f67";
+const CHART_HEIGHT = 380; 
+
 const fmtVnd = (n: number) => new Intl.NumberFormat("vi-VN").format(n) + "đ";
 const formatTickShort = (n: number) => {
   if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
@@ -46,7 +48,6 @@ export default function Dashboard() {
   const [approveStats, setApproveStats] =
     useState<{ approved: number; rejected: number; total: number } | null>(null);
 
-  // Tự cập nhật năm lúc 00:00
   useEffect(() => {
     const t = setTimeout(() => setYear(new Date().getFullYear()), msToNextMidnight());
     return () => clearTimeout(t);
@@ -59,11 +60,9 @@ export default function Dashboard() {
       const series = await getRevenueSeriesByYear(year);
       setMonthly(series);
 
-      // tính doanh thu
       setYearRevenue(series.reduce((s, x) => s + x.v, 0));
       setMonthRevenue(series.find(x => Number(x.m) === mm)?.v ?? 0);
 
-      // Tỉ lệ duyệt & tổng member
       try {
         const rate = await getApprovalRate();
         setApproveRate(rate.rate * 100);
@@ -90,7 +89,6 @@ export default function Dashboard() {
     },
   ]), [year, yearRevenue, monthRevenue, memberCount, approveRate, approveStats]);
 
-  const growth: Array<{ m: string; xe: number; pin: number }> = [];
   const monthlyTotal = monthly.reduce((s, x) => s + x.v, 0);
 
   return (
@@ -99,14 +97,14 @@ export default function Dashboard() {
         {stats.map((s) => <StatsCard key={s.title} {...s} />)}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <Card className="xl:col-span-2 border rounded-2xl bg-white p-4">
+      <div className="grid grid-cols-1 gap-4">
+        <Card className="col-span-full border rounded-2xl bg-white p-4">
           <div className="text-[15px] font-semibold mb-3" style={{ color: BRAND }}>
             Doanh thu theo tháng ({year})
           </div>
 
-          <div className="w-full" style={{ minWidth: 320 }}>
-            <ResponsiveContainer width="100%" height={224}>
+          <div className="w-full">
+            <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
               <BarChart data={monthly}>
                 <CartesianGrid stroke="#e5f3f0" strokeDasharray="3 3" />
                 <XAxis dataKey="m" tick={{ fill: "#5b6b67" }} />

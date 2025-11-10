@@ -268,7 +268,7 @@ export default function Navbar() {
 
             <Button
               asChild
-              className="!bg-[#246f67] !text-sm hover:bg-teal-800 flex items-center gap-2 text-white"
+              className="!bg-[#246f67] !text-sm  flex items-center gap-2 !text-white"
             >
               <Link to="/post/new">
                 <PlusCircle className="w-4 h-4" />

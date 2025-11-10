@@ -70,9 +70,6 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
             <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={viewPost}>
               <Eye className="w-4 h-4 mr-1" /> Xem tin
             </Button>
-            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={editPost}>
-              <Edit className="w-4 h-4 mr-1" /> Sửa tin
-            </Button>
             <Button size="sm" className="text-[#246f67] !border-[#246f67]" onClick={() => update("hidden")}>
               <EyeOff className="w-4 h-4 mr-1" /> Ẩn tin
             </Button>
@@ -113,28 +110,14 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
       case "unpaid":
         return (
           <>
-            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={viewPost}>
-              <Eye className="w-4 h-4 mr-1" /> Xem tin
-            </Button>
             <Button size="sm" className="text-[#246f67] !border-[#246f67]" onClick={goPay}>
               <CreditCard className="w-4 h-4 mr-1" /> Thanh toán
             </Button>
           </>
         );
-
-      case "pending":
-        return (
-          <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={viewPost}>
-            <Eye className="w-4 h-4 mr-1" /> Xem tin
-          </Button>
-        );
-
       case "hidden":
         return (
           <>
-            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={viewPost}>
-              <Eye className="w-4 h-4 mr-1" /> Xem tin
-            </Button>
             <Button size="sm" className="text-[#246f67] !border-[#246f67]" onClick={() => update("active")}>
               <EyeIcon className="w-4 h-4 mr-1 rotate-180" /> Bật tin
             </Button>

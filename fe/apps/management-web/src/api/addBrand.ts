@@ -1,6 +1,5 @@
 import api from "@/lib/axios";
 
-/* ================== Create vehicle catalog ================== */
 export type VehicleCatalogCreateReq = {
   brandName: string;
   modelName: string;
@@ -40,7 +39,30 @@ export async function createVehicleCatalog(req: VehicleCatalogCreateReq) {
   return data;
 }
 
-/* ================== Vehicle categories (select) ================== */
+export type BatteryBrandCreateReq = {
+  brandName: string;
+  logo?: File | null;
+};
+
+export type BatteryBrandCreated = {
+  brandId: string;
+  brandName: string;
+  logoUrl?: string | null;
+};
+
+export async function createBatteryBrand(req: BatteryBrandCreateReq): Promise<BatteryBrandCreated> {
+  const fd = new FormData();
+  fd.append("brandName", req.brandName.trim());
+  if (req.logo) fd.append("logo", req.logo);
+
+  const { data } = await api.post<BatteryBrandCreated>(
+    "/staff/battery/brands/create",
+    fd,
+    { headers: { "Content-Type": "multipart/form-data" } }
+  );
+  return data;
+}
+
 export type VehicleCategory = { id: string; name: string };
 export async function listVehicleCategories(): Promise<VehicleCategory[]> {
   const { data } = await api.get("/vehicle/categories/all");
@@ -60,24 +82,27 @@ export async function listVehicleCategories(): Promise<VehicleCategory[]> {
     .filter((c) => c.id && c.name);
 }
 
-/* ================== Public brands (list view) ================== */
+export type BrandType = "VEHICLE" | "BATTERY";
+
 export type PublicBrand = {
   id: string;
   name: string;
   logoUrl?: string | null;
-  type?: "VEHICLE" | "BATTERY" | (string & {});
+  type?: BrandType | (string & {});
 };
 
-export async function fetchPublicBrands(): Promise<PublicBrand[]> {
-  const { data } = await api.get("/public/brands");
-  const items: any[] = Array.isArray(data)
-    ? data
-    : Array.isArray(data?.result?.items)
-    ? data.result.items
-    : Array.isArray(data?.items)
-    ? data.items
-    : [];
-  return items
+export type BrandPage = {
+  items: PublicBrand[];
+  page: number;
+  size: number;
+  totalPages: number;
+  totalItems: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+};
+
+function normalizeBrands(raw: any[]): PublicBrand[] {
+  return (raw || [])
     .map((x) => ({
       id: String(x?.id ?? x?.brandId ?? ""),
       name: String(x?.name ?? x?.brandName ?? x?.title ?? ""),
@@ -87,8 +112,53 @@ export async function fetchPublicBrands(): Promise<PublicBrand[]> {
     .filter((b) => b.id && b.name);
 }
 
-/* ================== Admin: update & delete brand ================== */
-export type BrandType = "VEHICLE" | "BATTERY";
+
+export async function fetchPublicBrandsPage(params?: {
+  page?: number;
+  size?: number;
+  type?: BrandType | "ALL";
+}): Promise<BrandPage> {
+  const { page = 0, size = 12, type } = params || {};
+
+  const { data } = await api.get("/public/brands/pageable", {
+    params: {
+      page,
+      size,
+      ...(type && type !== "ALL" ? { type } : {}),
+    },
+  });
+
+  const itemsArr =
+    (Array.isArray(data?.items) && data.items) ||
+    (Array.isArray(data?.result?.items) && data.result.items) ||
+    [];
+
+  return {
+    items: normalizeBrands(itemsArr),
+    page: Number(data?.page ?? page) || 0,
+    size: Number(data?.size ?? size) || size,
+    totalPages: Number(data?.totalPages ?? data?.totalPage ?? 0) || 0,
+    totalItems: Number(data?.totalItems ?? data?.total ?? 0) || 0,
+    hasPreviousPage: Boolean(
+      data?.hasPreviousPage ?? data?.hasPrev ?? data?.previous ?? false
+    ),
+    hasNextPage: Boolean(
+      data?.hasNextPage ?? data?.hasMore ?? data?.next ?? false
+    ),
+  };
+}
+
+export async function fetchPublicBrands(
+  opts?: { size?: number; type?: BrandType | "ALL" }
+): Promise<PublicBrand[]> {
+  const size = opts?.size ?? 100;
+  const page = await fetchPublicBrandsPage({
+    page: 0,
+    size,
+    type: opts?.type,
+  });
+  return page.items;
+}
 
 export type AdminBrand = {
   id: string;
@@ -97,7 +167,6 @@ export type AdminBrand = {
   type: BrandType;
 };
 
-/** PUT /admin/brands/update/{id}  (body JSON) */
 export type UpdateBrandPayload = {
   name?: string;
   logoUrl?: string | null;
@@ -115,7 +184,6 @@ export async function updateAdminBrand(
   return data;
 }
 
-/** DELETE /admin/brands/delete/{id}?type=VEHICLE|BATTERY */
 export type DeleteBrandResp = {
   success?: boolean;
   message?: string;

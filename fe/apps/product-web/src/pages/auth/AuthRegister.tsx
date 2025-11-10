@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { User as UserIcon, Lock, Eye, EyeOff, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { registerApi, loginApi, getMe, oauthUrls } from "@/api/auth";
+import { registerApi} from "@/api/auth";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function AuthRegister() {
@@ -36,14 +36,6 @@ export default function AuthRegister() {
     setLoading(false);
   }
 }
-
-
-  function onGoogle() {
-    window.location.assign(oauthUrls.google);
-  }
-  function onFacebook() {
-    window.location.assign(oauthUrls.facebook);
-  }
 
   return (
     <div
@@ -134,52 +126,8 @@ export default function AuthRegister() {
             </Link>
           </p>
         </form>
-
-        <div className="flex items-center gap-3 mb-5">
-          <div className="h-px flex-1 bg-gray-200" />
-          <span className="text-xs text-gray-500">hoặc</span>
-          <div className="h-px flex-1 bg-gray-200" />
-        </div>
-
-        {/* Social */}
-        <div className="grid gap-2 mb-5">
-          <button
-            onClick={onGoogle}
-            type="button"
-            className="!inline-flex !items-center !justify-center !gap-2 !w-full !h-10 !rounded-full !border !border-gray-200 !bg-white !text-gray-800"
-          >
-            <GoogleIcon className="w-5 h-5" />
-            <span>Đăng ký với Google</span>
-          </button>
-          <button
-            onClick={onFacebook}
-            type="button"
-            className="!inline-flex !items-center !justify-center !gap-2 !w-full !h-10 !rounded-full !border !border-gray-200 !bg-white !text-gray-800"
-          >
-            <FacebookIcon className="w-5 h-5" />
-            <span>Đăng ký với Facebook</span>
-          </button>
-        </div>
       </div>
     </div>
   );
 }
 
-function GoogleIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 533.5 544.3" aria-hidden>
-      <path fill="#4285f4" d="M533.5 278.4c0-18.4-1.7-36.1-4.9-53.3H272v100.9h147.2c-6.4 34.7-26 64.1-55.6 83.8v69.5h89.9c52.5-48.4 80-119.7 80-200.9z" />
-      <path fill="#34a853" d="M272 544.3c72.5 0 133.5-24 178-65.1l-89.9-69.5c-24.9 16.7-56.8 26.6-88.1 26.6-67.7 0-125.2-45.7-145.8-107.1H34.5v67.3C79.2 486.2 169.9 544.3 272 544.3z" />
-      <path fill="#fbbc04" d="M126.2 329.1c-9.6-28.8-9.6-60.2 0-88.9V172.9H34.5c-40.5 80.8-40.5 176.9 0 257.7l91.7-101.5z" />
-      <path fill="#ea4335" d="M272 106.5c39.4-.6 77.3 14.2 106.1 41.2l79.1-79.1C403.2-8.7 324.3-23.7 249.8 4.2 147.9 42 57.2 100.1 34.5 172.9l91.7 67.3C146.8 178.8 204.3 106.5 272 106.5z" />
-    </svg>
-  );
-}
-
-function FacebookIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden>
-      <path fill="#1877F2" d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.093 10.125 24v-8.437H7.078V12.07h3.047V9.412c0-3.007 1.79-4.668 4.533-4.668 1.313 0 2.686.235 2.686.235v2.953h-1.513c-1.49 0-1.953.928-1.953 1.88v2.258h3.328l-.532 3.492h-2.796V24C19.612 23.093 24 18.1 24 12.073z" />
-    </svg>
-  );
-}
