@@ -67,10 +67,10 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
       case "active":
         return (
           <>
-            <Button variant="outline" size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={viewPost}>
+            <Button variant="outline" size="sm" className="text-[#246f67] bg-white !border-[#246f67]" onClick={viewPost}>
               <Eye className="w-4 h-4 mr-1 bg-white" /> Xem tin
             </Button>
-            <Button size="sm" className="text-[#246f67] bg-white !border-[#246f67]" onClick={() => update("hidden")}>
+            <Button variant="outline" size="sm" className="text-[#246f67] bg-white !border-[#246f67]" onClick={() => update("hidden")}>
               <EyeOff className="w-4 h-4 mr-1" /> Ẩn tin
             </Button>
           </>
@@ -82,7 +82,7 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
             <Button variant="outline" size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={viewPost}>
               <Eye className="w-4 h-4 mr-1 bg-white" /> Xem tin
             </Button>
-            <Button size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={() => update("pending")}>
+            <Button variant="outline" size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={() => update("pending")}>
               <RotateCcw className="w-4 h-4 mr-1 bg-white" /> Đăng lại
             </Button>
           </>
@@ -110,7 +110,7 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
       case "unpaid":
         return (
           <>
-            <Button size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={goPay}>
+            <Button variant="outline" size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={goPay}>
               <CreditCard className="w-4 h-4 mr-1 bg-white" /> Thanh toán
             </Button>
           </>
@@ -118,7 +118,7 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
       case "hidden":
         return (
           <>
-            <Button size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={() => update("active")}>
+            <Button variant="outline" size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={() => update("active")}>
               <EyeIcon className="w-4 h-4 mr-1 rotate-180 bg-white" /> Bật tin
             </Button>
           </>
@@ -127,7 +127,7 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
       case "sold":
         return (
           <>
-            <Button size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={() => update("pending")}>
+            <Button variant="outline" size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={() => update("pending")}>
               <RotateCcw className="w-4 h-4 mr-1" /> Đăng lại
             </Button>
           </>

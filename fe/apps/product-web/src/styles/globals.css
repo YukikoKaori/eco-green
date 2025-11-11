@@ -53,7 +53,7 @@
 
 /* Links */
 a { font-weight: 500; text-decoration: inherit; }
-a:hover { color: #fbcd00; }
+a:hover { color: #00a889; }
 
 /* Body reset (không set bg/color cứng ở :root) */
 body {
@@ -75,7 +75,7 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
-button:hover { border-color: #646cff; }
+button:hover { border-color: #02ac98; }
 button:focus,
 button:focus-visible { outline: 4px auto -webkit-focus-ring-color; }
 
@@ -118,37 +118,27 @@ button:focus-visible { outline: 4px auto -webkit-focus-ring-color; }
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
-
-/* ===== Dark mode kill-switch ===== */
 .dark {}
 
-/* ===== Base layer: dùng token ===== */
 @layer base {
   * { @apply border-border outline-ring/50; }
   body { @apply bg-background text-foreground; }
 }
 
-/* ===== Scrollbar utilities ===== */
-/* Ẩn thanh cuộn (CÓ THỂ SCROLL) cho mọi trình duyệt phổ biến */
-.no-scrollbar::-webkit-scrollbar { display: none; }          /* Chrome/Safari/Edge Chromium */
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; } /* IE/Edge cũ + Firefox */
+.no-scrollbar::-webkit-scrollbar { display: none; }         
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Tuỳ chọn: Ẩn riêng thanh cuộn NGANG (giữ dọc nếu có) */
 .no-scrollbar-x { overflow-x: auto; overflow-y: hidden; }
 .no-scrollbar-x::-webkit-scrollbar { height: 0 !important; }
 
-/* Ẩn thanh ngang của shadcn ScrollArea khi cần:
-   Thêm class 'scroll-area-no-x' vào ScrollArea root */
 .scroll-area-no-x [data-orientation="horizontal"] { display: none !important; }
 
-/* ===== Other utilities bạn đang dùng ===== */
 .carousel-dot { padding: 0 !important; background: transparent; }
 
 html, body, #root { max-width: 100%; overflow-x: hidden; }
 
 body[data-scroll-locked] { width: 100%; }
 
-/* Ẩn caret & chọn văn bản theo whitelist */
 *:not(input):not(textarea):not([contenteditable="true"]):not([role="textbox"]):not(iframe) {
   caret-color: transparent;
 }

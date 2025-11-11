@@ -526,7 +526,7 @@ export default function PostNotice() {
                   Thoát
                 </Button>
                 <Button
-                  className="text-[#246f67]"
+                  className=" !bg-white text-[#246f67]"
                   onClick={onPay}
                   disabled={!productId || isPaying || loadingPkg || !basePkg}
                 >
