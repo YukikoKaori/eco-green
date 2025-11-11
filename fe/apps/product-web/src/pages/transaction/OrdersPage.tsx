@@ -63,7 +63,7 @@ export default function OrdersPage() {
 
   /* --------- CONTRACTS --------- */
   const [q, setQ] = useState("");
-  const [pageC, setPageC] = useState(0);
+  const [pageC, setPageC] = useState(0); 
   const [sizeC] = useState(10);
   const [contracts, setContracts] = useState<PageResp<ContractItem>>({ items: [] });
 
@@ -92,6 +92,7 @@ export default function OrdersPage() {
   /* --------- PACKAGES --------- */
   const [pageP, setPageP] = useState(0);
   const [sizeP] = useState(10);
+  const [qP, setQP] = useState("");
   const [packages, setPackages] = useState<PageResp<PackageHistoryItem>>({ items: [] });
 
   useEffect(() => {
@@ -110,12 +111,27 @@ export default function OrdersPage() {
     return () => { cancelled = true; };
   }, [pageP, sizeP]);
 
-  const totalPagesC = contracts.totalPages ?? 1;
-  const totalPagesP = packages.totalPages ?? 1;
+  const totalPagesC = Math.max(1, contracts.totalPages ?? 1);
+  const totalPagesP = Math.max(1, packages.totalPages ?? 1);
+
+  const filteredPackages = useMemo(() => {
+    const key = qP.trim().toLowerCase();
+    if (!key) return packages.items;
+    return packages.items.filter((r) =>
+      (r.packageName || "").toLowerCase().includes(key) ||
+      (r.paymentId || "").toLowerCase().includes(key) ||
+      (r.paymentMethod || "").toLowerCase().includes(key)
+    );
+  }, [packages.items, qP]);
+  const makePages = (page: number, total: number, windowSize = 5) => {
+    const n = Math.min(windowSize, total);
+    const start = Math.max(0, Math.min(page - Math.floor(n / 2), total - n));
+    return Array.from({ length: n }, (_, i) => start + i);
+  };
 
   return (
     <div className="mx-auto max-w-6xl px-3 md:px-4 py-4 md:py-6 space-y-4">
-      {/* Header (gọn hai bên) */}
+      {/* Header */}
       <div className="rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 p-5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -133,9 +149,24 @@ export default function OrdersPage() {
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="w-full">
-        <TabsList className="grid grid-cols-2 w-full md:w-auto">
-          <TabsTrigger value="contracts" className="text-[#246f67]">Hợp đồng</TabsTrigger>
-          <TabsTrigger value="packages" className="text-[#246f67]">Gói dịch vụ</TabsTrigger>
+        {/* prettier, pill tabs */}
+        <TabsList className="grid grid-cols-2 w-full md:w-auto gap-6 bg-transparent p-0">
+          <TabsTrigger
+            value="contracts"
+            className="relative rounded-xl px-6 py-2 text-slate-700 bg-slate-100/80 shadow-sm data-[state=active]:bg-slate-100 data-[state=active]:text-[#1f4f4b] data-[state=active]:font-semibold data-[state=active]:shadow md:min-w-[220px]
+                        after:content-[''] after:absolute after:left-2 after:right-2 after:bottom-0 after:h-[2px] after:bg-transparent
+                        data-[state=active]:after:bg-[#246f67]"
+          >
+            Hợp đồng
+          </TabsTrigger>
+          <TabsTrigger
+            value="packages"
+            className="relative rounded-xl px-6 py-2 text-slate-700 bg-slate-100/80 shadow-sm data-[state=active]:bg-slate-100 data-[state=active]:text-[#1f4f4b] data-[state=active]:font-semibold data-[state=active]:shadow md:min-w-[220px]
+                        after:content-[''] after:absolute after:left-2 after:right-2 after:bottom-0 after:h-[2px] after:bg-transparent
+                        data-[state=active]:after:bg-[#246f67]"
+          >
+            Gói dịch vụ
+          </TabsTrigger>
         </TabsList>
 
         {/* ====== CONTRACTS ====== */}
@@ -202,32 +233,37 @@ export default function OrdersPage() {
               </table>
             </div>
 
+            {/* pagination */}
             <div className="flex items-center justify-end gap-2 p-3 border-t bg-slate-50 text-sm">
               <Button
                 variant="outline"
                 className="!text-[#246f67]"
-                onClick={() => setPageC(p => Math.max(0, p - 1))}
-                disabled={(contracts.page ?? 0) <= 0}
+                onClick={() => setPageC((p) => Math.max(0, p - 1))}
+                disabled={pageC <= 0}
               >
                 Trước
               </Button>
-              {[0, 1]
-                .filter((i) => i < totalPagesC)
-                .map((pi) => (
-                  <Button
-                    key={pi}
-                    variant={(contracts.page ?? 0) === pi ? "default" : "outline"}
-                    onClick={() => setPageC(pi)}
-                    className="w-10 !text-[#246f67]"
-                  >
-                    {pi + 1}
-                  </Button>
-                ))}
+
+              {makePages(pageC, totalPagesC).map((pi) => (
+                <Button
+                  key={pi}
+                  variant="outline"
+                  onClick={() => setPageC(pi)}
+                  aria-current={pageC === pi ? "page" : undefined}
+                  className={[
+                    "w-10 !text-[#246f67]",
+                    pageC === pi && "text-white border-[#246f67]"
+                  ].filter(Boolean).join(" ")}
+                >
+                  {pi + 1}
+                </Button>
+              ))}
+
               <Button
                 variant="outline"
                 className="!text-[#246f67]"
-                onClick={() => setPageC(p => Math.min((totalPagesC - 1), p + 1))}
-                disabled={(contracts.page ?? 0) >= (totalPagesC - 1)}
+                onClick={() => setPageC((p) => Math.min(totalPagesC - 1, p + 1))}
+                disabled={pageC >= totalPagesC - 1}
               >
                 Sau
               </Button>
@@ -237,6 +273,19 @@ export default function OrdersPage() {
 
         {/* ====== PACKAGES ====== */}
         <TabsContent value="packages" className="mt-3 space-y-3">
+          {/* Search for packages */}
+          <Card className="p-3 border rounded-xl">
+            <label className="text-xs text-slate-500">Tìm kiếm</label>
+            <div className="relative">
+              <svg className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2"/></svg>
+              <Input
+                value={qP}
+                onChange={(e) => { setQP(e.target.value); setPageP(0); }}
+                placeholder="Tìm theo tên gói, mã giao dịch, phương thức…"
+                className="pl-8"
+              />
+            </div>
+          </Card>
 
           {/* Table */}
           <div className="overflow-hidden rounded-xl border bg-white">
@@ -245,7 +294,7 @@ export default function OrdersPage() {
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 sticky top-0 z-10">
                   <tr className="text-[#246f67]">
-                    <Th className="min-w-[220px]">Gói</Th>
+                    <Th className="min-w[220px]">Gói</Th>
                     <Th className="w-[160px]">Mã giao dịch</Th>
                     <Th className="w-[180px]">Thời gian</Th>
                     <Th className="w-[130px]">Phương thức</Th>
@@ -261,11 +310,11 @@ export default function OrdersPage() {
                     </Td></tr>
                   )}
 
-                  {!loading.p && packages.items.length === 0 && (
+                  {!loading.p && filteredPackages.length === 0 && (
                     <tr><Td colSpan={5} className="py-8 text-center text-slate-500">Chưa có giao dịch.</Td></tr>
                   )}
 
-                  {!loading.p && packages.items.map((r) => (
+                  {!loading.p && filteredPackages.map((r) => (
                     <tr key={r.paymentId} className="hover:bg-emerald-50/40">
                       <Td className="truncate">
                         <div className="flex items-center gap-2">
@@ -288,32 +337,37 @@ export default function OrdersPage() {
               </table>
             </div>
 
+            {/* pagination */}
             <div className="flex items-center justify-end gap-2 p-3 border-t bg-slate-50 text-sm">
               <Button
                 variant="outline"
                 className="!text-[#246f67]"
-                onClick={() => setPageP(p => Math.max(0, p - 1))}
-                disabled={(packages.page ?? 0) <= 0}
+                onClick={() => setPageP((p) => Math.max(0, p - 1))}
+                disabled={pageP <= 0}
               >
                 Trước
               </Button>
-              {[0, 1]
-                .filter((i) => i < totalPagesP)
-                .map((pi) => (
-                  <Button
-                    key={pi}
-                    variant={(packages.page ?? 0) === pi ? "default" : "outline"}
-                    onClick={() => setPageP(pi)}
-                    className="w-10 !text-[#246f67]"
-                  >
-                    {pi + 1}
-                  </Button>
-                ))}
+
+              {makePages(pageP, totalPagesP).map((pi) => (
+                <Button
+                  key={pi}
+                  variant="outline"
+                  onClick={() => setPageP(pi)}
+                  aria-current={pageP === pi ? "page" : undefined}
+                  className={[
+                    "w-10 ",
+                    pageP === pi && "!text-[#246f67] border-[#246f67]"
+                  ].filter(Boolean).join(" ")}
+                >
+                  {pi + 1}
+                </Button>
+              ))}
+
               <Button
                 variant="outline"
                 className="!text-[#246f67]"
-                onClick={() => setPageP(p => Math.min((totalPagesP - 1), p + 1))}
-                disabled={(packages.page ?? 0) >= (totalPagesP - 1)}
+                onClick={() => setPageP((p) => Math.min(totalPagesP - 1, p + 1))}
+                disabled={pageP >= totalPagesP - 1}
               >
                 Sau
               </Button>

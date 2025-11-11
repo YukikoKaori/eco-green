@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export type BrandItem = {
@@ -15,6 +14,21 @@ type Props = {
   className?: string;
   size?: "sm" | "md";
 };
+
+function ArrowLeftIcon({ size = 20, strokeWidth = 3, color = "#4B5563" }:{ size?: number; strokeWidth?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M15 6L9 12L15 18" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function ArrowRightIcon({ size = 20, strokeWidth = 3, color = "#4B5563" }:{ size?: number; strokeWidth?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 6L15 12L9 18" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 export default function BrandStrip({
   title = "Tin bán xe và pin theo hãng",
@@ -68,6 +82,11 @@ export default function BrandStrip({
   }, [updateEdges]);
 
   const sizePx = 40;
+  const arrowFactor = 0.70; 
+  const arrowMin = 20;     
+  const arrowSize = Math.max(arrowMin, Math.round(sizePx * arrowFactor));
+  const arrowStroke = 1; 
+
   const arrowBtnBase: React.CSSProperties = {
     position: "absolute", top: "50%", width: `${sizePx}px`, height: `${sizePx}px`,
     borderRadius: "9999px", background: "#fff", border: "1px solid rgba(0,0,0,.08)",
@@ -76,7 +95,7 @@ export default function BrandStrip({
   };
   const leftArrowStyle: React.CSSProperties  = { ...arrowBtnBase, left: 0,  transform: "translate(-50%, -50%)" };
   const rightArrowStyle: React.CSSProperties = { ...arrowBtnBase, right: 0, transform: "translate(50%, -50%)" };
-  const vis = (disabled: boolean): React.CSSProperties => ({ opacity: showNav ? (disabled ? 0.35 : 1) : 0, pointerEvents: showNav && !disabled ? "auto" : "none" });
+  const vis = (disabled: boolean): React.CSSProperties => ({ opacity: disabled ? 0.35 : 1, pointerEvents: disabled ? "none" : "auto" });
 
   return (
     <section className={`space-y-2 ${className}`}>
@@ -98,7 +117,7 @@ export default function BrandStrip({
           >
             {items.map((b, i) => (
               <Link
-                key={b.id ?? `${b.name}-${i}`}  
+                key={b.id ?? `${b.name}-${i}`}
                 to={b.to ?? "#"}
                 className={`${cfg.itemMin} flex flex-col items-center`}
               >
@@ -118,7 +137,9 @@ export default function BrandStrip({
             onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 10px 28px rgba(0,0,0,.16)")}
             onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,.12)")}
           >
-            <ChevronLeft style={{ width: 20, height: 20, color: "#111" }} />
+            <span style={{ width: arrowSize, height: arrowSize, display:'inline-flex', alignItems:'center', justifyContent:'center', lineHeight: 0 }}>
+              <ArrowLeftIcon size={arrowSize} strokeWidth={arrowStroke} color="#6B7280" />
+            </span>
           </button>
 
           <button
@@ -127,7 +148,9 @@ export default function BrandStrip({
             onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 10px 28px rgba(0,0,0,.16)")}
             onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,.12)")}
           >
-            <ChevronRight style={{ width: 20, height: 20, color: "#111" }} />
+            <span style={{ width: arrowSize, height: arrowSize, display:'inline-flex', alignItems:'center', justifyContent:'center', lineHeight: 0 }}>
+              <ArrowRightIcon size={arrowSize} strokeWidth={arrowStroke} color="#6B7280" />
+            </span>
           </button>
         </div>
       </div>

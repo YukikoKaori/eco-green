@@ -122,8 +122,7 @@ export default function ProductDetail() {
     (async () => {
       try {
         await addRecentView(id);
-      } catch {
-      }
+      } catch { }
     })();
   }, [id, user]);
 
@@ -138,12 +137,12 @@ export default function ProductDetail() {
         const p = await fetchProductDetail(id);
         if (off) return;
         setProd(p);
-        if (user) refresh().catch(() => {});
+        if (user) refresh().catch(() => { });
 
         if (p?.type?.toUpperCase() === "VEHICLE") {
           fetchVehicleCatalog(id)
             .then((c) => !off && setCatalog(c))
-            .catch(() => {});
+            .catch(() => { });
         } else {
           setCatalog(null);
         }
@@ -154,8 +153,8 @@ export default function ProductDetail() {
           p?.type?.toUpperCase() === "VEHICLE"
             ? fetchSimilarVehicles(id)
             : p?.type?.toUpperCase() === "BATTERY"
-            ? fetchSimilarBatteries(id)
-            : Promise.resolve<NormalizedSimilarItem[]>([]);
+              ? fetchSimilarBatteries(id)
+              : Promise.resolve<NormalizedSimilarItem[]>([]);
         similarPromise
           .then((s) => !off && setSimilar(s))
           .catch(() => !off && setSimilar([]))
@@ -235,6 +234,38 @@ export default function ProductDetail() {
       setBuying(false);
     }
   };
+
+  // ===== Scroller cho Similar =====
+  const similarRef = useRef<HTMLDivElement | null>(null);
+  const [simAtStart, setSimAtStart] = useState(true);
+  const [simAtEnd, setSimAtEnd] = useState(false);
+
+  const simUpdateEdges = () => {
+    const el = similarRef.current; if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    setSimAtStart(el.scrollLeft <= 0);
+    setSimAtEnd(el.scrollLeft >= max - 1);
+  };
+  const simScrollBy = (dir: "left" | "right") => {
+    const el = similarRef.current; if (!el) return;
+    const step = Math.max(320, Math.round(el.clientWidth * 0.75));
+    el.scrollBy({ left: dir === "right" ? step : -step, behavior: "smooth" });
+    setTimeout(simUpdateEdges, 320);
+  };
+
+  useEffect(() => {
+    const el = similarRef.current;
+    if (!el) return;
+    simUpdateEdges();
+    const onScroll = () => simUpdateEdges();
+    const onResize = () => simUpdateEdges();
+    window.addEventListener("resize", onResize);
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("resize", onResize);
+      el.removeEventListener("scroll", onScroll as any);
+    };
+  }, [similar.length]);
 
   if (loading)
     return (
@@ -319,9 +350,8 @@ export default function ProductDetail() {
                 <button
                   key={i}
                   onClick={() => setIdx(i)}
-                  className={`h-16 w-28 shrink-0 rounded-lg overflow-hidden border ${
-                    i === idx ? "border-[#246f67]" : "border-slate-200"
-                  }`}
+                  className={`h-16 w-28 shrink-0 rounded-lg overflow-hidden border ${i === idx ? "border-[#246f67]" : "border-slate-200"
+                    }`}
                 >
                   <img src={im.imageUrl} className="w-full h-full object-cover" loading="lazy" />
                 </button>
@@ -333,7 +363,7 @@ export default function ProductDetail() {
           {prod.description && (
             <Card className="mt-4">
               <CardContent className="p-4">
-                <div className="text-lg font-semibold mb-2">Mô tả chi tiết</div>
+                <div className="text-lg font-semibold mb-2 text-[#246f67]">Mô tả chi tiết</div>
                 <p className="whitespace-pre-line leading-relaxed text-[15px] text-slate-700">
                   {prod.description}
                 </p>
@@ -344,7 +374,7 @@ export default function ProductDetail() {
           {/* specs */}
           <Card className="mt-4">
             <CardContent className="p-4">
-              <div className="text-lg font-semibold mb-3">Thông số chi tiết</div>
+              <div className="text-lg font-semibold mb-3 text-[#246f67]">Thông số chi tiết</div>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-[13px]">
                 {brandName && <Spec label="Hãng" value={brandName} />}
                 {modelName && <Spec label="Dòng xe" value={modelName} />}
@@ -489,35 +519,76 @@ export default function ProductDetail() {
         <Card className="mt-6">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-lg font-semibold">Tin đăng tương tự</div>
+              <div className="text-lg text-[#246f67] font-semibold">Tin đăng tương tự</div>
             </div>
 
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
-              {similar.map((s) => (
-                <Link
-                  key={s.id}
-                  to={`/product/${s.id}`}
-                  className="min-w-[280px] max-w-[280px] bg-white rounded-xl border border-slate-200 hover:shadow-md transition"
-                >
-                  <div className="aspect-video rounded-t-xl overflow-hidden bg-slate-100">
-                    <img
-                      src={s.image || "https://via.placeholder.com/640x360?text=No+Image"}
-                      alt={s.title}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  </div>
-                  <div className="p-3">
-                    <div className="text-sm text-slate-500 mb-0.5">
-                      {[s.brandName, s.modelName].filter(Boolean).join(" · ")}
+            <div className="relative">
+              {!simAtStart && (
+                <div className="pointer-events-none absolute left-0 top-0 h-full w-8 bg-gradient-to-r from-white to-transparent z-10 rounded-l-xl" />
+              )}
+              {!simAtEnd && (
+                <div className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-white to-transparent z-10 rounded-r-xl" />
+              )}
+
+              <div
+                ref={similarRef}
+                className="flex gap-3 overflow-x-auto no-scrollbar pb-1 pr-10 pl-1 scroll-smooth"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" as any, scrollSnapType: "x proximity" }}
+              >
+                {similar.map((s) => (
+                  <Link
+                    key={s.id}
+                    to={`/product/${s.id}`}
+                    className="min-w-[280px] max-w-[280px] bg-white rounded-xl border border-slate-200 hover:shadow-md transition"
+                    style={{ scrollSnapAlign: "start" }}
+                  >
+                    <div className="aspect-video rounded-t-xl overflow-hidden bg-slate-100">
+                      <img
+                        src={s.image || "https://via.placeholder.com/640x360?text=No+Image"}
+                        alt={s.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
                     </div>
-                    <div className="font-medium line-clamp-2">{s.title}</div>
-                    <div className="mt-2 text-[#d4205b] font-bold">
-                      {currencyVND(s.price)}
+                    <div className="p-3">
+                      <div className="text-sm text-slate-500 mb-0.5">
+                        {[s.brandName, s.modelName].filter(Boolean).join(" · ")}
+                      </div>
+                      <div className="font-medium line-clamp-2">{s.title}</div>
+                      <div className="mt-2 text-[#d4205b] font-bold">{currencyVND(s.price)}</div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => simScrollBy("left")}
+                disabled={simAtStart}
+                aria-label="Previous similar"
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-20
+             h-10 w-10 rounded-full bg-white border border-black/10 shadow-md
+             disabled:opacity-30 flex items-center justify-center
+             !p-0 !leading-none"               
+                style={{ padding: 0, lineHeight: 0 }}       
+              >
+                <ChevronLeft className="h-5 w-5 text-slate-600 block" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => simScrollBy("right")}
+                disabled={simAtEnd}
+                aria-label="Next similar"
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-20
+             h-10 w-10 rounded-full bg-white border border-black/10 shadow-md
+             disabled:opacity-30 flex items-center justify-center
+             !p-0 !leading-none"
+                style={{ padding: 0, lineHeight: 0 }}
+              >
+                <ChevronRight className="h-5 w-5 text-slate-600 block" />
+              </button>
+
             </div>
 
             {loadingSimilar && (
