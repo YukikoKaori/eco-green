@@ -67,10 +67,10 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
       case "active":
         return (
           <>
-            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={viewPost}>
-              <Eye className="w-4 h-4 mr-1" /> Xem tin
+            <Button variant="outline" size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={viewPost}>
+              <Eye className="w-4 h-4 mr-1 bg-white" /> Xem tin
             </Button>
-            <Button size="sm" className="text-[#246f67] !border-[#246f67]" onClick={() => update("hidden")}>
+            <Button size="sm" className="text-[#246f67] bg-white !border-[#246f67]" onClick={() => update("hidden")}>
               <EyeOff className="w-4 h-4 mr-1" /> Ẩn tin
             </Button>
           </>
@@ -79,11 +79,11 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
       case "expired":
         return (
           <>
-            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={viewPost}>
-              <Eye className="w-4 h-4 mr-1" /> Xem tin
+            <Button variant="outline" size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={viewPost}>
+              <Eye className="w-4 h-4 mr-1 bg-white" /> Xem tin
             </Button>
-            <Button size="sm" className="text-[#246f67] !border-[#246f67]" onClick={() => update("pending")}>
-              <RotateCcw className="w-4 h-4 mr-1" /> Đăng lại
+            <Button size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={() => update("pending")}>
+              <RotateCcw className="w-4 h-4 mr-1 bg-white" /> Đăng lại
             </Button>
           </>
         );
@@ -91,35 +91,35 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
       case "rejected":
         return (
           <>
-            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={() => onShowReason(it.rejectReason)}>
-              <Info className="w-4 h-4 mr-1" /> Xem lý do
+            <Button variant="outline" size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={() => onShowReason(it.rejectReason)}>
+              <Info className="w-4 h-4 mr-1 bg-white" /> Xem lý do
             </Button>
-            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={editPost}>
-              <Edit className="w-4 h-4 mr-1" /> Sửa tin
+            <Button variant="outline" size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={editPost}>
+              <Edit className="w-4 h-4 mr-1 bg-white" /> Sửa tin
             </Button>
           </>
         );
 
       case "draft":
         return (
-          <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={editPost}>
-            <Edit className="w-4 h-4 mr-1" /> Sửa tin
+          <Button variant="outline" size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={editPost}>
+            <Edit className="w-4 h-4 mr-1 bg-white" /> Sửa tin
           </Button>
         );
 
       case "unpaid":
         return (
           <>
-            <Button size="sm" className="text-[#246f67] !border-[#246f67]" onClick={goPay}>
-              <CreditCard className="w-4 h-4 mr-1" /> Thanh toán
+            <Button size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={goPay}>
+              <CreditCard className="w-4 h-4 mr-1 bg-white" /> Thanh toán
             </Button>
           </>
         );
       case "hidden":
         return (
           <>
-            <Button size="sm" className="text-[#246f67] !border-[#246f67]" onClick={() => update("active")}>
-              <EyeIcon className="w-4 h-4 mr-1 rotate-180" /> Bật tin
+            <Button size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={() => update("active")}>
+              <EyeIcon className="w-4 h-4 mr-1 rotate-180 bg-white" /> Bật tin
             </Button>
           </>
         );
@@ -127,10 +127,7 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
       case "sold":
         return (
           <>
-            <Button variant="outline" size="sm" className={tone.outlinePrimary} onClick={viewPost}>
-              <Eye className="w-4 h-4 mr-1" /> Xem tin
-            </Button>
-            <Button size="sm" className="text-[#246f67] !border-[#246f67]" onClick={() => update("pending")}>
+            <Button size="sm" className="text-[#246f67] !border-[#246f67] bg-white" onClick={() => update("pending")}>
               <RotateCcw className="w-4 h-4 mr-1" /> Đăng lại
             </Button>
           </>

@@ -136,7 +136,7 @@ export default function Navbar() {
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="icon" className="hidden md:inline-flex bg-white/90 text-teal-700" aria-label="Danh mục">
+              <Button size="icon" className="hidden md:inline-flex !bg-white/90 text-teal-700" aria-label="Danh mục">
                 <Menu className="w-5 h-5" />
               </Button>
             </DropdownMenuTrigger>
@@ -196,7 +196,7 @@ export default function Navbar() {
               <Button
                 type="button"
                 size="icon"
-                className="hidden sm:flex bg-white"
+                className="hidden sm:flex !bg-white"
                 aria-label="Thông báo"
                 title="Thông báo giao dịch"
               >
@@ -273,7 +273,7 @@ export default function Navbar() {
           <Button
             type="button"
             size="icon"
-            className="hidden sm:flex bg-white"
+            className="hidden sm:flex !bg-white"
             aria-label="Danh sách theo dõi"
             title="Danh sách theo dõi"
             onClick={() => nav("/account/wishlist")}
