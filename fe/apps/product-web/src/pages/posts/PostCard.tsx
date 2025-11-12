@@ -197,16 +197,7 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
               className="text-[#246f67] !border-[#246f67] bg-white"
               onClick={editPost}
             >
-              <Edit className="w-4 h-4 mr-1 bg-white" /> Tiếp tục bản nháp
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-[#246f67] !border-[#246f67] bg-white"
-              onClick={() => update("pending")}
-              title="Gửi tin nháp lên chờ duyệt"
-            >
-              <RotateCcw className="w-4 h-4 mr-1 bg-white" /> Gửi duyệt
+              <Edit className="w-4 h-4 mr-1 bg-white" /> Sửa tin
             </Button>
           </>
         );
