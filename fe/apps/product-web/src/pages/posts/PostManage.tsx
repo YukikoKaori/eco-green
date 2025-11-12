@@ -23,6 +23,7 @@ import { Link } from "react-router-dom";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import PostCard from "@/pages/posts/PostCard";
+import { toast } from "sonner";
 
 import {
   type ListingStatus,
@@ -31,7 +32,6 @@ import {
   getMemberProducts,
   getMemberCounts,
   getMemberProductDetail,
-  updateMemberProductStatus,
   getCoverFromImages,
   normalizePrice,
 } from "@/api/managePost";
@@ -61,20 +61,25 @@ export default function PostManage() {
   const [loading, setLoading] = useState(false);
   const [list, setList] = useState<ProductListItem[]>([]);
   const [counts, setCounts] = useState<Record<ListingStatus, number>>({
-    active: 0,
-    pending: 0,
-    unpaid: 0,
-    draft: 0,
-    rejected: 0,
-    expired: 0,
-    hidden: 0,
-    sold: 0,
+    active: 0, pending: 0, unpaid: 0, draft: 0, rejected: 0, expired: 0, hidden: 0, sold: 0,
   });
 
   const [reasonOpen, setReasonOpen] = useState(false);
   const [reasonText, setReasonText] = useState<string>("");
 
-  // fetch list by tab
+  const refreshTab = async () => {
+    setLoading(true);
+    try {
+      const [lst, cnt] = await Promise.all([getMemberProducts(tab), getMemberCounts()]);
+      setList(lst);
+      setCounts(cnt);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Không tải được dữ liệu.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     let stop = false;
     (async () => {
@@ -86,25 +91,18 @@ export default function PostManage() {
         if (!stop) setLoading(false);
       }
     })();
-    return () => {
-      stop = true;
-    };
+    return () => { stop = true; };
   }, [tab]);
 
-  // fetch counts for badges
   useEffect(() => {
     let stop = false;
     (async () => {
       try {
         const c = await getMemberCounts();
         if (!stop) setCounts(c);
-      } catch {
-        /* ignore */
-      }
+      } catch { /* ignore */ }
     })();
-    return () => {
-      stop = true;
-    };
+    return () => { stop = true; };
   }, []);
 
   const filtered = useMemo(() => {
@@ -112,32 +110,17 @@ export default function PostManage() {
     if (!s) return list;
     return list.filter((x) => {
       const title = (x.title || "").toLowerCase();
-      const location = `${x.addressesDetail || ""} ${x.ward || ""} ${x.district || ""} ${
-        x.city || ""
-      }`.toLowerCase();
+      const location = `${x.addressesDetail || ""} ${x.ward || ""} ${x.district || ""} ${x.city || ""}`.toLowerCase();
       return title.includes(s) || location.includes(s);
     });
   }, [list, q]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageData = filtered.slice((page - 1) * pageSize, page * pageSize);
-  useEffect(() => {
-    setPage(1);
-  }, [tab, q]);
+  useEffect(() => { setPage(1); }, [tab, q]);
 
-  async function setStatus(id: string, next: ListingStatus) {
-    try {
-      await updateMemberProductStatus(id, next);
-      // remove from current list and adjust counters
-      setList((prev) => prev.filter((it) => it.id !== id));
-      setCounts((c) => ({
-        ...c,
-        [tab]: Math.max(0, c[tab] - 1),
-        [next]: (c[next] ?? 0) + 1,
-      }));
-    } catch {
-      /* ignore or toast */
-    }
+  async function setStatus(_id: string, _next: ListingStatus) {
+    await refreshTab();
   }
 
   async function onShowReason(item?: ProductListItem) {
@@ -160,39 +143,30 @@ export default function PostManage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
-      {/* Page header */}
+      {/* header */}
       <div className="flex items-center justify-between gap-3 mb-4">
         <div>
           <h1 className="!text-xl !font-bold !text-[#246f67]">Quản lý tin đăng</h1>
-          <p className="text-sm text-muted-foreground">
-            Theo dõi, chỉnh sửa và quản lý tin đăng của bạn.
-          </p>
+          <p className="text-sm text-muted-foreground">Theo dõi, chỉnh sửa và quản lý tin đăng của bạn.</p>
         </div>
       </div>
 
-      {/* User header */}
+      {/* user bar */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 ring-2 ring-[#2ba195]/20">
             <AvatarImage
               src={user?.avatarUrl || DEFAULT_AVATAR}
               alt={displayName}
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = DEFAULT_AVATAR;
-              }}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = DEFAULT_AVATAR; }}
             />
-            <AvatarFallback className="bg-[#bf3b16] text-white font-semibold">
-              {initial}
-            </AvatarFallback>
+            <AvatarFallback className="bg-[#bf3b16] text-white font-semibold">{initial}</AvatarFallback>
           </Avatar>
-
-          <div>
-            <div className="text-xl font-semibold">{displayName}</div>
-          </div>
+          <div><div className="text-xl font-semibold">{displayName}</div></div>
         </div>
       </div>
 
-      {/* Search bar */}
+      {/* search */}
       <div className="flex items-center gap-2 bg-white rounded-xl border px-3 py-2 mb-3">
         <Search className="w-4 h-4 text-gray-500" />
         <Input
@@ -203,7 +177,7 @@ export default function PostManage() {
         />
       </div>
 
-      {/* Tabs */}
+      {/* tabs */}
       <Tabs value={tab} onValueChange={(v) => setTab(v as ListingStatus)} className="!w-full">
         <TabsList className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 bg-transparent p-0">
           {TABS.map((t) => (
@@ -222,9 +196,7 @@ export default function PostManage() {
         <TabsContent value={tab} className="mt-3">
           {loading ? (
             <Card className="border-dashed">
-              <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                Đang tải...
-              </CardContent>
+              <CardContent className="py-10 text-center text-sm text-muted-foreground">Đang tải...</CardContent>
             </Card>
           ) : pageData.length === 0 ? (
             <Card className="border-dashed">
@@ -247,10 +219,7 @@ export default function PostManage() {
               {pageData.map((it) => {
                 const cover = getCoverFromImages(it.productImagesList);
                 const priceNum = normalizePrice(it.price);
-                const location = [it.addressesDetail, it.ward, it.district, it.city]
-                  .filter(Boolean)
-                  .join(", ");
-
+                const location = [it.addressesDetail, it.ward, it.district, it.city].filter(Boolean).join(", ");
                 return (
                   <PostCard
                     key={it.id}
@@ -264,7 +233,7 @@ export default function PostManage() {
                       views: it.views,
                       rejectReason: it.rejectReason,
                     }}
-                    setStatus={setStatus}
+                    setStatus={setStatus}        
                     onShowReason={() => onShowReason(it)}
                   />
                 );
@@ -279,9 +248,7 @@ export default function PostManage() {
                   <PaginationItem>
                     <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} />
                   </PaginationItem>
-                  <div className="px-3 text-sm self-center">
-                    Trang {page}/{totalPages}
-                  </div>
+                  <div className="px-3 text-sm self-center">Trang {page}/{totalPages}</div>
                   <PaginationItem>
                     <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} />
                   </PaginationItem>
@@ -291,8 +258,6 @@ export default function PostManage() {
           )}
         </TabsContent>
       </Tabs>
-
-      {/* Dialog: lý do bị từ chối */}
       <Dialog open={reasonOpen} onOpenChange={setReasonOpen}>
         <DialogContent>
           <DialogHeader>

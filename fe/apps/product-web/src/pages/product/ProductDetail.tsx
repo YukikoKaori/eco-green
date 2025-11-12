@@ -69,9 +69,17 @@ const hasNum = (n: number | null | undefined) => typeof n === "number" && Number
 const toNumberPrice = (v?: number | string | null): number | null => {
   if (v == null) return null;
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
-  const n = Number(v.replaceAll(".", "").replaceAll(",", ""));
+  const n = Number(String(v).replaceAll(".", "").replaceAll(",", ""));
   return Number.isFinite(n) ? n : null;
 };
+
+/** new: format mask 1.000.000 khi gõ */
+function formatPriceDots(raw: string | number | null | undefined) {
+  if (raw == null) return "";
+  const digits = String(raw).replace(/\D/g, "");
+  if (!digits) return "";
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
 
 /* ============================== Page ============================== */
 export default function ProductDetail() {
@@ -94,7 +102,7 @@ export default function ProductDetail() {
   const [openConfirm, setOpenConfirm] = useState(false);
   const [openSuccess, setOpenSuccess] = useState(false);
   const [successMsg, setSuccessMsg] = useState("Đã gửi yêu cầu đến người bán");
-  const [offerPrice, setOfferPrice] = useState<number | "">("");
+  const [offerPrice, setOfferPrice] = useState<string>(""); // <-- string để mask
   const [buyerMessage, setBuyerMessage] = useState("");
   const [buying, setBuying] = useState(false);
 
@@ -122,7 +130,7 @@ export default function ProductDetail() {
     (async () => {
       try {
         await addRecentView(id);
-      } catch { }
+      } catch {}
     })();
   }, [id, user]);
 
@@ -137,12 +145,12 @@ export default function ProductDetail() {
         const p = await fetchProductDetail(id);
         if (off) return;
         setProd(p);
-        if (user) refresh().catch(() => { });
+        if (user) refresh().catch(() => {});
 
         if (p?.type?.toUpperCase() === "VEHICLE") {
           fetchVehicleCatalog(id)
             .then((c) => !off && setCatalog(c))
-            .catch(() => { });
+            .catch(() => {});
         } else {
           setCatalog(null);
         }
@@ -153,8 +161,8 @@ export default function ProductDetail() {
           p?.type?.toUpperCase() === "VEHICLE"
             ? fetchSimilarVehicles(id)
             : p?.type?.toUpperCase() === "BATTERY"
-              ? fetchSimilarBatteries(id)
-              : Promise.resolve<NormalizedSimilarItem[]>([]);
+            ? fetchSimilarBatteries(id)
+            : Promise.resolve<NormalizedSimilarItem[]>([]);
         similarPromise
           .then((s) => !off && setSimilar(s))
           .catch(() => !off && setSimilar([]))
@@ -195,14 +203,14 @@ export default function ProductDetail() {
       return;
     }
     const p = toNumberPrice(prod?.price ?? catalog?.productPrice ?? null);
-    setOfferPrice(p ?? "");
+    setOfferPrice(formatPriceDots(p ?? "")); // <-- format khi mở dialog
     setOpenConfirm(true);
   };
 
   // Xác nhận mua
   const handleConfirmBuy = async () => {
     if (!id) return;
-    const numberPrice = typeof offerPrice === "number" ? offerPrice : toNumberPrice(offerPrice);
+    const numberPrice = toNumberPrice(offerPrice); // <-- parse từ chuỗi có dấu chấm
     if (!numberPrice || numberPrice <= 0) {
       toast.error("Giá đề nghị không hợp lệ.");
       return;
@@ -303,7 +311,7 @@ export default function ProductDetail() {
       : null;
   const metaLine = [metaYear, metaKm].filter(Boolean).join(" · ");
   const sellerProfilePath = prod.sellerId
-    ? `/profile/${encodeURIComponent(prod.sellerId)}`
+    ? `/seller/${encodeURIComponent(prod.sellerId)}`
     : undefined;
 
   /* ------------------------------ UI ------------------------------ */
@@ -447,8 +455,8 @@ export default function ProductDetail() {
             <CardContent className="p-4">
               <div className="text-lg font-semibold mb-2">Người bán</div>
 
-              {/* Header người bán: nếu có username thì bọc Link để sang trang profile public */}
               {sellerProfilePath ? (
+                /* Toàn bộ hàng này là 1 link sang trang cá nhân seller */
                 <Link
                   to={sellerProfilePath}
                   className="flex items-center gap-3 hover:bg-emerald-50/40 rounded-lg -mx-2 px-2 py-1 transition"
@@ -457,13 +465,14 @@ export default function ProductDetail() {
                   <div className="h-8 w-8 rounded-full bg-slate-200 grid place-items-center font-semibold">
                     {(prod.sellerName || "?").charAt(0)}
                   </div>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-[#246f67] hover:underline">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-[#246f67] hover:underline truncate">
                       {prod.sellerName || "Người bán"}
                     </div>
-                    <div className="text-xs text-slate-500 line-clamp-1">{address || "—"}</div>
+                    <div className="text-xs text-slate-500 line-clamp-1">
+                      {address || "—"}
+                    </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
                 </Link>
               ) : (
                 <div className="flex items-center gap-3">
@@ -480,7 +489,6 @@ export default function ProductDetail() {
               <Separator className="my-4" />
 
               <div className="grid grid-cols-2 gap-2">
-                {/* Nút Mua */}
                 <Button
                   className="!bg-[#246f67] hover:bg-[#1f5f58] text-white"
                   onClick={handleOpenBuy}
@@ -488,7 +496,6 @@ export default function ProductDetail() {
                   Mua
                 </Button>
 
-                {/* Hiện số điện thoại */}
                 <Button
                   variant="outline"
                   className="!border-slate-300"
@@ -498,7 +505,6 @@ export default function ProductDetail() {
                   {showPhone ? (prod.sellerPhone || "Chưa có SĐT") : `Hiện số ${maskPhone(prod.sellerPhone)}`}
                 </Button>
 
-                {/* Nút sang trang cá nhân (nổi bật) nếu có username */}
                 {sellerProfilePath && (
                   <Button
                     asChild
@@ -511,6 +517,7 @@ export default function ProductDetail() {
               </div>
             </CardContent>
           </Card>
+
         </div>
       </div>
 
@@ -569,8 +576,8 @@ export default function ProductDetail() {
                 className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-20
              h-10 w-10 rounded-full bg-white border border-black/10 shadow-md
              disabled:opacity-30 flex items-center justify-center
-             !p-0 !leading-none"               
-                style={{ padding: 0, lineHeight: 0 }}       
+             !p-0 !leading-none"
+                style={{ padding: 0, lineHeight: 0 }}
               >
                 <ChevronLeft className="h-5 w-5 text-slate-600 block" />
               </button>
@@ -616,10 +623,12 @@ export default function ProductDetail() {
             <div>
               <label className="text-sm text-slate-600">Giá đề nghị (VND)</label>
               <Input
-                type="number"
-                min={0}
+                type="text"
+                inputMode="numeric"
+                placeholder="vd: 600.000.000"
                 value={offerPrice}
-                onChange={(e) => setOfferPrice(e.target.value === "" ? "" : Number(e.target.value))}
+                onFocus={(e) => e.currentTarget.select()}
+                onChange={(e) => setOfferPrice(formatPriceDots(e.target.value))}
               />
             </div>
             <div>

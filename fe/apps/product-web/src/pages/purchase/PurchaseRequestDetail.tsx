@@ -1,3 +1,4 @@
+// src/pages/PurchaseRequestDetail.tsx
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,12 +12,34 @@ import {
   respondPurchaseRequest,
   listSellerPurchaseRequests,
 } from "@/api/productDetail";
-import { currencyVND } from "@/utils/price"; 
+import { currencyVND } from "@/utils/price";
 
+/* --------------------- helpers --------------------- */
+function pickErrMessage(err: any) {
+  const status = err?.response?.status as number | undefined;
+  const serverMsg =
+    err?.response?.data?.message ||
+    err?.response?.data?.error ||
+    err?.message;
+
+  if (status === 409) {
+    return (
+      serverMsg ||
+      "Sản phẩm đã được chấp nhận cho người mua khác hoặc không còn khả dụng."
+    );
+  }
+  if (status === 400) {
+    return serverMsg || "Dữ liệu không hợp lệ.";
+  }
+  return serverMsg || "Thao tác thất bại. Vui lòng thử lại.";
+}
+
+/* --------------------- component --------------------- */
 export default function PurchaseRequestDetail() {
   const { id = "" } = useParams();
   const loc = useLocation() as { state?: { request?: PurchaseRequestDTO } };
   const nav = useNavigate();
+
   const passed = loc?.state?.request;
   const [data, setData] = useState<PurchaseRequestDTO | null>(passed ?? null);
   const [loading, setLoading] = useState(true);
@@ -34,16 +57,25 @@ export default function PurchaseRequestDetail() {
           if (!found && !passed) toast.error("Không tìm thấy yêu cầu mua.");
         }
       } catch (e: any) {
-        toast.error(e?.response?.data?.message || "Không tải được dữ liệu.");
+        toast.error(pickErrMessage(e));
       } finally {
         if (!off) setLoading(false);
       }
     })();
-    return () => { off = true; };
-  }, [id]); 
+    return () => {
+      off = true;
+    };
+  }, [id]);
 
   const onRespond = async (accept: boolean) => {
     if (!data) return;
+
+    // Block early if already processed
+    if (data.status !== "PENDING") {
+      toast.info("Yêu cầu này đã được xử lý trước đó.");
+      return;
+    }
+
     setBusy(true);
     try {
       const updated = await respondPurchaseRequest({
@@ -53,10 +85,26 @@ export default function PurchaseRequestDetail() {
           ? "Đồng ý bán với giá bạn đề xuất. Vui lòng ký hợp đồng."
           : "Xin lỗi, tôi không đồng ý bán.",
       });
+
       setData(updated);
-      toast.success(accept ? "Đã đồng ý – hệ thống đã gửi hợp đồng qua email." : "Đã từ chối yêu cầu.");
+
+      if (accept) {
+        const url = (updated as any)?.contractUrl as string | undefined;
+        if (url && updated.contractStatus === "SENT") {
+          toast.success("Đã đồng ý – hợp đồng đã được gửi qua email.", {
+            action: {
+              label: "Mở hợp đồng",
+              onClick: () => window.open(url, "_blank"),
+            },
+          });
+        } else {
+          toast.success("Đã đồng ý – hệ thống đã gửi thông báo cho người mua.");
+        }
+      } else {
+        toast.success("Đã từ chối yêu cầu.");
+      }
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Thao tác thất bại.");
+      toast.error(pickErrMessage(e));
     } finally {
       setBusy(false);
     }
@@ -108,32 +156,55 @@ export default function PurchaseRequestDetail() {
           <div className="grid sm:grid-cols-2 gap-3 text-sm">
             <div>
               <div className="font-semibold text-[#246f67] mb-1">Người mua</div>
-              <div>Tên: <b>{data.buyerName ?? "—"}</b></div>
-              <div>Email: <span className="underline">{data.buyerEmail ?? "—"}</span></div>
+              <div>
+                Tên: <b>{data.buyerName ?? "—"}</b>
+              </div>
+              <div>
+                Email: <span className="underline">{data.buyerEmail ?? "—"}</span>
+              </div>
             </div>
 
             <div>
               <div className="font-semibold text-[#246f67] mb-1">Thông tin giao dịch</div>
-              <div>Giá đề nghị: <b className="text-[#d4205b]">
-                {currencyVND(data.offeredPrice as any)}
-              </b></div>
-              <div>Trạng thái: <span className="px-2 py-0.5 rounded-full border text-xs ml-1">
-                {data.status}
-              </span></div>
+              <div>
+                Giá đề nghị:{" "}
+                <b className="text-[#d4205b]">{currencyVND(data.offeredPrice as any)}</b>
+              </div>
+              <div>
+                Trạng thái:{" "}
+                <span className="px-2 py-0.5 rounded-full border text-xs ml-1">{data.status}</span>
+              </div>
               {data.contractStatus && (
-                <div>Hợp đồng: <span className="px-2 py-0.5 rounded-full border text-xs ml-1">
-                  {data.contractStatus}
-                </span></div>
+                <div>
+                  Hợp đồng:{" "}
+                  <span className="px-2 py-0.5 rounded-full border text-xs ml-1">
+                    {data.contractStatus}
+                  </span>
+                </div>
               )}
               {contractUrl && data.contractStatus === "SENT" && (
                 <div className="mt-1">
-                  <a href={contractUrl} target="_blank" rel="noreferrer" className="text-teal-700 underline">
+                  <a
+                    href={contractUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-teal-700 underline"
+                  >
                     Mở hợp đồng Eversign
                   </a>
                 </div>
               )}
             </div>
           </div>
+
+          {data.status !== "PENDING" && (
+            <>
+              <Separator className="my-3" />
+              <div className="text-sm text-amber-700">
+                Yêu cầu đã ở trạng thái <b>{data.status}</b>. Bạn không thể thay đổi nữa.
+              </div>
+            </>
+          )}
 
           {data.buyerMessage && (
             <>
