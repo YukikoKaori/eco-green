@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { logoutApi } from "@/api/auth";
 import {
   Bookmark, Search as Clock, Star, History,
-  Settings, HelpCircle, MessageSquare, LogOut, User, ChevronRight
+  Settings, HelpCircle, MessageSquare, LogOut, User, ChevronRight,
+  BadgeDollarSignIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,26 +17,42 @@ type Item = { to: string; label: string; icon: JSX.Element; danger?: boolean };
 type Section = { title: string; items: Item[] };
 
 const SECTIONS: Section[] = [
-  { title: "Tiện ích", items: [
-    { to: "/account/wishlist", label: "Tin đăng đã lưu", icon: <Bookmark className="w-4 h-4" /> },
-    { to: "/history/views", label: "Lịch sử xem tin", icon: <Clock className="w-4 h-4" /> },
-    { to: "/ratings", label: "Đánh giá từ tôi", icon: <Star className="w-4 h-4" /> },
-  ]},
-  { title: "Dịch vụ trả phí", items: [
-    { to: "/orders", label: "Lịch sử giao dịch", icon: <History className="w-4 h-4" /> },
-  ]},
-  { title: "Khác", items: [
-    { to: "/account/profile", label: "Cài đặt tài khoản", icon: <Settings className="w-4 h-4" /> },
-    { to: "/help", label: "Trợ giúp", icon: <HelpCircle className="w-4 h-4" /> },
-    { to: "/feedback", label: "Đóng góp ý kiến", icon: <MessageSquare className="w-4 h-4" /> },
-  ]},
+  {
+    title: "Tiện ích",
+    items: [
+      { to: "/account/wishlist", label: "Tin đăng đã lưu", icon: <Bookmark className="w-4 h-4" /> },
+      { to: "/history/views", label: "Lịch sử xem tin", icon: <Clock className="w-4 h-4" /> },
+      { to: "/ratings", label: "Đánh giá từ tôi", icon: <Star className="w-4 h-4" /> },
+    ],
+  },
+  {
+    title: "Dịch vụ",
+    items: [
+      { to: "/orders", label: "Lịch sử giao dịch", icon: <History className="w-4 h-4" /> },
+      { to: "/bought", label: "Sản phẩm đã mua", icon: <BadgeDollarSignIcon className="w-4 h-4" /> },
+    ],
+  },
+  {
+    title: "Khác",
+    items: [
+      { to: "/account/profile", label: "Cài đặt tài khoản", icon: <Settings className="w-4 h-4" /> },
+      { to: "/help", label: "Trợ giúp", icon: <HelpCircle className="w-4 h-4" /> },
+      { to: "/feedback", label: "Đóng góp ý kiến", icon: <MessageSquare className="w-4 h-4" /> },
+    ],
+  },
 ];
 
-function RowLink({ to, icon, label, danger }: Item) {
+type RowLinkProps = Item & { isLoggedIn: boolean };
+
+function RowLink({ to, icon, label, danger, isLoggedIn }: RowLinkProps) {
+  const targetHref = isLoggedIn
+    ? to
+    : `/login?redirect=${encodeURIComponent(to)}`;
+
   return (
     <DropdownMenuItem asChild className="p-0">
       <Link
-        to={to}
+        to={targetHref}
         className={`flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2 no-underline text-sm ${
           danger ? "text-rose-600" : "text-gray-800"
         } cursor-pointer`}
@@ -56,7 +73,9 @@ export default memo(function UserMenu() {
   const isLoggedIn = !!user;
 
   async function handleLogout() {
-    try { await logoutApi(); } catch {}
+    try {
+      await logoutApi();
+    } catch {}
     await logout();
     nav("/");
   }
@@ -83,18 +102,26 @@ export default memo(function UserMenu() {
           <div className="flex items-center gap-3">
             <Link
               to={profileUrl}
-              aria-label={isLoggedIn ? `Xem trang của ${user!.fullName || user!.username}` : "Đăng nhập"}
+              aria-label={
+                isLoggedIn
+                  ? `Xem trang của ${user!.fullName || user!.username}`
+                  : "Đăng nhập"
+              }
               className="flex items-center gap-3 no-underline hover:opacity-90"
             >
               <Avatar className="w-14 h-14 ring-2 ring-[#2ba195]/20">
                 <AvatarImage
                   src={user?.avatarUrl ?? DEFAULT_AVATAR}
                   alt={user?.fullName || user?.username || "User"}
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = DEFAULT_AVATAR; }}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = DEFAULT_AVATAR;
+                  }}
                   className="object-cover"
                 />
                 <AvatarFallback>
-                  {(user?.fullName || user?.username || "U").charAt(0).toUpperCase()}
+                  {(user?.fullName || user?.username || "U")
+                    .charAt(0)
+                    .toUpperCase()}
                 </AvatarFallback>
               </Avatar>
 
@@ -111,13 +138,23 @@ export default memo(function UserMenu() {
 
           {!isLoggedIn && (
             <div className="mt-4 rounded-2xl border border-gray-200 bg-white px-4 py-3">
-              <div className="text-[#0f766e] font-semibold text-sm">Mua thì hời, bán thì lời!</div>
-              <div className="text-gray-500 text-xs mb-3">Đăng nhập tài khoản nha!</div>
+              <div className="text-[#0f766e] font-semibold text-sm">
+                Mua thì hời, bán thì lời!
+              </div>
+              <div className="text-gray-500 text-xs mb-3">
+                Đăng nhập tài khoản nha!
+              </div>
               <div className="flex items-center gap-3">
-                <Link to="/register" className="flex-1 h-9 rounded-full bg-white border border-gray-300 text-gray-800 text-sm grid place-content-center">
+                <Link
+                  to="/register"
+                  className="flex-1 h-9 rounded-full bg-white border border-gray-300 text-gray-800 text-sm grid place-content-center"
+                >
                   Tạo tài khoản
                 </Link>
-                <Link to="/login" className="flex-1 h-9 rounded-full bg-[#0f766e] text-white text-sm grid place-content-center">
+                <Link
+                  to="/login"
+                  className="flex-1 h-9 rounded-full bg-[#0f766e] text-white text-sm grid place-content-center"
+                >
                   Đăng nhập
                 </Link>
               </div>
@@ -128,9 +165,13 @@ export default memo(function UserMenu() {
         {/* Sections */}
         {SECTIONS.map((sec) => (
           <div key={sec.title} className="px-4 py-3">
-            <h4 className="text-gray-600 text-sm font-semibold mb-2">{sec.title}</h4>
+            <h4 className="text-gray-600 text-sm font-semibold mb-2">
+              {sec.title}
+            </h4>
             <div className="space-y-2">
-              {sec.items.map((it) => <RowLink key={it.to} {...it} />)}
+              {sec.items.map((it) => (
+                <RowLink key={it.to} {...it} isLoggedIn={isLoggedIn} />
+              ))}
             </div>
           </div>
         ))}
@@ -138,7 +179,10 @@ export default memo(function UserMenu() {
         {/* Logout */}
         {isLoggedIn && (
           <div className="px-4 pb-4">
-            <DropdownMenuItem className="p-0" onSelect={(e) => e.preventDefault()}>
+            <DropdownMenuItem
+              className="p-0"
+              onSelect={(e) => e.preventDefault()}
+            >
               <button
                 type="button"
                 onClick={handleLogout}

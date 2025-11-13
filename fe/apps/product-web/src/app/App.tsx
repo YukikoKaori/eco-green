@@ -27,6 +27,7 @@ import OrdersPage from "@/pages/transaction/OrdersPage";
 import OAuthPopupBridge from "@/pages/auth/OAuthPopupBridge";
 import BrandProductsPage from "@/pages/listingEV/BrandProductsPage";
 import SellerPublic from "@/pages/account/SellerPublic";
+import BoughtProductsPage from "@/pages/bought/BoughtProductsPage";
 
 export default function App() {
   return (
@@ -35,10 +36,19 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
       </Route>
 
+      {/* Layout compact */}
       <Route element={<LayoutCompact />}>
         <Route path="/xe-dien" element={<VehicleListPage />} />
         <Route path="/pin-dien" element={<BatteryListPage />} />
-        <Route path="/account/wishlist" element={<WishlistPage />} />
+        <Route
+          path="/account/wishlist"
+          element={
+            <PrivateRoute>
+              <WishlistPage />
+            </PrivateRoute>
+          }
+        />
+
         <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route path="/search" element={<SearchResults />} />
         <Route path="/payment/vnpay-return" element={<VNPayReturn />} />
@@ -47,7 +57,14 @@ export default function App() {
         <Route path="/brands/:brandId" element={<BrandProductsPage />} />
         <Route path="/seller/:userId" element={<SellerPublic />} />
 
-
+        <Route
+          path="/bought"
+          element={
+            <PrivateRoute>
+              <BoughtProductsPage />
+            </PrivateRoute>
+          }
+        />
         <Route
           path="/orders"
           element={
@@ -56,6 +73,7 @@ export default function App() {
             </PrivateRoute>
           }
         />
+
         <Route
           path="/postnotice"
           element={
@@ -64,7 +82,10 @@ export default function App() {
             </PrivateRoute>
           }
         />
-        <Route path="/post/notice/:id" element={<Navigate to="/postnotice" replace />} />
+        <Route
+          path="/post/notice/:id"
+          element={<Navigate to="/postnotice" replace />}
+        />
 
         <Route
           path="/post/new"
@@ -105,6 +126,7 @@ export default function App() {
             </PrivateRoute>
           }
         />
+
         <Route
           path="/history/views"
           element={
@@ -113,6 +135,8 @@ export default function App() {
             </PrivateRoute>
           }
         />
+
+        {/* Auth */}
         <Route
           path="/login"
           element={
