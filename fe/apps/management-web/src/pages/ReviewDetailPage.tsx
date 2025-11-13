@@ -6,53 +6,37 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, ArrowLeft, Phone, Copy, CheckCheck, CalendarClock } from "lucide-react";
+import {
+  Loader2,
+  ArrowLeft,
+  Phone,
+  Copy,
+  CheckCheck,
+  CalendarClock,
+  XCircle,
+  CheckCircle2,
+} from "lucide-react";
 import {
   approveActive,
   rejectWithReason,
-  fetchPendingByIdViaList,
-  type PendingRow,
+  fetchPendingPaged,
+  type ModerationRow,
 } from "@/api/moderation";
 import { toast } from "sonner";
 
-/* ---------- constants & helpers ---------- */
 const BRAND = "#0f766e";
 
 const fmtMoney = (v: number | null | undefined) =>
   v == null ? "—" : v.toLocaleString("vi-VN") + " ₫";
 
-const normalizeIso = (iso?: string | null): string | null => {
-  if (!iso) return null;
-  return String(iso).trim().replace(/(\.\d{3})\d+/, "$1");
-};
-const toDate = (iso?: string | null): Date | null => {
-  const s = normalizeIso(iso);
-  if (!s) return null;
-  const d = new Date(s);
-  return isNaN(d.getTime()) ? null : d;
-};
 const fmtDate = (iso?: string | null) => {
-  const d = toDate(iso);
-  return d ? d.toLocaleString("vi-VN") : "—";
-};
-const relTime = (iso?: string | null) => {
-  const d = toDate(iso);
-  if (!d) return "";
-  const diff = d.getTime() - Date.now();
-  const abs = Math.abs(diff);
-  const day = 86400000;
-  const hour = 3600000;
-  if (abs >= day) {
-    const n = Math.round(abs / day);
-    return diff >= 0 ? `(còn ${n} ngày)` : `(${n} ngày trước)`;
-  }
-  const n = Math.round(abs / hour);
-  return diff >= 0 ? `(còn ${n} giờ)` : `(${n} giờ trước)`;
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? "—" : d.toLocaleString("vi-VN");
 };
 
 const statusTone: Record<string, string> = {
   PENDING_REVIEW: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  APPROVED: "bg-blue-50 text-blue-700 border-blue-200",
   ACTIVE: "bg-emerald-100 text-emerald-700 border-emerald-200",
   REJECTED: "bg-red-100 text-red-700 border-red-200",
 };
@@ -61,76 +45,84 @@ export default function ReviewDetailPage() {
   const { id } = useParams<{ id: string }>();
   const nav = useNavigate();
   const loc = useLocation();
-  const itemFromState = (loc.state as any)?.item as PendingRow | undefined;
 
-  const [item, setItem] = useState<PendingRow | undefined>(itemFromState);
-  const [loading, setLoading] = useState<boolean>(!itemFromState);
+  const [item, setItem] = useState<ModerationRow | null>(
+    (loc.state as any)?.item || null
+  );
+  const [loading, setLoading] = useState(!item);
   const [rejectReason, setRejectReason] = useState("");
+  const [showRejectBox, setShowRejectBox] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [copied, setCopied] = useState<{ id?: boolean; seller?: boolean }>({});
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id || itemFromState) return;
+    if (item || !id) return;
     let alive = true;
     (async () => {
       try {
         setLoading(true);
-        const found = await fetchPendingByIdViaList(id, { pageSize: 50, maxPages: 20 });
+        const res = await fetchPendingPaged({ page: 0, size: 50 });
+        const found = res.content.find((x) => x.id === id);
         if (!alive) return;
         if (!found) setError("Không tìm thấy bài đang chờ phê duyệt.");
-        setItem(found || undefined);
+        else setItem(found);
       } catch (e: any) {
-        if (!alive) return;
         setError(e?.message || "Lỗi tải dữ liệu.");
       } finally {
-        if (!alive) return;
-        setLoading(false);
+        if (alive) setLoading(false);
       }
     })();
-    return () => { alive = false; };
-  }, [id, itemFromState]);
+    return () => {
+      alive = false;
+    };
+  }, [id, item]);
 
   const tone = useMemo(
-    () => statusTone[item?.status || "PENDING_REVIEW"] || "bg-gray-50 text-gray-700 border-gray-200",
+    () =>
+      statusTone[item?.status || "PENDING_REVIEW"] ||
+      "bg-gray-50 text-gray-700 border-gray-200",
     [item?.status]
   );
 
-  if (!id) return <div className="p-4">Thiếu id</div>;
+  if (!id) return <div className="p-4">Thiếu ID</div>;
 
   return (
     <div className="p-4 md:p-6 space-y-4">
-      {/* Header actions */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <Button variant="outline" onClick={() => nav(-1)}>
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Quay lại
+          <ArrowLeft className="w-4 h-4 mr-1" /> Quay lại
         </Button>
-        {item?.status ? (
-          <Badge className={["border", tone].join(" ")}>
-            {item.status}
-          </Badge>
-        ) : null}
+        {item?.status && (
+          <Badge className={["border", tone].join(" ")}>{item.status}</Badge>
+        )}
       </div>
 
       <Card className="border border-gray-200">
-        <CardHeader className="pb-3">
+        <CardHeader>
           <CardTitle className="flex flex-col gap-2">
-            <span className="text-emerald-700">{item?.title || "Chi tiết sản phẩm chờ duyệt"}</span>
+            <span className="text-emerald-700 text-lg font-semibold">
+              {item?.title || "Chi tiết sản phẩm"}
+            </span>
             <div className="text-xs text-slate-500 font-normal">
-              <span className="mr-2">ID:</span>
-              <code className="px-1.5 py-0.5 bg-slate-100 rounded">{id}</code>
+              <span className="mr-2">Post ID:</span>
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-7 ml-1 px-2"
                 onClick={async () => {
                   await navigator.clipboard.writeText(id || "");
-                  setCopied("id");
-                  setTimeout(() => setCopied(null), 1200);
+                  setCopied({ id: true });
+                  toast.success("Đã copy Post ID");
+                  setTimeout(() => setCopied({}), 1200);
                 }}
               >
-                {copied === "id" ? <CheckCheck className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {copied.id ? (
+                  <CheckCheck className="w-4 h-4 text-emerald-600" />
+                ) : (
+                  <Copy className="w-4 h-4 text-slate-500" />
+                )}
               </Button>
             </div>
           </CardTitle>
@@ -147,191 +139,255 @@ export default function ReviewDetailPage() {
             <div>Không có dữ liệu.</div>
           ) : (
             <>
-              {/* TOP: Ảnh trái - Thông tin xe phải */}
+              {/* Ảnh + mô tả + người bán */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Ảnh bên trái */}
-                <div>
+                <div className="flex flex-col gap-3">
                   {item.thumbnail ? (
-                    <div className="overflow-hidden rounded-xl border">
-                      <img
-                        src={item.thumbnail}
-                        alt={item.title}
-                        className="w-full max-h-[520px] object-cover"
-                        loading="lazy"
-                      />
-                    </div>
+                    <img
+                      src={item.thumbnail}
+                      alt={item.title}
+                      className="rounded-xl border w-full max-h-[500px] object-cover"
+                    />
                   ) : (
                     <div className="h-[320px] rounded-xl border bg-slate-50 flex items-center justify-center text-slate-400">
                       Không có ảnh
                     </div>
                   )}
+
+                  <Section title="Thông tin người bán" className="mt-6">
+                    <div className="rounded-xl border p-4 bg-white space-y-3">
+                      <Row
+                        label="Seller ID"
+                        value={
+                          item.sellerId ? (
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2"
+                                onClick={async () => {
+                                  await navigator.clipboard.writeText(
+                                    item.sellerId || ""
+                                  );
+                                  setCopied({ seller: true });
+                                  toast.success("Đã copy Seller ID");
+                                  setTimeout(() => setCopied({}), 1200);
+                                }}
+                              >
+                                {copied.seller ? (
+                                  <CheckCheck className="w-3.5 h-3.5 text-emerald-600" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5 text-slate-500" />
+                                )}
+                              </Button>
+                            </div>
+                          ) : (
+                            "—"
+                          )
+                        }
+                      />
+                      <Row label="Họ tên" value={item.sellerName || "—"} />
+                      <Row
+                        label="Số điện thoại"
+                        value={
+                          item.sellerPhone ? (
+                            <a
+                              href={`tel:${item.sellerPhone}`}
+                              className="inline-flex items-center gap-1 text-emerald-700"
+                            >
+                              <Phone className="w-4 h-4" /> {item.sellerPhone}
+                            </a>
+                          ) : (
+                            "—"
+                          )
+                        }
+                      />
+                      <Row label="Email" value={item.sellerEmail || "—"} />
+                    </div>
+                  </Section>
                 </div>
 
-                {/* Thông tin xe bên phải */}
+                {/* Cột phải */}
                 <div className="space-y-5">
-                  <Section title="Thông tin xe">
+                  <Section title="Thông tin bài đăng">
+                    <div className="rounded-xl border p-3 bg-white">
+                      <div className="font-semibold text-slate-800 mb-1">
+                        {item.title || "—"}
+                      </div>
+                      {item.description ? (
+                        <div className="text-slate-700 text-sm leading-relaxed max-h-[160px] overflow-y-auto">
+                          {item.description}
+                        </div>
+                      ) : (
+                        <div className="text-slate-400 text-sm">Không có mô tả</div>
+                      )}
+                    </div>
+                  </Section>
+
+                  <Section title="Thông tin sản phẩm">
                     <InfoGrid
-                      rows={[
-                        { label: "Loại sản phẩm", value: item.productType || "—" },
-                        { label: "Hãng", value: item.brandName || "—" },
-                        { label: "Model", value: item.modelName || "—" },
-                        { label: "Phiên bản", value: item.versionName || "—" },
-                        ...(item.batteryType
-                          ? [{ label: "Loại pin", value: item.batteryType as React.ReactNode }]
-                          : []),
-                        { label: "Gói hiển thị", value: item.packageName || "—" },
-                        { label: "Giá", value: fmtMoney(item.amount) },
-                      ]}
+                      rows={
+                        item.productType === "BATTERY"
+                          ? [
+                              { label: "Loại sản phẩm", value: item.productType },
+                              { label: "Hãng", value: item.brandName || "—" },
+                              {
+                                label: "Loại pin",
+                                value: item.batteryType || "—",
+                              },
+                              {
+                                label: "Sức khỏe pin (%)",
+                                value:
+                                  item.batteryHealthPercent ??
+                                  item.healthPercent ??
+                                  "—",
+                              },
+                              {
+                                label: "Dung lượng (kWh)",
+                                value: item.capacityKwh
+                                  ? `${item.capacityKwh} kWh`
+                                  : "—",
+                              },
+                              {
+                                label: "Điện áp (V)",
+                                value: item.voltageV
+                                  ? `${item.voltageV} V`
+                                  : "—",
+                              },
+                              {
+                                label: "Gói hiển thị",
+                                value: item.packageName || "—",
+                              },
+                              { label: "Giá", value: fmtMoney(item.price) },
+                            ]
+                          : [
+                              { label: "Loại sản phẩm", value: item.productType },
+                              { label: "Danh mục", value: item.categoryName || "—" },
+                              { label: "Hãng", value: item.brandName || "—" },
+                              { label: "Model", value: item.modelName || "—" },
+                              { label: "Phiên bản", value: item.versionName || "—" },
+                              {
+                                label: "Năm sản xuất",
+                                value: item.year ?? "—",
+                              },
+                              {
+                                label: "Số km đã đi",
+                                value: item.mileageKm
+                                  ? `${item.mileageKm} km`
+                                  : "—",
+                              },
+                              {
+                                label: "Gói hiển thị",
+                                value: item.packageName || "—",
+                              },
+                              { label: "Giá", value: fmtMoney(item.price) },
+                            ]
+                      }
                     />
                   </Section>
 
-                  {/* Lý do từ chối nếu có */}
-                  {item.rejectReason ? (
-                    <Section title="Lý do từ chối">
+                  <Section title="Địa chỉ đăng bán">
+                    <div className="rounded-lg border p-4 bg-white space-y-1">
+                      <div>{item.addressDetail || "—"}</div>
+                      <div className="text-slate-600 text-sm">
+                        {[item.ward, item.district, item.city]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </div>
+                    </div>
+                  </Section>
+
+                  <Section title="Thời hạn & hiển thị">
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <InfoCard
+                        label="Gói nổi bật đến"
+                        value={fmtDate(item.featuredEndAt)}
+                      />
+                      <InfoCard
+                        label="Tin hết hạn"
+                        value={fmtDate(item.expiresAt)}
+                      />
+                    </div>
+                  </Section>
+
+                  {item.status === "REJECTED" && item.rejectReason && (
+                    <Section title="Lý do bị từ chối">
                       <div className="rounded-lg border p-3 bg-red-50 text-red-700">
                         {item.rejectReason}
                       </div>
                     </Section>
-                  ) : null}
+                  )}
                 </div>
               </div>
 
-              {/* BOTTOM: Thông tin người bán & Thông tin gói/thời hạn */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Người bán */}
-                <Section title="Thông tin người bán">
-                  <div className="rounded-xl border p-4 bg-white space-y-3">
-                    <Row label="Seller ID">
-                      <div className="inline-flex items-center gap-1">
-                        <code className="px-1.5 py-0.5 bg-slate-100 rounded">
-                          {item.sellerId || "—"}
-                        </code>
-                        {!!item.sellerId && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 px-2"
-                            onClick={async () => {
-                              await navigator.clipboard.writeText(item.sellerId!);
-                              setCopied("sellerId");
-                              setTimeout(() => setCopied(null), 1200);
-                            }}
-                            title="Copy Seller ID"
-                          >
-                            {copied === "sellerId" ? <CheckCheck className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                          </Button>
-                        )}
-                      </div>
-                    </Row>
-                    <Row label="Họ tên" value={item.sellerName || "—"} />
-                    <Row
-                      label="Số điện thoại"
-                      value={
-                        item.sellerPhone ? (
-                          <a
-                            href={`tel:${item.sellerPhone}`}
-                            className="inline-flex items-center gap-1"
-                            style={{ color: BRAND }}
-                          >
-                            <Phone className="w-4 h-4" />
-                            {item.sellerPhone}
-                          </a>
-                        ) : ("—")
-                      }
-                    />
-                  </div>
-                </Section>
+              <Separator className="my-6" />
 
-                {/* Gói / thời hạn */}
-                <Section title="Thông tin gói & thời hạn">
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="rounded-lg border p-3">
-                      <div className="text-xs text-slate-500 mb-1">Gói hiển thị</div>
-                      <div className="font-medium">{item.packageName || "—"}</div>
-                    </div>
-                    <div className="rounded-lg border p-3">
-                      <div className="text-xs text-slate-500 mb-1">Giá hiện tại</div>
-                      <div className="font-medium">{fmtMoney(item.amount)}</div>
-                    </div>
-                    <div className="rounded-lg border p-3">
-                      <div className="text-xs text-slate-500 mb-1">Gói nổi bật đến</div>
-                      <div className="flex items-center gap-2">
-                        <CalendarClock className="w-4 h-4 text-slate-500" />
-                        <span className="font-medium">{fmtDate(item.featuredEndAt)}</span>
-                        <span className="text-xs text-slate-500">{relTime(item.featuredEndAt)}</span>
-                      </div>
-                    </div>
-                    <div className="rounded-lg border p-3">
-                      <div className="text-xs text-slate-500 mb-1">Tin hết hạn</div>
-                      <div className="flex items-center gap-2">
-                        <CalendarClock className="w-4 h-4 text-slate-500" />
-                        <span className="font-medium">{fmtDate(item.expiresAt)}</span>
-                        <span className="text-xs text-slate-500">{relTime(item.expiresAt)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Section>
-              </div>
-
-              {/* Footer meta */}
-              <Separator />
-              {/* Hành động phê duyệt */}
-              <Section title="Hành động phê duyệt">
-                <div className="space-y-3">
-                  <div>
-                    <Label htmlFor="reason">Lý do từ chối (nếu từ chối)</Label>
-                    <Input
-                      id="reason"
-                      placeholder="Nhập lý do…"
-                      value={rejectReason}
-                      onChange={(e) => setRejectReason(e.target.value)}
-                      className="mt-1"
-                      disabled={submitting}
-                    />
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button
-                      style={{ backgroundColor: BRAND }}
-                      className="!text-white flex-1"
-                      disabled={submitting}
-                      onClick={async () => {
-                        try {
+              {/* ---- Hành động phê duyệt ---- */}
+              {item.status === "PENDING_REVIEW" && (
+                <Section title="Hành động phê duyệt">
+                  {!showRejectBox ? (
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        style={{ backgroundColor: BRAND }}
+                        className="text-white flex items-center gap-1"
+                        disabled={submitting}
+                        onClick={async () => {
                           setSubmitting(true);
-                          const updated = await approveActive(id!);
-                          setItem(updated);
-                          toast.success("Đã duyệt & kích hoạt bài đăng!"); 
+                          await approveActive(id!);
+                          toast.success("Đã duyệt & kích hoạt bài đăng!");
                           nav("/posts/moderate?status=ACTIVE", { replace: true });
-                        } finally {
-                          setSubmitting(false);
-                        }
-                      }}
-                    >
-                      {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                      Duyệt & kích hoạt
-                    </Button>
+                        }}
+                      >
+                        <CheckCircle2 className="w-4 h-4" /> Duyệt
+                      </Button>
 
-                    <Button
-                      className="!bg-red-600 !text-white flex-1"
-                      disabled={submitting}
-                      onClick={async () => {
-                        if (!rejectReason.trim()) return alert("Nhập lý do từ chối!");
-                        try {
-                          setSubmitting(true);
-                          await rejectWithReason(id!, rejectReason.trim());
-                          toast.success("Đã từ chối bài đăng."); // <<< CHỈ THÊM TOAST
-                          nav("/posts/moderate?status=REJECTED", { replace: true });
-                        } finally {
-                          setSubmitting(false);
-                        }
-                      }}
-                    >
-                      {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                      Từ chối
-                    </Button>
-                  </div>
-                </div>
-              </Section>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="flex items-center gap-1 !bg-red-600 text-white"
+                        onClick={() => setShowRejectBox(true)}
+                      >
+                        <XCircle className="w-4 h-4" /> Từ chối
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <Label>Lý do từ chối</Label>
+                      <Input
+                        placeholder="Nhập lý do..."
+                        value={rejectReason}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                        disabled={submitting}
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          className="!bg-red-600 text-white flex items-center gap-1"
+                          disabled={submitting}
+                          onClick={async () => {
+                            if (!rejectReason.trim())
+                              return toast.error("Vui lòng nhập lý do từ chối!");
+                            setSubmitting(true);
+                            await rejectWithReason(id!, rejectReason.trim());
+                            toast.success("Đã từ chối bài đăng!");
+                            nav("/posts/moderate?status=REJECTED", { replace: true });
+                          }}
+                        >
+                          <XCircle className="w-4 h-4" /> Xác nhận từ chối
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setShowRejectBox(false)}
+                        >
+                          Hủy
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </Section>
+              )}
             </>
           )}
         </CardContent>
@@ -340,11 +396,19 @@ export default function ReviewDetailPage() {
   );
 }
 
-/* ---------- UI blocks ---------- */
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+/* ---------- UI Helpers ---------- */
+function Section({
+  title,
+  children,
+  className = "",
+}: {
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="space-y-2">
-      <div className="text-sm font-semibold text-slate-800">{title}</div>
+    <div className={`space-y-2 mt-4 ${className}`}>
+      <div className="text-sm font-semibold text-emerald-700">{title}</div>
       {children}
     </div>
   );
@@ -360,12 +424,24 @@ function InfoGrid({ rows }: { rows: Array<{ label: string; value?: React.ReactNo
   );
 }
 
-function Row({ label, value, children }: { label: string; value?: React.ReactNode; children?: React.ReactNode }) {
+function Row({ label, value }: { label: string; value?: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="text-xs text-slate-500 min-w-[120px]">{label}</div>
       <div className="flex-1 font-medium text-slate-800 break-words">
-        {value ?? children ?? "—"}
+        {value ?? "—"}
+      </div>
+    </div>
+  );
+}
+
+function InfoCard({ label, value }: { label: string; value?: string }) {
+  return (
+    <div className="rounded-lg border p-3 bg-white flex items-center gap-2">
+      <CalendarClock className="w-4 h-4 text-slate-500" />
+      <div>
+        <div className="text-xs text-slate-500">{label}</div>
+        <div className="font-medium text-slate-800">{value || "—"}</div>
       </div>
     </div>
   );

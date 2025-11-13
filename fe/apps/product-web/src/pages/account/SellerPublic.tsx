@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CalendarDays, MapPin } from "lucide-react";
+import SellerFeedback from "@/components/feedback/SellerFeedback";
 
 import {
   getSellerProfile,
@@ -15,7 +16,7 @@ import {
   formatVND,
 } from "@/api/seller";
 
-/* ====== local helpers ====== */
+/* ====== Local helpers ====== */
 const DEFAULT_AVATAR = "/images/avatar-default.png";
 function daysSince(iso?: string | null) {
   if (!iso) return "?";
@@ -33,7 +34,6 @@ function FullscreenSpinner() {
 
 export default function SellerPublic() {
   const { userId = "" } = useParams<{ userId: string }>();
-
   const [profile, setProfile] = useState<SellerPublicProfile | null>(null);
   const [active, setActive] = useState<SellerProduct[]>([]);
   const [sold, setSold] = useState<SellerProduct[]>([]);
@@ -85,7 +85,9 @@ export default function SellerPublic() {
       <div className="mx-auto w-full max-w-3xl px-4 md:px-6 py-12 text-center">
         <div className="text-xl font-semibold mb-2">Có lỗi xảy ra</div>
         <div className="text-slate-600 mb-4">{err}</div>
-        <Link to="/" className="underline text-[#246f67]">Về trang chủ</Link>
+        <Link to="/" className="underline text-[#246f67]">
+          Về trang chủ
+        </Link>
       </div>
     );
   }
@@ -93,11 +95,12 @@ export default function SellerPublic() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 md:px-6 py-8">
       <div className="md:flex md:items-start md:gap-6">
-        {/* LEFT – Info */}
+        {/* LEFT – Profile & Feedback */}
         <aside className="w-full md:w-96 md:sticky md:top-24 md:self-start space-y-4">
-          <div className="rounded-2xl bg-white shadow-sm border border-emerald-100">
+          {/* Profile card */}
+          <div className="rounded-2xl bg-white shadow-sm border border-emerald-100 overflow-hidden">
             <div
-              className="w-full h-28 rounded-t-2xl bg-center bg-cover bg-no-repeat"
+              className="w-full h-28 bg-center bg-cover bg-no-repeat"
               style={{ backgroundImage: "url('/images/profile-cover.png')" }}
             />
             <div className="p-5">
@@ -113,12 +116,11 @@ export default function SellerPublic() {
                     {initials}
                   </AvatarFallback>
                 </Avatar>
-
-                <div className="min-w-0">
-                  <div className="text-[17px] font-semibold truncate text-slate-900">
+                <div>
+                  <div className="text-[17px] font-semibold text-slate-900">
                     {profile?.fullName || profile?.username || "Người bán"}
                   </div>
-                  <div className="text-xs text-slate-500">Chưa có đánh giá</div>
+                  <div className="text-xs text-slate-500">Tham gia {daysSince(profile?.createdAt)} ngày</div>
                 </div>
               </div>
 
@@ -142,49 +144,38 @@ export default function SellerPublic() {
                 </Button>
 
                 <div className="rounded-xl border border-emerald-100 p-4 bg-white">
-                  <div className="font-medium text-slate-900">Thông tin</div>
-                  <ul className="mt-2 space-y-2 text-slate-700">
+                  <div className="font-medium text-slate-900 mb-2">Thông tin</div>
+                  <ul className="space-y-2 text-slate-700 text-sm">
                     <li className="flex items-center gap-2">
-                      <CalendarDays className="w-4 h-4 text-slate-400" />
-                      <span className="font-medium text-slate-800">Đã tham gia:</span>{" "}
-                      <span>{daysSince(profile?.createdAt)} ngày</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-slate-400 mt-0.5" />
-                      <div>
-                        <span className="font-medium text-slate-800">Địa chỉ:</span>{" "}
-                        {profile?.address || "Chưa cập nhật"}
-                      </div>
+                      <MapPin className="w-4 h-4 text-slate-400" />
+                      <span>{profile?.address || "Chưa cập nhật địa chỉ"}</span>
                     </li>
                   </ul>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Feedback Section */}
+          <div className="rounded-2xl bg-white shadow-sm border border-emerald-100 p-5">
+            <SellerFeedback sellerId={userId} />
+          </div>
         </aside>
 
-        {/* RIGHT – Listings */}
+        {/* RIGHT – Products */}
         <section className="w-full md:flex-1 mt-6 md:mt-0 bg-white">
           <Tabs defaultValue="active" className="w-full">
             <div className="px-4 pt-4">
-              <TabsList className="w-full flex bg-transparent p-0">
+              <TabsList className="w-full flex bg-transparent p-0 border-b border-emerald-100">
                 <TabsTrigger
                   value="active"
-                  className="relative !rounded-none bg-transparent py-3 text-sm font-semibold
-                             text-emerald-800 data-[state=inactive]:text-emerald-700/70
-                             after:absolute after:inset-x-0 after:-bottom-[1px] after:h-[2px]
-                             after:scale-x-0 after:bg-[#246f67] after:transition
-                             data-[state=active]:after:scale-x-100"
+                  className="relative !rounded-none py-3 text-sm font-semibold text-emerald-800 data-[state=inactive]:text-emerald-700/70 after:absolute after:inset-x-0 after:-bottom-[1px] after:h-[2px] after:scale-x-0 after:bg-[#246f67] after:transition data-[state=active]:after:scale-x-100"
                 >
                   Đang hiển thị ({active.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="sold"
-                  className="relative !rounded-none bg-transparent py-3 text-sm font-semibold
-                             text-emerald-800 data-[state=inactive]:text-emerald-700/70
-                             after:absolute after:inset-x-0 after:-bottom-[1px] after:h-[2px]
-                             after:scale-x-0 after:bg-[#246f67] after:transition
-                             data-[state=active]:after:scale-x-100"
+                  className="relative !rounded-none py-3 text-sm font-semibold text-emerald-800 data-[state=inactive]:text-emerald-700/70 after:absolute after:inset-x-0 after:-bottom-[1px] after:h-[2px] after:scale-x-0 after:bg-[#246f67] after:transition data-[state=active]:after:scale-x-100"
                 >
                   Đã bán ({sold.length})
                 </TabsTrigger>
@@ -215,13 +206,11 @@ export default function SellerPublic() {
   );
 }
 
-function EmptyState({ text = "Chưa có tin đăng nào" }: { text?: string }) {
+/* ====== Sub Components ====== */
+function EmptyState({ text }: { text: string }) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-dashed border-emerald-200 p-10 text-center text-slate-600 min-h-[220px] flex flex-col items-center justify-center bg-white">
-      <div className="relative z-10 flex flex-col items-center">
-        <div className="text-6xl">🗒️</div>
-        <div className="mt-3 text-base">{text}</div>
-      </div>
+    <div className="text-center text-slate-500 py-10 border border-dashed border-emerald-100 rounded-xl">
+      {text}
     </div>
   );
 }
@@ -232,35 +221,29 @@ function CardsGrid({ items }: { items: SellerProduct[] }) {
       {items.map((p) => (
         <article
           key={p.id}
-          className="group rounded-2xl bg-white shadow-sm border border-emerald-100 overflow-hidden flex flex-col h-full transition hover:shadow-md hover:border-emerald-200 focus-within:border-emerald-300"
+          className="group rounded-2xl bg-white shadow-sm border border-emerald-100 overflow-hidden flex flex-col h-full transition hover:shadow-md hover:border-emerald-200"
         >
           <div className="w-full h-44 bg-emerald-50 overflow-hidden">
             <img
               src={pickProductImage(p)}
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = "/images/placeholder.png";
-              }}
+              onError={(e) => ((e.currentTarget as HTMLImageElement).src = '/images/placeholder.png')}
               alt={p.title}
-              className="h-full w-full object-cover transform transition-transform duration-300 group-hover:scale-105"
+              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           </div>
-
-          <div className="flex flex-col gap-2 p-4 flex-1">
-            <h3 className="line-clamp-2 min-h-[3.25rem] font-semibold !text-[#246f67]">{p.title}</h3>
+          <div className="p-4 flex flex-col gap-2 flex-1">
+            <h3 className="line-clamp-2 font-semibold text-[#246f67]">{p.title}</h3>
             <div className="font-semibold text-red-700">{formatVND(p.price)}</div>
             <div className="text-xs text-slate-600 flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-slate-400" />
               <span>{[p.district, p.city].filter(Boolean).join(", ")}</span>
             </div>
-
-            <div className="mt-auto flex items-center justify-between gap-2 pt-3 px-1">
-              <Link
-                to={`/product/${p.id}`}
-                className="inline-flex items-center text-sm px-3 py-1.5 rounded-md bg-[#246f67] text-white hover:bg-emerald-800 focus-visible:ring-2 focus-visible:ring-emerald-600"
-              >
-                Xem chi tiết
-              </Link>
-            </div>
+            <Link
+              to={`/product/${p.id}`}
+              className="mt-auto text-sm px-3 py-1.5 rounded-md bg-[#246f67] text-white text-center hover:bg-emerald-800"
+            >
+              Xem chi tiết
+            </Link>
           </div>
         </article>
       ))}
@@ -279,14 +262,11 @@ function SoldList({ items }: { items: SellerProduct[] }) {
           <div className="w-40 h-24 rounded-lg overflow-hidden bg-emerald-50 shrink-0">
             <img
               src={pickProductImage(p)}
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = "/images/placeholder.png";
-              }}
+              onError={(e) => ((e.currentTarget as HTMLImageElement).src = '/images/placeholder.png')}
               alt={p.title}
               className="w-full h-full object-cover"
             />
           </div>
-
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-slate-800 line-clamp-2">{p.title}</div>
             <div className="mt-1 text-sm text-slate-600 flex items-center gap-1.5">
@@ -294,7 +274,6 @@ function SoldList({ items }: { items: SellerProduct[] }) {
               <span className="truncate">{[p.district, p.city].filter(Boolean).join(", ")}</span>
             </div>
           </div>
-
           <div className="flex flex-col items-end justify-between">
             <div className="text-red-700 font-semibold">{formatVND(p.price)}</div>
             <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">ĐÃ BÁN</span>
