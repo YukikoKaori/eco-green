@@ -1,3 +1,4 @@
+// src/api/searchByName.ts (đặt lại đúng path file bạn đang dùng)
 import api from "@/lib/axios";
 
 export type SearchByNameItem = {
@@ -7,7 +8,7 @@ export type SearchByNameItem = {
   type: "VEHICLE" | "BATTERY" | string;
 
   productImagesList?: Array<{
-    url?: string;
+    url?: string;        // phòng khi BE đổi
     imageUrl?: string;
     isPrimary?: boolean;
   }>;
@@ -31,12 +32,17 @@ export type SearchByNameItem = {
   modelName?: string | null;
   version?: string | null;
 
-  isWishlisted?: boolean;
+  isHot?: boolean | null;
+  isWishlisted?: boolean | null;
+  sellerAvatarUrl?: string | null;
+
+  /** flag đã review – đã normalize từ hasReivew của BE */
+  hasReview?: boolean;
 };
 
 export type SearchByNameResponse = {
   items: SearchByNameItem[];
-  page: number;          
+  page: number;
   size: number;
   totalElements: number;
   totalPages: number;
@@ -47,7 +53,8 @@ export type SearchByNameResponse = {
 export type Province = { code: string; name: string };
 
 /* ── Helpers ───────────────────────────────────────────────────────── */
-const unwrap = (d: any) => (d?.result ?? d);
+
+const unwrap = (d: any) => d?.result ?? d;
 
 const toInt = (v: any, def = 0) =>
   Number.isFinite(v) ? Number(v) : def;
@@ -55,9 +62,21 @@ const toInt = (v: any, def = 0) =>
 const toBool = (v: any, def = false) =>
   typeof v === "boolean" ? v : def;
 
+/** Normalize từng item để FE luôn có hasReview chuẩn */
+const normalizeItem = (raw: any): SearchByNameItem => {
+  const hasReview =
+    (raw.hasReview ?? raw.hasReivew) ?? false; // BE đang trả hasReivew
+
+  return {
+    ...raw,
+    hasReview,
+  } as SearchByNameItem;
+};
+
 const normalizeResp = (raw: any, fallbackSize = 20): SearchByNameResponse => {
+  // Trường hợp API trả array trần
   if (Array.isArray(raw)) {
-    const items = raw as SearchByNameItem[];
+    const items = (raw as any[]).map(normalizeItem);
     return {
       items,
       page: 0,
@@ -70,14 +89,19 @@ const normalizeResp = (raw: any, fallbackSize = 20): SearchByNameResponse => {
   }
 
   const d = unwrap(raw) ?? {};
-  const items: SearchByNameItem[] =
+
+  const rawItems: any[] =
     (Array.isArray(d.items) && d.items) ||
     (Array.isArray(d.content) && d.content) ||
     [];
+  const items: SearchByNameItem[] = rawItems.map(normalizeItem);
 
   const page = toInt(d.page ?? d.number, 0);
   const size = toInt(d.size, fallbackSize);
-  const totalElements = toInt(d.totalElements ?? d.totalItems ?? items.length, items.length);
+  const totalElements = toInt(
+    d.totalElements ?? d.totalItems ?? items.length,
+    items.length
+  );
   const totalPages = toInt(
     d.totalPages,
     size > 0 ? Math.max(1, Math.ceil(totalElements / size)) : 1
@@ -94,6 +118,8 @@ const normalizeResp = (raw: any, fallbackSize = 20): SearchByNameResponse => {
   };
 };
 
+/* ── APIs ──────────────────────────────────────────────────────────── */
+
 export async function searchProductsByName(
   name: string,
   page = 0,
@@ -105,7 +131,7 @@ export async function searchProductsByName(
     maxPrice?: number;
     yearFrom?: number;
     yearTo?: number;
-    sort?: string; 
+    sort?: string;
   }
 ): Promise<SearchByNameResponse> {
   if (!name.trim()) {
@@ -126,6 +152,7 @@ export async function searchProductsByName(
     size,
     sort: opts?.sort ?? "createdAt,desc",
   };
+
   if (opts?.city) params.city = opts.city;
   if (Number.isFinite(opts?.minPrice)) params.minPrice = opts!.minPrice;
   if (Number.isFinite(opts?.maxPrice)) params.maxPrice = opts!.maxPrice;
@@ -137,8 +164,13 @@ export async function searchProductsByName(
 }
 
 export async function fetchProvinces(): Promise<Province[]> {
-  const r = await fetch("https://vn-public-apis.fpo.vn/provinces/getAll?limit=-1");
+  const r = await fetch(
+    "https://vn-public-apis.fpo.vn/provinces/getAll?limit=-1"
+  );
   const j = await r.json();
   const arr = j?.data?.data ?? [];
-  return arr.map((p: any) => ({ code: String(p.code), name: String(p.name) })) as Province[];
+  return arr.map((p: any) => ({
+    code: String(p.code),
+    name: String(p.name),
+  })) as Province[];
 }
