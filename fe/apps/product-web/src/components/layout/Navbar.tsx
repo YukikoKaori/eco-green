@@ -19,6 +19,8 @@ import { toast } from "sonner";
 import {
   listMemberNotifications,
   markAllNotificationsRead,
+  markNotificationRead,
+  getUnreadNotificationCount,
   type NotificationDTO,
 } from "@/api/notifications";
 
@@ -34,11 +36,10 @@ export default function Navbar() {
   const [keyword, setKeyword] = useState("");
   const { user } = useAuth();
   const nav = useNavigate();
-
-  /* ===== Popover Thông báo ===== */
   const [openNoti, setOpenNoti] = useState(false);
   const [loadingNoti, setLoadingNoti] = useState(false);
   const [notifications, setNotifications] = useState<NotificationDTO[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const loadNoti = async () => {
     if (!user) return;
@@ -47,9 +48,7 @@ export default function Navbar() {
       const res = await listMemberNotifications({ page: 0, size: 10 });
       setNotifications(res.content ?? []);
     } catch (e: any) {
-      toast.error(
-        e?.response?.data?.message || "Không tải được thông báo."
-      );
+      toast.error(e?.response?.data?.message || "Không tải được thông báo.");
     } finally {
       setLoadingNoti(false);
     }
@@ -72,14 +71,14 @@ export default function Navbar() {
     setOpenNoti(v);
   };
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
   const hasUnread = unreadCount > 0;
 
   const handleMarkAllRead = async () => {
-    if (!notifications.length) return;
+    if (!notifications.length && unreadCount === 0) return;
     try {
       const res = await markAllNotificationsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadCount(0);
       toast.success(res.message || "Đã đánh dấu tất cả là đã đọc.");
     } catch (e: any) {
       toast.error(
@@ -87,6 +86,22 @@ export default function Navbar() {
       );
     }
   };
+
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      setNotifications([]);
+      return;
+    }
+
+    (async () => {
+      try {
+        const res = await getUnreadNotificationCount();
+        setUnreadCount(res.unreadCount ?? 0);
+      } catch {
+      }
+    })();
+  }, [user]);
 
   useEffect(() => {
     const THRESHOLD = 60,
@@ -210,6 +225,7 @@ export default function Navbar() {
           </Link>
         </div>
 
+        {/* Nav / search */}
         <div className="hidden md:flex flex-1 justify-center">
           {!isScrolled ? (
             <nav className="flex items-center gap-6 pl-35">
@@ -253,6 +269,7 @@ export default function Navbar() {
           )}
         </div>
 
+        {/* Actions */}
         <div className="ml-auto flex items-center gap-2">
           {/* Thông báo */}
           <Popover open={openNoti} onOpenChange={onOpenChange}>
@@ -267,7 +284,17 @@ export default function Navbar() {
                 <div className="relative">
                   <Bell className="w-4 h-4 text-teal-700" />
                   {hasUnread && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500" />
+                    <span
+                      className="
+                        absolute -top-2 -right-2
+                        flex items-center justify-center
+                        min-w-[16px] h-4 px-1
+                        rounded-full bg-red-500
+                        text-[10px] leading-none text-white
+                      "
+                    >
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
                   )}
                 </div>
               </Button>
@@ -333,8 +360,22 @@ export default function Navbar() {
                       (isRequest && n.refId) ||
                       (n.type === "PURCHASE_REQUEST_COMPLETED" && n.refId);
 
-                    const goto = () => {
+                    const goto = async () => {
                       if (!clickable) return;
+
+                      if (!n.read) {
+                        try {
+                          await markNotificationRead(n.id);
+                          setNotifications((prev) =>
+                            prev.map((x) =>
+                              x.id === n.id ? { ...x, read: true } : x
+                            )
+                          );
+                          setUnreadCount((c) => Math.max(0, c - 1));
+                        } catch {
+                        }
+                      }
+
                       if (isRequest && n.refId) {
                         nav(`/seller/purchase-requests/${n.refId}`, {
                           state: { fromNoti: true },

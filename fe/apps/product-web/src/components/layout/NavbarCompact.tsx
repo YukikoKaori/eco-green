@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Menu, Heart, PlusCircle, Search, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,9 +15,11 @@ import UserMenu from "../user/UserMenu";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
-  listSellerPurchaseRequests,
-  type PurchaseRequestDTO,
-} from "@/api/productDetail";
+  listMemberNotifications,
+  markAllNotificationsRead,
+  getUnreadNotificationCount,
+  type NotificationDTO,
+} from "@/api/notifications";
 
 const mainNav = [
   { label: "EcoGreen", to: "/" },
@@ -26,61 +28,80 @@ const mainNav = [
   { label: "EcoBlog", to: "/blog" },
 ];
 
-const READ_KEY = "eg_read_requests_ids";
-
-export default function Navbar() {
+export default function NavbarCompact() {
   const { user } = useAuth();
   const nav = useNavigate();
   const [keyword, setKeyword] = useState("");
 
+  /* ===== Thông báo ===== */
   const [openNoti, setOpenNoti] = useState(false);
   const [loadingNoti, setLoadingNoti] = useState(false);
-  const [requests, setRequests] = useState<PurchaseRequestDTO[]>([]);
-  const readIdsRef = useRef<Set<string>>(new Set());
-
-  useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem(READ_KEY);
-      if (raw) readIdsRef.current = new Set(JSON.parse(raw));
-    } catch {}
-  }, []);
-
-  const saveReadIds = () => {
-    try {
-      sessionStorage.setItem(READ_KEY, JSON.stringify(Array.from(readIdsRef.current)));
-    } catch {}
-  };
+  const [notifications, setNotifications] = useState<NotificationDTO[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const loadNoti = async () => {
     if (!user) return;
     setLoadingNoti(true);
     try {
-      const res = await listSellerPurchaseRequests({ page: 0, size: 20 });
-      setRequests(res?.content ?? []);
+      const res = await listMemberNotifications({ page: 0, size: 10 });
+      const items = res.content ?? [];
+      setNotifications(items);
+      setUnreadCount(items.filter((n) => !n.read).length);
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Không tải được thông báo giao dịch.");
+      toast.error(e?.response?.data?.message || "Không tải được thông báo.");
     } finally {
       setLoadingNoti(false);
     }
   };
 
-  const markAsRead = (id: string) => {
-    if (!readIdsRef.current.has(id)) {
-      readIdsRef.current.add(id);
-      saveReadIds();
-    }
-  };
-
   const onOpenChange = (v: boolean) => {
-    if (v && user) loadNoti();
+    if (v && user) {
+      loadNoti();
+    }
     if (!user && v) {
       setOpenNoti(false);
-      nav(`/login?next=${encodeURIComponent(location.pathname + location.search + location.hash)}`);
+      nav(
+        `/login?next=${encodeURIComponent(
+          location.pathname + location.search + location.hash
+        )}`
+      );
       toast.info("Vui lòng đăng nhập để xem thông báo.");
       return;
     }
     setOpenNoti(v);
   };
+
+  const hasUnread = unreadCount > 0;
+
+  const handleMarkAllRead = async () => {
+    if (!notifications.length) return;
+    try {
+      const res = await markAllNotificationsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadCount(0);
+      toast.success(res.message || "Đã đánh dấu tất cả là đã đọc.");
+    } catch (e: any) {
+      toast.error(
+        e?.response?.data?.message || "Không thể đánh dấu đã đọc."
+      );
+    }
+  };
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      if (!user) {
+        setUnreadCount(0);
+        setNotifications([]);
+        return;
+      }
+      try {
+        const res = await getUnreadNotificationCount();
+        setUnreadCount(res.unreadCount ?? 0);
+      } catch {
+      }
+    };
+    fetchUnread();
+  }, [user]);
 
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -105,7 +126,11 @@ export default function Navbar() {
             <SheetContent side="left" className="w-72 z-[13000]">
               <nav className="mt-6 grid gap-3">
                 {mainNav.map((it) => (
-                  <NavLink key={it.to} to={it.to} className="px-2 py-2 rounded hover:bg-accent">
+                  <NavLink
+                    key={it.to}
+                    to={it.to}
+                    className="px-2 py-2 rounded hover:bg-accent"
+                  >
                     {it.label}
                   </NavLink>
                 ))}
@@ -121,9 +146,17 @@ export default function Navbar() {
                   <Menu className="!w-5 h-5 text-teal-700" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" sideOffset={8} className="z-[13000]">
-                <DropdownMenuItem asChild><Link to="/xe-dien">Xe điện</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link to="/pin-dien">Pin điện</Link></DropdownMenuItem>
+              <DropdownMenuContent
+                align="start"
+                sideOffset={8}
+                className="z-[13000]"
+              >
+                <DropdownMenuItem asChild>
+                  <Link to="/xe-dien">Xe điện</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/pin-dien">Pin điện</Link>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -170,72 +203,148 @@ export default function Navbar() {
                   size="icon"
                   className="hidden sm:flex !bg-white"
                   aria-label="Thông báo"
-                  title="Thông báo giao dịch"
+                  title="Thông báo"
                 >
-                  <Bell className="w-4 h-4 text-teal-700" />
+                  <div className="relative">
+                    <Bell className="w-4 h-4 text-teal-700" />
+                    {hasUnread && (
+                      <span
+                        className="
+                          absolute -top-2 -right-2
+                          flex items-center justify-center
+                          min-w-[16px] h-4 px-1
+                          rounded-full bg-red-500
+                          text-[10px] leading-none text-white
+                        "
+                      >
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
+                  </div>
                 </Button>
               </PopoverTrigger>
-
               <PopoverContent
-                side="bottom"
                 align="end"
                 sideOffset={10}
-                className="
-                  p-0 w-[420px] max-h-[70vh]
-                  overflow-y-auto             /* chỉ để auto, không overscroll-behavior */
-                  rounded-2xl border border-teal-200 bg-white shadow-xl
-                  focus-visible:outline-none focus-visible:ring-0
-                "
+                className="eg-noti p-0 w-[420px] max-h-[70vh] z-[20000] rounded-2xl border-teal-200 bg-white shadow-xl"
               >
-                {/* Header */}
+                {/* Header popover */}
                 <div
                   className="sticky top-0 z-10 px-4 py-3 rounded-t-2xl text-white"
-                  style={{ background: "linear-gradient(90deg,#246f67 0%,#01c5a7 100%)" }}
+                  style={{
+                    background: "linear-gradient(90deg,#246f67 0%,#01c5a7 100%)",
+                  }}
                 >
-                  <div className="text-lg font-semibold">Thông Báo</div>
-                  <div className="mt-2 flex items-center gap-2 text-xs">
-                    <span className="px-2 py-0.5 rounded-full bg-white/20 backdrop-blur">Hoạt động</span>
-                    <span className="px-2 py-0.5 rounded-full bg-white/10">Tin tức</span>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-lg font-semibold">Thông Báo</div>
+                      <div className="mt-1 text-xs text-white/80">
+                        {unreadCount > 0
+                          ? `${unreadCount} thông báo chưa đọc`
+                          : "Bạn đã đọc hết tất cả thông báo"}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-1 text-[11px]">
+                      <button
+                        type="button"
+                        onClick={handleMarkAllRead}
+                        className="font-medium text-white hover:text-emerald-100 transition-colors"
+                      >
+                        Đánh dấu đã đọc hết
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenNoti(false);
+                          nav("/notifications");
+                        }}
+                        className="font-medium text-white hover:text-emerald-100 transition-colors"
+                      >
+                        Xem tất cả
+                      </button>
+                    </div>
                   </div>
                 </div>
 
+                {/* Body popover */}
                 {loadingNoti ? (
                   <div className="px-4 py-6 text-sm text-slate-600">Đang tải…</div>
-                ) : requests.length === 0 ? (
-                  <div className="px-4 py-6 text-sm text-slate-600">Chưa có thông báo giao dịch nào.</div>
+                ) : notifications.length === 0 ? (
+                  <div className="px-4 py-6 text-sm text-slate-600">
+                    Chưa có thông báo nào.
+                  </div>
                 ) : (
                   <ul className="px-3 pb-3">
-                    {requests.map((r) => {
-                      const isRead = readIdsRef.current.has(r.id);
+                    {notifications.map((n) => {
+                      const created = n.createdAt
+                        ? new Date(n.createdAt).toLocaleString("vi-VN")
+                        : "";
+                      const isRequest = n.type === "PURCHASE_REQUEST";
+
+                      // chỉ cho click nếu có đích cụ thể
+                      const clickable =
+                        (isRequest && n.refId) ||
+                        (n.type === "PURCHASE_REQUEST_COMPLETED" && n.refId);
+
+                      const goto = () => {
+                        if (!clickable) return;
+
+                        if (isRequest && n.refId) {
+                          nav(`/seller/purchase-requests/${n.refId}`, {
+                            state: { fromNoti: true },
+                          });
+                        } else if (
+                          n.type === "PURCHASE_REQUEST_COMPLETED" &&
+                          n.refId
+                        ) {
+                          nav(
+                            `/account/bought-products?ref=${encodeURIComponent(
+                              n.refId
+                            )}`
+                          );
+                        }
+                        setOpenNoti(false);
+                      };
+
                       return (
                         <li
-                          key={r.id}
-                          className={`rounded-xl border border-teal-100 m-2 p-3 shadow-sm transition bg-teal-50/40 hover:bg-teal-50 ${
-                            isRead ? "opacity-60" : "opacity-100"
-                          }`}
+                          key={n.id}
+                          className={`rounded-xl border bg-white m-2 p-3 shadow-sm transition ${
+                            !n.read
+                              ? "border-teal-300 bg-teal-50/70"
+                              : "border-slate-200"
+                          } ${clickable ? "cursor-pointer" : "cursor-default"}`}
+                          onClick={goto}
                         >
-                          <div className="font-semibold text-slate-800">
-                            Yêu cầu mua – {r.productTitle}
-                          </div>
-                          <div className="mt-1 text-sm text-slate-700">
-                            Người mua: <b>{r.buyerName}</b>
-                          </div>
-                          <div className="text-sm text-slate-700">
-                            Giá đề nghị: <b>{(r.offeredPrice ?? 0).toLocaleString("vi-VN")} đ</b>
-                          </div>
+                          <div className="flex items-start gap-2">
+                            {!n.read && (
+                              <span className="mt-1 w-2 h-2 rounded-full bg-red-500" />
+                            )}
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="font-semibold text-emerald-800">
+                                  {n.title}
+                                </div>
+                                {isRequest && clickable && (
+                                  <span className="px-3 py-1 rounded-full bg-emerald-50 text-[11px] text-emerald-700 border border-emerald-200">
+                                    Yêu cầu mua
+                                  </span>
+                                )}
+                                {!clickable && (
+                                  <span className="px-3 py-1 rounded-full bg-slate-50 text-[11px] text-slate-600 border border-slate-200">
+                                    Thông báo
+                                  </span>
+                                )}
+                              </div>
 
-                          <div className="mt-3">
-                            <Link
-                              to={`/seller/purchase-requests/${r.id}`}
-                              state={{ request: r }}
-                              className="inline-flex items-center gap-1 rounded-sm px-3 py-1 !text-sm bg-[#246f67] text-white"
-                              onClick={() => {
-                                setOpenNoti(false);
-                                markAsRead(r.id);
-                              }}
-                            >
-                              Xem chi tiết
-                            </Link>
+                              <div className="mt-1 !text-xs text-slate-700">
+                                {n.content}
+                              </div>
+                              <div className="mt-1 text-[11px] text-slate-500">
+                                {created}
+                              </div>
+                            </div>
                           </div>
                         </li>
                       );
@@ -245,6 +354,7 @@ export default function Navbar() {
               </PopoverContent>
             </Popover>
 
+            {/* Wishlist */}
             <Button
               type="button"
               size="icon"
@@ -256,6 +366,7 @@ export default function Navbar() {
               <Heart className="w-4 h-4 text-teal-700" />
             </Button>
 
+            {/* Quản lý tin / Đăng nhập */}
             {user ? (
               <Button asChild className="hidden md:flex !text-[#246f67] !bg-white">
                 <Link to="/post/manage">Quản lý tin</Link>
@@ -266,9 +377,10 @@ export default function Navbar() {
               </Button>
             )}
 
+            {/* Đăng tin */}
             <Button
               asChild
-              className="!bg-[#246f67] !text-sm  flex items-center gap-2 !text-white"
+              className="!bg-[#246f67] !text-sm flex items-center gap-2 !text-white"
             >
               <Link to="/post/new">
                 <PlusCircle className="w-4 h-4" />
