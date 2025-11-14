@@ -7,7 +7,7 @@ export type ProductImage = {
 
 export type ProductBoughtItem = {
   id: string;              
-  productId: string;      
+  productId: string;        
   productName: string;
   price: string;
   status: string;
@@ -17,7 +17,7 @@ export type ProductBoughtItem = {
   sellerId?: string;
   sellerName?: string;
   sellerPhone?: string;
-  hasReview?: boolean;
+  hasReview?: boolean;      
 };
 
 /* ---------------- Normalizer ---------------- */
@@ -39,7 +39,7 @@ function normalizeBought(it: any): ProductBoughtItem {
     sellerId: it.sellerId ?? undefined,
     sellerName: it.sellerName ?? undefined,
     sellerPhone: it.sellerPhone ?? undefined,
-    hasReview: it.hasReview ?? false,
+    hasReview: (it.hasReview ?? it.hasReivew) ?? false,
   };
 }
 

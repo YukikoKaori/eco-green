@@ -7,7 +7,7 @@ import { ReviewDialog } from "@/components/feedback/ReviewDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PackageIcon } from "lucide-react";
-import { Link } from "react-router-dom";   // 👈 thêm import
+import { Link } from "react-router-dom";
 
 export default function BoughtProductsPage() {
   const [products, setProducts] = useState<ProductBoughtItem[]>([]);
@@ -179,9 +179,10 @@ export default function BoughtProductsPage() {
                   className={`
                     rounded-xl 
                     px-4 shadow-sm
-                    ${reviewed
-                      ? "bg-slate-200 text-slate-500 cursor-not-allowed hover:bg-slate-200"
-                      : "bg-emerald-700 hover:bg-emerald-700 text-white"
+                    ${
+                      reviewed
+                        ? "bg-slate-200 text-slate-500 cursor-not-allowed hover:bg-slate-200"
+                        : "bg-emerald-700 hover:bg-emerald-700 text-white"
                     }
                   `}
                   disabled={reviewed}
@@ -208,15 +209,14 @@ export default function BoughtProductsPage() {
           productName={selected.productName}
           productId={selected.productId}
           onSuccess={(productId) => {
-            setProducts(prev =>
-              prev.map(p =>
+            setProducts((prev) =>
+              prev.map((p) =>
                 p.productId === productId ? { ...p, hasReview: true } : p
               )
             );
             setSelected(null);
           }}
         />
-
       )}
     </div>
   );

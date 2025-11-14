@@ -1,5 +1,7 @@
 import api from "@/lib/axios";
-import { parsePrice } from "@/utils/price"; 
+import { parsePrice } from "@/utils/price";
+
+/* ----------------------------- Types chung ----------------------------- */
 
 export type ProductImage = {
   id?: string;
@@ -56,7 +58,7 @@ export type ProductDetailDTO = {
 
 export type VehicleCatalogEnvelope = {
   productTitle?: string;
-  productPrice?: number | string | null; 
+  productPrice?: number | string | null;
   productStatus?: string;
   brandName?: string;
   brandLogoUrl?: string;
@@ -73,8 +75,8 @@ export type VehicleCatalogEnvelope = {
 
 export type SimilarItemRaw = {
   productId: string;
-  tittle: string; 
-  price: number | string; 
+  tittle: string; // BE typo
+  price: number | string;
   brandName?: string;
   modelName?: string;
   images?: string;
@@ -90,6 +92,7 @@ export type NormalizedSimilarItem = {
 };
 
 /* ----------------------------- Helpers ----------------------------- */
+
 export function normalizeSimilar(list: SimilarItemRaw[] | unknown): NormalizedSimilarItem[] {
   if (!Array.isArray(list)) return [];
   return list.map((x) => {
@@ -97,7 +100,7 @@ export function normalizeSimilar(list: SimilarItemRaw[] | unknown): NormalizedSi
     return {
       id: obj.productId,
       title: obj.tittle ?? "",
-      price: parsePrice(obj.price) ?? 0, 
+      price: parsePrice(obj.price) ?? 0,
       brandName: obj.brandName ?? null,
       modelName: obj.modelName ?? null,
       image: obj.images ?? null,
@@ -106,6 +109,7 @@ export function normalizeSimilar(list: SimilarItemRaw[] | unknown): NormalizedSi
 }
 
 /* ------------------------------- APIs ------------------------------- */
+
 export const fetchProductDetail = async (id: string) => {
   const { data } = await api.get<ProductDetailDTO>(`/product/search/${id}`);
   return data;
@@ -125,6 +129,7 @@ export const fetchSimilarBatteries = async (id: string) => {
   const { data } = await api.get<SimilarItemRaw[]>(`/battery/${id}/similar`);
   return normalizeSimilar(data);
 };
+
 
 export type PurchaseRequestPayload = {
   productId: string;
@@ -148,18 +153,25 @@ export type PurchaseRequestDTO = {
   sellerEmail?: string;
   sellerPhone?: string | null;
 
-  offeredPrice: number | string; 
+  offeredPrice: number | string;
   buyerMessage?: string | null;
+
+  sellerResponseMessage?: string | null;
+  rejectReason?: string | null;
 
   status: "PENDING" | "APPROVED" | "REJECTED" | "CONTRACT_SENT" | string;
   contractStatus?: "SENT" | "SIGNED" | "CANCELLED" | null;
   contractUrl?: string | null;
 
   createdAt?: string | null;
+  respondedAt?: string | null; 
 };
 
 export const createPurchaseRequest = async (payload: PurchaseRequestPayload) => {
-  const { data } = await api.post<PurchaseRequestDTO>("/member/purchase-request/create", payload);
+  const { data } = await api.post<PurchaseRequestDTO>(
+    "/member/purchase-request/create",
+    payload
+  );
   return data;
 };
 
@@ -171,11 +183,17 @@ export type Page<T> = {
   number: number;
 };
 
-export const listSellerPurchaseRequests = async (params?: { page?: number; size?: number }) => {
+export const listSellerPurchaseRequests = async (params?: {
+  page?: number;
+  size?: number;
+}) => {
   const { page = 0, size = 20 } = params || {};
-  const { data } = await api.get<Page<PurchaseRequestDTO>>("/member/purchase-request/seller", {
-    params: { page, size },
-  });
+  const { data } = await api.get<Page<PurchaseRequestDTO>>(
+    "/member/purchase-request/seller",
+    {
+      params: { page, size },
+    }
+  );
   return data;
 };
 
@@ -183,9 +201,13 @@ export type RespondPayload = {
   requestId: string;
   accept: boolean;
   responseMessage?: string;
+  rejectReason?: string;
 };
 
 export const respondPurchaseRequest = async (payload: RespondPayload) => {
-  const { data } = await api.post<PurchaseRequestDTO>("/member/purchase-request/respond", payload);
+  const { data } = await api.post<PurchaseRequestDTO>(
+    "/member/purchase-request/respond",
+    payload
+  );
   return data;
 };
