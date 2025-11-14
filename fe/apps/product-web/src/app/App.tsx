@@ -28,6 +28,7 @@ import OAuthPopupBridge from "@/pages/auth/OAuthPopupBridge";
 import BrandProductsPage from "@/pages/listingEV/BrandProductsPage";
 import SellerPublic from "@/pages/account/SellerPublic";
 import BoughtProductsPage from "@/pages/bought/BoughtProductsPage";
+import NotificationCenterPage from "@/pages/notification/NotificationsPage";
 
 export default function App() {
   return (
@@ -56,7 +57,10 @@ export default function App() {
         <Route path="/profile/:username" element={<ProfilePublicPage />} />
         <Route path="/brands/:brandId" element={<BrandProductsPage />} />
         <Route path="/seller/:userId" element={<SellerPublic />} />
-
+        <Route
+          path="/notifications"
+          element={<NotificationCenterPage />}
+        />
         <Route
           path="/bought"
           element={

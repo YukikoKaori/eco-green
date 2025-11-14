@@ -17,10 +17,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { searchProductsByName } from "@/api/search";
 import { toast } from "sonner";
 import {
-  listSellerPurchaseRequests,
-  respondPurchaseRequest,
-  type PurchaseRequestDTO,
-} from "@/api/productDetail";
+  listMemberNotifications,
+  markAllNotificationsRead,
+  type NotificationDTO,
+} from "@/api/notifications";
 
 const mainNav = [
   { label: "EcoGreen", to: "/" },
@@ -38,24 +38,27 @@ export default function Navbar() {
   /* ===== Popover Thông báo ===== */
   const [openNoti, setOpenNoti] = useState(false);
   const [loadingNoti, setLoadingNoti] = useState(false);
-  const [requests, setRequests] = useState<PurchaseRequestDTO[]>([]);
-  const [busy, setBusy] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<NotificationDTO[]>([]);
 
   const loadNoti = async () => {
     if (!user) return;
     setLoadingNoti(true);
     try {
-      const res = await listSellerPurchaseRequests({ page: 0, size: 20 });
-      setRequests(res?.content ?? []);
+      const res = await listMemberNotifications({ page: 0, size: 10 });
+      setNotifications(res.content ?? []);
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Không tải được thông báo giao dịch.");
+      toast.error(
+        e?.response?.data?.message || "Không tải được thông báo."
+      );
     } finally {
       setLoadingNoti(false);
     }
   };
 
   const onOpenChange = (v: boolean) => {
-    if (v && user) loadNoti();
+    if (v && user) {
+      loadNoti();
+    }
     if (!user && v) {
       setOpenNoti(false);
       nav(
@@ -69,24 +72,19 @@ export default function Navbar() {
     setOpenNoti(v);
   };
 
-  const handleRespond = async (id: string, accept: boolean) => {
-    setBusy(id);
+  const unreadCount = notifications.filter((n) => !n.read).length;
+  const hasUnread = unreadCount > 0;
+
+  const handleMarkAllRead = async () => {
+    if (!notifications.length) return;
     try {
-      const updated = await respondPurchaseRequest({
-        requestId: id,
-        accept,
-        responseMessage: accept
-          ? "Đồng ý bán với giá bạn đề xuất. Vui lòng ký hợp đồng."
-          : "Xin lỗi, tôi không đồng ý bán.",
-      });
-      setRequests((prev) => prev.map((r) => (r.id === id ? updated : r)));
-      toast.success(
-        accept ? "Đã đồng ý – hợp đồng đã được gửi qua email." : "Đã từ chối yêu cầu."
-      );
+      const res = await markAllNotificationsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      toast.success(res.message || "Đã đánh dấu tất cả là đã đọc.");
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Thao tác thất bại.");
-    } finally {
-      setBusy(null);
+      toast.error(
+        e?.response?.data?.message || "Không thể đánh dấu đã đọc."
+      );
     }
   };
 
@@ -99,7 +97,9 @@ export default function Navbar() {
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(() => {
-        setIsScrolled((prev) => (prev ? y > THRESHOLD - HYST : y > THRESHOLD + HYST));
+        setIsScrolled((prev) =>
+          prev ? y > THRESHOLD - HYST : y > THRESHOLD + HYST
+        );
         ticking = false;
       });
     };
@@ -113,11 +113,12 @@ export default function Navbar() {
     const q = keyword.trim();
     try {
       if (q) await searchProductsByName(q);
-    } catch {}
+    } catch {
+      // ignore
+    }
     nav(`/search?keyword=${encodeURIComponent(q)}`);
   };
 
-  // ===== helper: yêu cầu login rồi redirect về trang hiện tại =====
   const requireLoginAndGo = (target: string, message: string) => {
     if (!user) {
       nav(
@@ -209,7 +210,6 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Nav desktop / Search khi shrink */}
         <div className="hidden md:flex flex-1 justify-center">
           {!isScrolled ? (
             <nav className="flex items-center gap-6 pl-35">
@@ -253,9 +253,8 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Actions (bên phải) */}
         <div className="ml-auto flex items-center gap-2">
-          {/* Thông báo giao dịch */}
+          {/* Thông báo */}
           <Popover open={openNoti} onOpenChange={onOpenChange}>
             <PopoverTrigger asChild>
               <Button
@@ -263,9 +262,14 @@ export default function Navbar() {
                 size="icon"
                 className="hidden sm:flex !bg-white"
                 aria-label="Thông báo"
-                title="Thông báo giao dịch"
+                title="Thông báo"
               >
-                <Bell className="w-4 h-4 text-teal-700" />
+                <div className="relative">
+                  <Bell className="w-4 h-4 text-teal-700" />
+                  {hasUnread && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500" />
+                  )}
+                </div>
               </Button>
             </PopoverTrigger>
             <PopoverContent
@@ -273,74 +277,127 @@ export default function Navbar() {
               sideOffset={10}
               className="eg-noti p-0 w-[420px] max-h-[70vh] z-[20000] rounded-2xl border-teal-200 bg-white shadow-xl"
             >
+              {/* Header popover */}
               <div
                 className="sticky top-0 z-10 px-4 py-3 rounded-t-2xl text-white"
                 style={{ background: "linear-gradient(90deg,#246f67 0%,#01c5a7 100%)" }}
               >
-                <div className="text-lg font-semibold">Thông Báo</div>
-                <div className="mt-2 flex items-center gap-2 text-xs">
-                  <span className="px-2 py-0.5 rounded-full bg-white/20 backdrop-blur">
-                    Hoạt động
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-white/10">Tin tức</span>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-lg font-semibold">Thông Báo</div>
+                    <div className="mt-1 text-xs text-white/80">
+                      {unreadCount > 0
+                        ? `${unreadCount} thông báo chưa đọc`
+                        : "Bạn đã đọc hết tất cả thông báo"}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-1 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={handleMarkAllRead}
+                      className="font-medium text-white hover:text-emerald-100 transition-colors"
+                    >
+                      Đánh dấu đã đọc hết
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpenNoti(false);
+                        nav("/notifications");
+                      }}
+                      className="font-medium text-white hover:text-emerald-100 transition-colors"
+                    >
+                      Xem tất cả
+                    </button>
+                  </div>
                 </div>
               </div>
 
+              {/* Body popover */}
               {loadingNoti ? (
                 <div className="px-4 py-6 text-sm text-slate-600">Đang tải…</div>
-              ) : requests.length === 0 ? (
+              ) : notifications.length === 0 ? (
                 <div className="px-4 py-6 text-sm text-slate-600">
-                  Chưa có thông báo giao dịch nào.
+                  Chưa có thông báo nào.
                 </div>
               ) : (
                 <ul className="px-3 pb-3">
-                  {requests.map((r) => (
-                    <li
-                      key={r.id}
-                      className="rounded-xl border border-teal-100 bg-teal-50/40 hover:bg-teal-50 transition m-2 p-3 shadow-sm"
-                    >
-                      <div className="font-semibold text-slate-800">
-                        Yêu cầu mua – {r.productTitle}
-                      </div>
+                  {notifications.map((n) => {
+                    const created = n.createdAt
+                      ? new Date(n.createdAt).toLocaleString("vi-VN")
+                      : "";
+                    const isRequest = n.type === "PURCHASE_REQUEST";
 
-                      <div className="mt-1 text-sm text-slate-700">
-                        Người mua: <b>{r.buyerName}</b>
-                      </div>
-                      <div className="text-sm text-slate-700">
-                        Giá đề nghị:{" "}
-                        <b>{(r.offeredPrice ?? 0).toLocaleString("vi-VN")} đ</b>
-                      </div>
+                    const clickable =
+                      (isRequest && n.refId) ||
+                      (n.type === "PURCHASE_REQUEST_COMPLETED" && n.refId);
 
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        {(r as any).contractUrl && r.contractStatus === "SENT" && (
-                          <a
-                            href={(r as any).contractUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs underline text-teal-700 ml-1"
-                          >
-                            Mở hợp đồng
-                          </a>
-                        )}
-                      </div>
-                      <div className="mt-3">
-                        <Link
-                          to={`/seller/purchase-requests/${r.id}`}
-                          state={{ request: r }}
-                          className="inline-flex items-center gap-1 rounded-sm px-3 py-1 !text-sm bg-[#246f67] text-white"
-                          onClick={() => setOpenNoti(false)}
-                        >
-                          Xem chi tiết
-                        </Link>
-                      </div>
-                    </li>
-                  ))}
+                    const goto = () => {
+                      if (!clickable) return;
+                      if (isRequest && n.refId) {
+                        nav(`/seller/purchase-requests/${n.refId}`, {
+                          state: { fromNoti: true },
+                        });
+                      } else if (
+                        n.type === "PURCHASE_REQUEST_COMPLETED" &&
+                        n.refId
+                      ) {
+                        nav(
+                          `/account/bought-products?ref=${encodeURIComponent(
+                            n.refId
+                          )}`
+                        );
+                      }
+                      setOpenNoti(false);
+                    };
+
+                    return (
+                      <li
+                        key={n.id}
+                        className={`rounded-xl border bg-white m-2 p-3 shadow-sm transition ${
+                          !n.read ? "border-teal-300 bg-teal-50/70" : "border-slate-200"
+                        } ${clickable ? "cursor-pointer" : "cursor-default"}`}
+                        onClick={goto}
+                      >
+                        <div className="flex items-start gap-2">
+                          {!n.read && (
+                            <span className="mt-1 w-2 h-2 rounded-full bg-red-500" />
+                          )}
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="font-semibold text-emerald-800">
+                                {n.title}
+                              </div>
+                              {isRequest && clickable && (
+                                <span className="px-3 py-1 rounded-full bg-emerald-50 text-[11px] text-emerald-700 border border-emerald-200">
+                                  Yêu cầu mua
+                                </span>
+                              )}
+                              {!clickable && (
+                                <span className="px-3 py-1 rounded-full bg-slate-50 text-[11px] text-slate-600 border border-slate-200">
+                                  Thông báo
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="mt-1 !text-xs text-slate-700">
+                              {n.content}
+                            </div>
+                            <div className="mt-1 text-[11px] text-slate-500">
+                              {created}
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </PopoverContent>
           </Popover>
 
-          {/* Wishlist – bắt login nếu chưa có tài khoản */}
+          {/* Wishlist */}
           <Button
             type="button"
             size="icon"
@@ -359,22 +416,16 @@ export default function Navbar() {
 
           {/* Quản lý tin / Đăng nhập */}
           {user ? (
-            <Button
-              asChild
-              className="hidden md:flex text-[#246f67] !bg-white"
-            >
+            <Button asChild className="hidden md:flex text-[#246f67] !bg-white">
               <Link to="/post/manage">Quản lý tin</Link>
             </Button>
           ) : (
-            <Button
-              asChild
-              className="hidden md:flex !text-[#246f67] !bg-white"
-            >
+            <Button asChild className="hidden md:flex !text-[#246f67] !bg-white">
               <Link to="/login">Đăng nhập</Link>
             </Button>
           )}
 
-          {/* Đăng tin – cũng bắt login */}
+          {/* Đăng tin */}
           <Button
             type="button"
             className="!bg-[#246f67] text-sm flex items-center gap-2 !text-white"
@@ -386,7 +437,7 @@ export default function Navbar() {
             <span>Đăng tin</span>
           </Button>
 
-          {/* User menu (giữ như cũ: chưa login thì hiện menu khách + CTA) */}
+          {/* User menu */}
           <UserMenu />
         </div>
       </div>
