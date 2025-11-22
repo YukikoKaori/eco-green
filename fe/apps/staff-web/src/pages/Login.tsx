@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Phone, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { loginApi, getMe } from "@/api/auth";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/lib/axios";
+import ReCAPTCHA from "react-google-recaptcha";
 
 function Typewriter({
   texts,
@@ -64,6 +65,10 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY as string | undefined;
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+
   const nav = useNavigate();
   const { setUser } = useAuth();
 
@@ -72,36 +77,44 @@ export default function Login() {
     if (loading) return;
 
     const p = phone.trim();
-    if (!/^\d{9,11}$/.test(p))
-      return setErr("Số điện thoại không hợp lệ (9–11 chữ số).");
+    if (!/^\d{9,11}$/.test(p)) return setErr("Số điện thoại không hợp lệ (9–11 chữ số).");
     if (!password) return setErr("Vui lòng nhập mật khẩu.");
+    if (siteKey && !captchaToken) return setErr("Vui lòng xác nhận captcha trước khi đăng nhập.");
 
     try {
       setLoading(true);
       setErr(null);
 
-      const res = await loginApi({ phone: p, password });
+      const res = await loginApi({
+        phone: p,
+        password,
+        ...(siteKey ? { recaptchaToken: captchaToken! } : {}),
+      });
+
       const tokenRaw = res.token;
       if (!tokenRaw) throw new Error("Không tìm thấy token trong phản hồi.");
-      const bare = tokenRaw.startsWith("Bearer ")
-        ? tokenRaw.slice(7)
-        : tokenRaw;
+      const bare = tokenRaw.startsWith("Bearer ") ? tokenRaw.slice(7) : tokenRaw;
 
       const store = remember ? localStorage : sessionStorage;
       store.setItem("access_token", bare);
       api.defaults.headers.common.Authorization = `Bearer ${bare}`;
 
       const me = await getMe();
+
+      // ==== CHỈ CHO STAFF VÀO HỆ THỐNG ====
       const role = String(me.role || "").toUpperCase();
-      const isStaff = role.includes("STAFF") || role.includes("ADMIN");
-      if (!isStaff) {
-        setErr("Tài khoản không có quyền truy cập trang quản trị.");
+      const allowedRoles = ["STAFF"]; // nếu muốn cho thêm ADMIN vào thì: ["STAFF", "ADMIN"]
+      const isAllowed = allowedRoles.includes(role);
+
+      if (!isAllowed) {
+        setErr("Tài khoản không có quyền truy cập trang staff.");
         try {
           localStorage.removeItem("access_token");
           sessionStorage.removeItem("access_token");
         } catch {}
         return;
       }
+      // ====================================
 
       setUser(
         {
@@ -122,9 +135,15 @@ export default function Login() {
         { remember: remember ? "local" : "session" }
       );
 
+      recaptchaRef.current?.reset();
+      setCaptchaToken(null);
+
       nav("/", { replace: true });
     } catch (e: any) {
       setErr(e?.response?.data?.message || e?.message || "Đăng nhập thất bại");
+
+      recaptchaRef.current?.reset();
+      setCaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -168,9 +187,7 @@ export default function Login() {
           <form onSubmit={onSubmit} className="space-y-4" noValidate>
             {/* Phone */}
             <div>
-              <label className="text-sm font-medium text-[#0f766e]">
-                Số điện thoại
-              </label>
+              <label className="text-sm font-medium text-[#0f766e]">Số điện thoại</label>
               <div className="mt-1 flex items-center gap-2 rounded-lg border bg-white px-3 focus-within:ring-2 focus-within:ring-[#0f766e]/20 focus-within:border-[#0f766e]">
                 <Phone className="w-4 h-4 text-gray-500" />
                 <Input
@@ -190,9 +207,7 @@ export default function Login() {
 
             {/* Password */}
             <div>
-              <label className="text-sm font-medium text-[#0f766e]">
-                Mật khẩu
-              </label>
+              <label className="text-sm font-medium text-[#0f766e]">Mật khẩu</label>
               <div className="mt-1 flex items-center gap-2 rounded-lg border bg-white px-3 focus-within:ring-2 focus-within:ring-[#0f766e]/20 focus-within:border-[#0f766e]">
                 <Lock className="w-4 h-4 text-gray-500" />
                 <Input
@@ -212,14 +227,25 @@ export default function Login() {
                   aria-label={showPw ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                   aria-pressed={showPw}
                 >
-                  {showPw ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
+                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
+
+            {siteKey && (
+              <div className="pt-1">
+                <ReCAPTCHA
+                  ref={recaptchaRef}
+                  sitekey={siteKey}
+                  onChange={(v) => setCaptchaToken(v)}
+                  onExpired={() => setCaptchaToken(null)}
+                  onErrored={() => {
+                    recaptchaRef.current?.reset();
+                    setCaptchaToken(null);
+                  }}
+                />
+              </div>
+            )}
 
             {/* Options */}
             <div className="flex items-center justify-between">
@@ -246,7 +272,7 @@ export default function Login() {
         </div>
 
         <p className="text-center text-xs text-gray-500 mt-4">
-          © {new Date().getFullYear()} EcoGreen. Admin access only.
+          © {new Date().getFullYear()} EcoGreen. Staff access only.
         </p>
       </div>
     </div>

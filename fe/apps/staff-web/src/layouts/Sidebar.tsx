@@ -1,10 +1,8 @@
-// src/layouts/Sidebar.tsx
 import { useLocation, NavLink } from "react-router-dom";
 import { useMemo, useState } from "react";
 import {
   LayoutDashboard,
   FileText,
-  Clock3,
   Eye,
   Users,
   UserRound,
@@ -13,6 +11,8 @@ import {
   Settings,
   ChevronDown,
   LockKeyhole,
+  ListOrdered,
+  Info, 
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -20,7 +20,6 @@ import SidebarUserCard from "@/components/SidebarUserCard";
 
 const BRAND = "#0f766e";
 
-// style helpers (đồng bộ cho mọi item)
 const linkBase =
   "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition";
 const linkActive =
@@ -32,20 +31,26 @@ const groupBtn = `${linkBase} w-full justify-between select-none`;
 export default function Sidebar() {
   const { pathname } = useLocation();
 
-  // active detection cho group
-  const isPostsActive = useMemo(() => pathname.startsWith("/posts"), [pathname]);
+  const isPostsActive = useMemo(
+    () => pathname.startsWith("/posts") || pathname.startsWith("/reports"),
+    [pathname]
+  );
   const isAccountsActive = useMemo(
     () => pathname.startsWith("/users") || pathname.startsWith("/staffs"),
     [pathname]
   );
+  const isTransactionsActive = useMemo(
+    () => pathname.startsWith("/transactions"),
+    [pathname]
+  );
   const isSettingsActive = useMemo(
-    () => pathname.startsWith("/settings"),
+    () => pathname.startsWith("/settings") || pathname === "/profile" || pathname === "/password",
     [pathname]
   );
 
-  // mở mặc định nếu đang ở trong nhóm
   const [openPosts, setOpenPosts] = useState(isPostsActive);
   const [openAccounts, setOpenAccounts] = useState(isAccountsActive);
+  const [openTransactions, setOpenTransactions] = useState(isTransactionsActive);
   const [openSettings, setOpenSettings] = useState(isSettingsActive);
 
   return (
@@ -79,7 +84,7 @@ export default function Sidebar() {
               <span className="truncate">Tổng quan</span>
             </NavLink>
 
-            {/* Quản lý bài đăng (group) */}
+            {/* Quản lý bài đăng */}
             <button
               type="button"
               onClick={() => setOpenPosts((v) => !v)}
@@ -103,99 +108,95 @@ export default function Sidebar() {
               id="menu-posts"
               className={[
                 "overflow-hidden pl-9 pr-1",
-                openPosts ? "max-h-48 py-1" : "max-h-0",
+                openPosts ? "max-h-80 py-1" : "max-h-0",
                 "transition-[max-height,padding] duration-300 ease-in-out",
               ].join(" ")}
             >
               <NavLink
-                to="/posts/pending"
+                to="/posts/moderate"
                 className={({ isActive }) =>
-                  ["flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                   isActive ? linkActive : linkIdle].join(" ")
+                  [linkBase, isActive ? linkActive : linkIdle].join(" ")
                 }
-                aria-label="Cần phê duyệt"
+                aria-label="Tất cả tin đăng"
               >
-                <Clock3 className="h-4 w-4" />
-                <span className="truncate">Cần phê duyệt</span>
+                <Eye className="h-4 w-4" />
+                <span className="truncate">Tất cả tin đăng</span>
               </NavLink>
 
               <NavLink
-                to="/posts/active"
+                to="/reports/count"
                 className={({ isActive }) =>
-                  ["flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                   isActive ? linkActive : linkIdle].join(" ")
+                  [linkBase, isActive ? linkActive : linkIdle].join(" ")
                 }
-                aria-label="Đang hiển thị"
+                aria-label="Các khiếu nại"
               >
-                <Eye className="h-4 w-4" />
-                <span className="truncate">Đang hiển thị</span>
+                <ListOrdered className="h-4 w-4" />
+                <span className="truncate">Các khiếu nại</span>
+              </NavLink>
+
+              {/* ✅ Thông tin các hãng */}
+              <NavLink
+                to="/posts/brands"
+                className={({ isActive }) =>
+                  [linkBase, isActive ? linkActive : linkIdle].join(" ")
+                }
+                aria-label="Thông tin các hãng"
+              >
+                <Info className="h-4 w-4" />
+                <span className="truncate">Thông tin các hãng</span>
               </NavLink>
             </div>
 
-            {/* Quản lý tài khoản (group) */}
+            {/* Quản lý giao dịch */}
             <button
               type="button"
-              onClick={() => setOpenAccounts((v) => !v)}
-              className={[groupBtn, isAccountsActive ? linkActive : linkIdle].join(" ")}
-              aria-expanded={openAccounts}
-              aria-controls="menu-accounts"
+              onClick={() => setOpenTransactions((v) => !v)}
+              className={[groupBtn, isTransactionsActive ? linkActive : linkIdle].join(" ")}
+              aria-expanded={openTransactions}
+              aria-controls="menu-transactions"
             >
               <span className="inline-flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                <span className="truncate text-sm">Quản lý tài khoản</span>
+                <DollarSign className="h-4 w-4" />
+                <span className="truncate text-sm">Quản lý giao dịch</span>
               </span>
               <ChevronDown
                 className={[
                   "h-4 w-4 transition-transform",
-                  openAccounts ? "rotate-180" : "",
+                  openTransactions ? "rotate-180" : "",
                 ].join(" ")}
               />
             </button>
 
             <div
-              id="menu-accounts"
+              id="menu-transactions"
               className={[
                 "overflow-hidden pl-9 pr-1",
-                openAccounts ? "max-h-48 py-1" : "max-h-0",
+                openTransactions ? "max-h-40 py-1" : "max-h-0",
                 "transition-[max-height,padding] duration-300 ease-in-out",
               ].join(" ")}
             >
               <NavLink
-                to="/users"
+                to="/transactions/contracts"
                 className={({ isActive }) =>
-                  ["flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                   isActive ? linkActive : linkIdle].join(" ")
+                  [linkBase, isActive ? linkActive : linkIdle].join(" ")
                 }
-                aria-label="Người dùng"
+                aria-label="Hợp đồng điện tử"
               >
-                <UserRound className="h-4 w-4" />
-                <span className="truncate">Người dùng</span>
+                <FileText className="h-4 w-4" />
+                <span className="truncate">Hợp đồng điện tử</span>
               </NavLink>
 
               <NavLink
-                to="/staffs"
+                to="/transactions/commissions"
                 className={({ isActive }) =>
-                  ["flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                   isActive ? linkActive : linkIdle].join(" ")
+                  [linkBase, isActive ? linkActive : linkIdle].join(" ")
                 }
-                aria-label="Nhân viên"
+                aria-label="Doanh thu đăng bài"
               >
-                <BadgeCheck className="h-4 w-4" />
-                <span className="truncate">Nhân viên</span>
+                <DollarSign className="h-4 w-4" />
+                <span className="truncate">Doanh thu đăng bài</span>
               </NavLink>
             </div>
-
-            {/* Quản lý giao dịch */}
-            <NavLink
-              to="/transactions"
-              className={({ isActive }) =>
-                [linkBase, isActive ? linkActive : linkIdle].join(" ")
-              }
-              aria-label="Quản lý giao dịch"
-            >
-              <DollarSign className="h-4 w-4" />
-              <span className="truncate">Quản lý giao dịch</span>
-            </NavLink>
 
             {/* Cài đặt */}
             <button
@@ -228,8 +229,7 @@ export default function Sidebar() {
               <NavLink
                 to="/profile"
                 className={({ isActive }) =>
-                  ["flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                   isActive ? linkActive : linkIdle].join(" ")
+                  [linkBase, isActive ? linkActive : linkIdle].join(" ")
                 }
                 aria-label="Hồ sơ cá nhân"
               >
@@ -240,8 +240,7 @@ export default function Sidebar() {
               <NavLink
                 to="/password"
                 className={({ isActive }) =>
-                  ["flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                   isActive ? linkActive : linkIdle].join(" ")
+                  [linkBase, isActive ? linkActive : linkIdle].join(" ")
                 }
                 aria-label="Đổi mật khẩu"
               >
@@ -252,7 +251,6 @@ export default function Sidebar() {
           </nav>
         </ScrollArea>
 
-        {/* Thẻ thông tin Admin + Logout ở đáy */}
         <SidebarUserCard />
       </div>
     </aside>

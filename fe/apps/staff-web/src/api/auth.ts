@@ -2,8 +2,6 @@ import api from "@/lib/axios";
 
 export type ApiEnvelope<T> = { code: number; message: string; result: T };
 
-export type ProductStatus = "PENDING_REVIEW" | "APPROVED" | "REJECTED";
-
 export interface UserProfile {
   id: string;
   username: string;
@@ -19,7 +17,7 @@ export interface UserProfile {
   nationalId?: string | null;
   gender?: "MALE" | "FEMALE" | "OTHER" | string;
   status: "ACTIVE" | "INACTIVE" | string;
-  role: string;
+  role?: string;
 }
 
 export interface LoginResult {
@@ -29,34 +27,14 @@ export interface LoginResult {
   phone?: string;
   dateOfBirth?: string | null;
   gender?: string;
-  role: string;
+  role?: string;
   status?: string;
   address?: string | null;
   avatarUrl?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 }
-
 export interface LoginResponse extends ApiEnvelope<LoginResult> {}
-
-export interface PendingProduct {
-  id: string;
-  status: string;
-  rejectReason: string | null;
-  title: string;
-  thumbnail: string | null;
-  productType: string;
-  updateAt: string | null;
-  modelName: string | null;
-  versionName: string | null;
-  packageName: string;
-  amount: number | null; 
-}
-
-export interface VerifyPostPayload {
-  newStatus: ProductStatus;
-  rejectReason?: string | null;
-}
 
 function unwrap<T>(data: any): T {
   return (data?.result ?? data) as T;
@@ -80,15 +58,27 @@ const compact = (obj: Record<string, any>) => {
   const out: Record<string, any> = {};
   for (const [k, v] of Object.entries(obj)) {
     if (v === undefined) continue;
+    if (v === null) {
+      out[k] = null;
+      continue;
+    }
     if (typeof v === "string" && v.trim() === "") continue;
     out[k] = v;
   }
   return out;
 };
 
-// 🧩 AUTH
-export async function loginApi(payload: { phone: string; password: string }) {
-  const { data } = await api.post<LoginResponse>("/auth/login", payload);
+export async function loginApi(payload: {
+  phone: string;
+  password: string;
+  recaptchaToken?: string;
+}) {
+  const body = {
+    phone: payload.phone,
+    password: payload.password,
+    recaptchaToken: payload.recaptchaToken ?? "",
+  };
+  const { data } = await api.post<LoginResponse>("/auth/login", body);
   return unwrap<LoginResult>(data);
 }
 
@@ -97,10 +87,7 @@ export async function registerApi(payload: {
   phone: string;
   password: string;
 }) {
-  const { data } = await api.post<ApiEnvelope<UserProfile>>(
-    "/auth/register",
-    payload
-  );
+  const { data } = await api.post<ApiEnvelope<UserProfile>>("/auth/register", payload);
   return unwrap<UserProfile>(data);
 }
 
@@ -114,12 +101,10 @@ export const oauthUrls = {
   facebook: `${import.meta.env.VITE_API_URL}/auth/facebook`,
 };
 
-// PROFILE
 export async function getMe(opts?: { signal?: AbortSignal }) {
-  const { data } = await api.get<UserProfile | ApiEnvelope<UserProfile>>(
-    "/profile/me",
-    { signal: opts?.signal }
-  );
+  const { data } = await api.get<UserProfile | ApiEnvelope<UserProfile>>("/profile/me", {
+    signal: opts?.signal,
+  });
   return normalizeUser(unwrap<UserProfile>(data));
 }
 
@@ -130,6 +115,7 @@ export type UpdateMePayload = Partial<{
   email: string | null;
   dateOfBirth: string | null;
   avatarUrl: string | null;
+  avatarFile: File | null;
   taxCode: string | null;
   gender: "MALE" | "FEMALE" | "OTHER" | string;
   nationalId: string | null;
@@ -138,50 +124,141 @@ export type UpdateMePayload = Partial<{
 function buildUpdatePayload(body: UpdateMePayload) {
   const payload: Record<string, any> = { ...body };
   if (payload.gender) payload.gender = String(payload.gender).toUpperCase();
+  delete payload.avatarFile;
   return compact(payload);
 }
 
-export async function updateMe(body: UpdateMePayload) {
-  const finalBody = buildUpdatePayload(body);
-  const { data } = await api.patch<UserProfile | ApiEnvelope<UserProfile>>(
-    "/profile/me/update",
-    finalBody
-  );
-  return normalizeUser(unwrap<UserProfile>(data));
+//create form data
+function buildFormData(body: UpdateMePayload) {
+  const fd = new FormData();
+
+  // data json
+  const dataJson = buildUpdatePayload(body);
+  fd.append("data", new Blob([JSON.stringify(dataJson)], { type: "application/json" }));
+
+  // file img
+  if (body.avatarFile instanceof File) {
+    fd.append("avatarUrl", body.avatarFile);
+  }
+
+  return fd;
 }
 
-export async function changePassword(payload: {
-  currentPassword: string;
-  newPassword: string;
-}) {
-  const { data } = await api.post<ApiEnvelope<unknown>>(
-    "/users/change-password",
-    payload
+export async function updateMe(body: UpdateMePayload) {
+  const form = buildFormData(body);
+  const { data } = await api.patch<UserProfile | ApiEnvelope<UserProfile>>(
+    "/profile/me/update",
+    form
   );
-  return data;
+  return normalizeUser(unwrap<UserProfile>(data));
 }
 
 export async function uploadAvatar(file: File) {
   const form = new FormData();
   form.append("file", file);
-  const { data } = await api.post<
-    { url: string } | ApiEnvelope<{ url: string }>
-  >("/users/avatar", form);
+  const { data } = await api.post<{ url: string } | ApiEnvelope<{ url: string }>>(
+    "/users/avatar",
+    form
+  );
   return unwrap<{ url: string }>(data).url;
 }
 
-export async function getPendingPosts(): Promise<PendingProduct[]> {
-  const { data } = await api.get<ApiEnvelope<PendingProduct[]>>(
-    "/staff/post/pending/review"
-  );
-  return unwrap<PendingProduct[]>(data);
+// ====== product for profile ======
+export type MemberProduct = {
+  id: string;
+  title: string;
+  description?: string;
+  type?: "VEHICLE" | "BATTERY" | string;
+  productImagesList?: Array<{ url?: string; imageUrl?: string; isPrimary?: boolean }>;
+  price?: string | number | null;
+  conditionType?: "NEW" | "USED" | string;
+  status?: string;
+  createdAt?: string;
+
+  addressDetail?: string | null;
+  city?: string | null;
+  district?: string | null;
+  ward?: string | null;
+
+  brandName?: string | null;
+  modelName?: string | null;
+};
+
+export type MemberProductStatus = "ACTIVE" | "SOLD";
+
+function toArray<T = any>(data: any): T[] {
+  if (Array.isArray(data)) return data as T[];
+  if (Array.isArray(data?.items)) return data.items as T[];
+  if (Array.isArray(data?.content)) return data.content as T[];
+  return [];
 }
 
+export async function getMemberProducts(
+  status: MemberProductStatus,
+  opts?: { page?: number; size?: number },
+  signal?: AbortSignal
+): Promise<MemberProduct[]> {
+  const params: Record<string, any> = { status };
+  if (Number.isFinite(opts?.page)) params.page = opts!.page;
+  if (Number.isFinite(opts?.size)) params.size = opts!.size;
 
-export async function verifyPost(productId: string, payload: VerifyPostPayload) {
-  const { data } = await api.put<ApiEnvelope<any>>(
-    `/staff/post/${productId}/verify`,
+  const { data } = await api.get<any>("/member/product", { params, signal });
+  return toArray<MemberProduct>(unwrap<any>(data));
+}
+
+export function pickProductImage(p?: MemberProduct) {
+  return (
+    p?.productImagesList?.find((x) => x.isPrimary)?.imageUrl ||
+    p?.productImagesList?.[0]?.imageUrl ||
+    p?.productImagesList?.[0]?.url ||
+    "/images/placeholder.png"
+  );
+}
+
+export function formatVND(v?: string | number | null) {
+  if (v == null || v === "") return "—";
+  if (typeof v === "number") {
+    return Number.isFinite(v) ? Math.round(v).toLocaleString("vi-VN") + " đ" : "—";
+  }
+  const s = String(v).trim();
+  const digits = s.replace(/[^0-9]/g, "");
+  if (!digits) return "—";
+  const n = Number(digits);
+  return Number.isFinite(n) ? n.toLocaleString("vi-VN") + " đ" : "—";
+}
+
+export interface MessageResponse {
+  message: string;
+}
+
+export async function requestPasswordReset(phone: string) {
+  const { data } = await api.post<MessageResponse | ApiEnvelope<MessageResponse>>(
+    "api/password/reset/request",
+    { phone }
+  );
+  return unwrap<MessageResponse>(data);
+}
+
+export async function resetPassword(payload: {
+  phone: string;
+  otp: string;
+  newPassword: string;
+}) {
+  const { data } = await api.post<MessageResponse | ApiEnvelope<MessageResponse>>(
+    "api/password/reset",
     payload
   );
-  return unwrap(data);
+  return unwrap<MessageResponse>(data);
+}
+
+export async function updatePassword(payload: {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
+}) {
+  const { data } = await api.put<MessageResponse | ApiEnvelope<MessageResponse>>(
+    "/password/update",
+    payload
+  );
+  return unwrap<MessageResponse>(data);
 }

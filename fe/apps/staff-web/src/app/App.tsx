@@ -8,7 +8,16 @@ import UsersPage from "@/pages/Users";
 import StaffsPage from "@/pages/Staffs";
 import ProfilePage from "@/pages/settings/ProfilePage";
 import AccountPage from "@/pages/settings/AccountPage";
-import PendingPostsPage from "@/pages/PendingPostsPage";
+import ReportStatsPage from "@/pages/ReportStatsPage";
+import RejectedPostsPage from "@/pages/RejectedPostsPage";
+import StaffPostsManagePage from "@/pages/PostsManagePage";
+import ReviewDetailPage from "@/pages/ReviewDetailPage";
+import Contracts from "@/pages/transactions/Contracts";
+import Commissions from "@/pages/transactions/Commissions";
+import BrandCreatePage from "@/pages/brand/BrandCreatePage";
+import BrandsInfoPage from "@/pages/brand/BrandsInfoPage";
+import BrandEditPage from "@/pages/brand/BrandEditPage";
+import CreateBatteryBrand from "@/pages/brand/CreateBatteryBrand";
 
 export default function App() {
   return (
@@ -26,8 +35,18 @@ export default function App() {
           <Route path="staffs" element={<StaffsPage />} />
 
           {/* Quản lý bài đăng */}
-          <Route path="posts/pending" element={<PendingPostsPage/> } />
-          <Route path="posts/active" element={<div>Đang hiển thị</div>} />
+          <Route path="/posts/rejected" element={<RejectedPostsPage />} />
+          <Route path="/reports/count" element={<ReportStatsPage />} />
+          <Route path="/posts/moderate" element={<StaffPostsManagePage />} />
+          <Route path="/posts/review/:id" element={<ReviewDetailPage />} />
+          <Route path="/posts/brands" element={<BrandsInfoPage />} />
+          <Route path="/posts/brands/new" element={<BrandCreatePage />} />
+          <Route path="/posts/brands/:id/edit" element={<BrandEditPage />} />
+          <Route path="/posts/battery-brands/new" element={<CreateBatteryBrand />} />
+
+          {/* Quản lý giao dịch */}
+          <Route path="/transactions/contracts" element={<Contracts />} />
+          <Route path="/transactions/commissions" element={<Commissions />} />
 
           {/* Cài đặt */}
           <Route path="profile" element={<ProfilePage />} />
