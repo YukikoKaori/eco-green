@@ -253,15 +253,6 @@ export default function VNPayReturn() {
             >
               Về quản lý tin
             </Button>
-            {pid && (
-              <Button
-                variant="outline"
-                className="w-full border-[#246f67] text-[#246f67] hover:bg-[#246f67]/5"
-                onClick={goBackNotice}
-              >
-                {success ? "Xem lại gói đã chọn" : "Thanh toán lại"}
-              </Button>
-            )}
           </div>
         </div>
       </div>

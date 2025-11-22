@@ -22,7 +22,7 @@ const SECTIONS: Section[] = [
     items: [
       { to: "/account/wishlist", label: "Tin đăng đã lưu", icon: <Bookmark className="w-4 h-4" /> },
       { to: "/history/views", label: "Lịch sử xem tin", icon: <Clock className="w-4 h-4" /> },
-      { to: "/ratings", label: "Đánh giá từ tôi", icon: <Star className="w-4 h-4" /> },
+      // { to: "/ratings", label: "Đánh giá từ tôi", icon: <Star className="w-4 h-4" /> },
     ],
   },
   {
@@ -36,8 +36,8 @@ const SECTIONS: Section[] = [
     title: "Khác",
     items: [
       { to: "/account/profile", label: "Cài đặt tài khoản", icon: <Settings className="w-4 h-4" /> },
-      { to: "/help", label: "Trợ giúp", icon: <HelpCircle className="w-4 h-4" /> },
-      { to: "/feedback", label: "Đóng góp ý kiến", icon: <MessageSquare className="w-4 h-4" /> },
+      // { to: "/help", label: "Trợ giúp", icon: <HelpCircle className="w-4 h-4" /> },
+      // { to: "/feedback", label: "Đóng góp ý kiến", icon: <MessageSquare className="w-4 h-4" /> },
     ],
   },
 ];

@@ -19,7 +19,7 @@ export interface Listing {
   description?: string | null;
 
   type: ListingType;
-  price: string | number | null;     
+  price: string | number | null;
   condition?: Condition;
   status?: ListingStatus;
 
@@ -31,10 +31,11 @@ export interface Listing {
 
   thumbnail?: string | null;
 
-  location?: string | null;        
+  location?: string | null;
   distance?: string | number | null;
 
   slug?: string;
+  isHot?: boolean;
 
   vehicleSpec?: {
     brand?: string;
@@ -60,7 +61,7 @@ export interface RawListing {
   description?: string | null;
 
   type: "BATTERY" | "VEHICLE" | string;
-  price?: string | number | null;             
+  price?: string | number | null;
 
   conditionType?: "NEW" | "USED" | "LIKE_NEW" | string;
   status?: "ACTIVE" | "INACTIVE" | "SOLD" | string;
@@ -85,9 +86,10 @@ export interface RawListing {
     format?: string;
   }>;
 
-  // ĐỊA CHỈ
   addressDetail?: string | null;
   city?: string | null;
   district?: string | null;
   ward?: string | null;
+
+  isHot?: boolean | null;
 }

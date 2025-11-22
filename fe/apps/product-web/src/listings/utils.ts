@@ -7,7 +7,9 @@ import type {
 } from "@/listings/types";
 
 export function onlyActive(arr: RawListing[]): RawListing[] {
-  return arr.filter((x) => String(x.status ?? "ACTIVE").toUpperCase() === "ACTIVE");
+  return arr.filter(
+    (x) => String(x.status ?? "ACTIVE").toUpperCase() === "ACTIVE"
+  );
 }
 
 export function sortByNewest<T extends { createdAt?: string }>(arr: T[]): T[] {
@@ -23,7 +25,7 @@ function toNumberOrString(v: unknown): number | string | null {
   if (typeof v === "number") return v;
   const s = String(v);
   const cleaned = s.replace(/[^\d]/g, "");
-  if (!cleaned) return s; 
+  if (!cleaned) return s;
   const n = Number(cleaned);
   return Number.isFinite(n) ? n : s;
 }
@@ -72,7 +74,8 @@ export function mapRawToListing(x: RawListing): ListingWithKey {
     type: String(x.type).toUpperCase() === "VEHICLE" ? "VEHICLE" : "BATTERY",
     price: toNumberOrString(x.price),
 
-    condition: conditionMap[String(x.conditionType ?? "").toUpperCase()] ?? undefined,
+    condition:
+      conditionMap[String(x.conditionType ?? "").toUpperCase()] ?? undefined,
     status: statusMap[String(x.status ?? "").toUpperCase()] ?? undefined,
 
     createdAt: x.createdAt,
@@ -92,6 +95,7 @@ export function mapRawToListing(x: RawListing): ListingWithKey {
 
     location: joinLocation(x),
     distance: null,
+    isHot: !!x.isHot,
 
     slug: undefined,
     vehicleSpec: undefined,

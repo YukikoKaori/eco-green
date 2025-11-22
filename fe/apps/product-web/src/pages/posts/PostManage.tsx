@@ -9,6 +9,7 @@ import {
   PaginationItem,
   PaginationNext,
   PaginationPrevious,
+  PaginationLink,
 } from "@/components/ui/pagination";
 import {
   Dialog,
@@ -61,7 +62,14 @@ export default function PostManage() {
   const [loading, setLoading] = useState(false);
   const [list, setList] = useState<ProductListItem[]>([]);
   const [counts, setCounts] = useState<Record<ListingStatus, number>>({
-    active: 0, pending: 0, unpaid: 0, draft: 0, rejected: 0, expired: 0, hidden: 0, sold: 0,
+    active: 0,
+    pending: 0,
+    unpaid: 0,
+    draft: 0,
+    rejected: 0,
+    expired: 0,
+    hidden: 0,
+    sold: 0,
   });
 
   const [reasonOpen, setReasonOpen] = useState(false);
@@ -70,7 +78,10 @@ export default function PostManage() {
   const refreshTab = async () => {
     setLoading(true);
     try {
-      const [lst, cnt] = await Promise.all([getMemberProducts(tab), getMemberCounts()]);
+      const [lst, cnt] = await Promise.all([
+        getMemberProducts(tab),
+        getMemberCounts(),
+      ]);
       setList(lst);
       setCounts(cnt);
     } catch (e: any) {
@@ -80,6 +91,7 @@ export default function PostManage() {
     }
   };
 
+  // load list theo tab
   useEffect(() => {
     let stop = false;
     (async () => {
@@ -91,18 +103,25 @@ export default function PostManage() {
         if (!stop) setLoading(false);
       }
     })();
-    return () => { stop = true; };
+    return () => {
+      stop = true;
+    };
   }, [tab]);
 
+  // load counts tổng
   useEffect(() => {
     let stop = false;
     (async () => {
       try {
         const c = await getMemberCounts();
         if (!stop) setCounts(c);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     })();
-    return () => { stop = true; };
+    return () => {
+      stop = true;
+    };
   }, []);
 
   const filtered = useMemo(() => {
@@ -110,16 +129,23 @@ export default function PostManage() {
     if (!s) return list;
     return list.filter((x) => {
       const title = (x.title || "").toLowerCase();
-      const location = `${x.addressesDetail || ""} ${x.ward || ""} ${x.district || ""} ${x.city || ""}`.toLowerCase();
+      const location = `${x.addressesDetail || ""} ${x.ward || ""} ${
+        x.district || ""
+      } ${x.city || ""}`.toLowerCase();
       return title.includes(s) || location.includes(s);
     });
   }, [list, q]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageData = filtered.slice((page - 1) * pageSize, page * pageSize);
-  useEffect(() => { setPage(1); }, [tab, q]);
+
+  // đổi tab / search thì quay về trang 1
+  useEffect(() => {
+    setPage(1);
+  }, [tab, q]);
 
   async function setStatus(_id: string, _next: ListingStatus) {
+    // sau khi cập nhật status xong, reload lại tab hiện tại
     await refreshTab();
   }
 
@@ -147,7 +173,9 @@ export default function PostManage() {
       <div className="flex items-center justify-between gap-3 mb-4">
         <div>
           <h1 className="!text-xl !font-bold !text-[#246f67]">Quản lý tin đăng</h1>
-          <p className="text-sm text-muted-foreground">Theo dõi, chỉnh sửa và quản lý tin đăng của bạn.</p>
+          <p className="text-sm text-muted-foreground">
+            Theo dõi, chỉnh sửa và quản lý tin đăng của bạn.
+          </p>
         </div>
       </div>
 
@@ -158,11 +186,17 @@ export default function PostManage() {
             <AvatarImage
               src={user?.avatarUrl || DEFAULT_AVATAR}
               alt={displayName}
-              onError={(e) => { (e.currentTarget as HTMLImageElement).src = DEFAULT_AVATAR; }}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = DEFAULT_AVATAR;
+              }}
             />
-            <AvatarFallback className="bg-[#bf3b16] text-white font-semibold">{initial}</AvatarFallback>
+            <AvatarFallback className="bg-[#bf3b16] text-white font-semibold">
+              {initial}
+            </AvatarFallback>
           </Avatar>
-          <div><div className="text-xl font-semibold">{displayName}</div></div>
+          <div>
+            <div className="text-xl font-semibold">{displayName}</div>
+          </div>
         </div>
       </div>
 
@@ -178,7 +212,11 @@ export default function PostManage() {
       </div>
 
       {/* tabs */}
-      <Tabs value={tab} onValueChange={(v) => setTab(v as ListingStatus)} className="!w-full">
+      <Tabs
+        value={tab}
+        onValueChange={(v) => setTab(v as ListingStatus)}
+        className="!w-full"
+      >
         <TabsList className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 bg-transparent p-0">
           {TABS.map((t) => (
             <TabsTrigger
@@ -196,13 +234,19 @@ export default function PostManage() {
         <TabsContent value={tab} className="mt-3">
           {loading ? (
             <Card className="border-dashed">
-              <CardContent className="py-10 text-center text-sm text-muted-foreground">Đang tải...</CardContent>
+              <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                Đang tải...
+              </CardContent>
             </Card>
           ) : pageData.length === 0 ? (
             <Card className="border-dashed">
               <CardContent className="py-10 text-center">
-                <div className="text-xl font-semibold mb-2">Không có tin phù hợp</div>
-                <p className="text-muted-foreground mb-4">Hãy đăng tin để bắt đầu bán nhé!</p>
+                <div className="text-xl font-semibold mb-2">
+                  Không có tin phù hợp
+                </div>
+                <p className="text-muted-foreground mb-4">
+                  Hãy đăng tin để bắt đầu bán nhé!
+                </p>
                 <Button
                   asChild
                   className="text-[#246f67] border border-[#246f67] bg-white hover:bg-[#f3fdfa] inline-flex items-center gap-2 px-6 py-2 font-semibold rounded-xl mx-auto"
@@ -219,7 +263,9 @@ export default function PostManage() {
               {pageData.map((it) => {
                 const cover = getCoverFromImages(it.productImagesList);
                 const priceNum = normalizePrice(it.price);
-                const location = [it.addressesDetail, it.ward, it.district, it.city].filter(Boolean).join(", ");
+                const location = [it.addressesDetail, it.ward, it.district, it.city]
+                  .filter(Boolean)
+                  .join(", ");
                 return (
                   <PostCard
                     key={it.id}
@@ -233,7 +279,7 @@ export default function PostManage() {
                       views: it.views,
                       rejectReason: it.rejectReason,
                     }}
-                    setStatus={setStatus}        
+                    setStatus={setStatus}
                     onShowReason={() => onShowReason(it)}
                   />
                 );
@@ -241,16 +287,45 @@ export default function PostManage() {
             </div>
           )}
 
+          {/* phân trang: Trước 1 2 3 Sau */}
           {totalPages > 1 && (
             <div className="mt-4">
               <Pagination>
                 <PaginationContent>
                   <PaginationItem>
-                    <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} />
+                    <PaginationPrevious
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setPage((p) => Math.max(1, p - 1));
+                      }}
+                    />
                   </PaginationItem>
-                  <div className="px-3 text-sm self-center">Trang {page}/{totalPages}</div>
+
+                  {Array.from({ length: totalPages }, (_, idx) => {
+                    const p = idx + 1;
+                    return (
+                      <PaginationItem key={p}>
+                        <PaginationLink
+                          href="#"
+                          isActive={p === page}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setPage(p);
+                          }}
+                        >
+                          {p}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+
                   <PaginationItem>
-                    <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} />
+                    <PaginationNext
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setPage((cur) => Math.min(totalPages, cur + 1));
+                      }}
+                    />
                   </PaginationItem>
                 </PaginationContent>
               </Pagination>
@@ -258,14 +333,21 @@ export default function PostManage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* dialog lý do từ chối */}
       <Dialog open={reasonOpen} onOpenChange={setReasonOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Lý do từ chối</DialogTitle>
-            <DialogDescription className="text-sm">{reasonText}</DialogDescription>
+            <DialogTitle className="text-[#246f67]">Lý do từ chối</DialogTitle>
+            <DialogDescription className="text-sm text-red-600">
+              {reasonText}
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button className="text-[#246f67] border border-[#246f67] bg-white" onClick={() => setReasonOpen(false)}>
+            <Button
+              className="text-[#246f67] border border-[#246f67] !bg-white"
+              onClick={() => setReasonOpen(false)}
+            >
               Đã hiểu
             </Button>
           </DialogFooter>

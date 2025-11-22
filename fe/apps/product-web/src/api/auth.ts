@@ -58,7 +58,10 @@ const compact = (obj: Record<string, any>) => {
   const out: Record<string, any> = {};
   for (const [k, v] of Object.entries(obj)) {
     if (v === undefined) continue;
-    if (v === null) { out[k] = null; continue; }
+    if (v === null) {
+      out[k] = null;
+      continue;
+    }
     if (typeof v === "string" && v.trim() === "") continue;
     out[k] = v;
   }
@@ -79,7 +82,11 @@ export async function loginApi(payload: {
   return unwrap<LoginResult>(data);
 }
 
-export async function registerApi(payload: { fullName: string; phone: string; password: string }) {
+export async function registerApi(payload: {
+  fullName: string;
+  phone: string;
+  password: string;
+}) {
   const { data } = await api.post<ApiEnvelope<UserProfile>>("/auth/register", payload);
   return unwrap<UserProfile>(data);
 }
@@ -107,8 +114,8 @@ export type UpdateMePayload = Partial<{
   address: string;
   email: string | null;
   dateOfBirth: string | null;
-  avatarUrl: string | null;   
-  avatarFile: File | null;    
+  avatarUrl: string | null;
+  avatarFile: File | null;
   taxCode: string | null;
   gender: "MALE" | "FEMALE" | "OTHER" | string;
   nationalId: string | null;
@@ -149,7 +156,10 @@ export async function updateMe(body: UpdateMePayload) {
 export async function uploadAvatar(file: File) {
   const form = new FormData();
   form.append("file", file);
-  const { data } = await api.post<{ url: string } | ApiEnvelope<{ url: string }>>("/users/avatar", form);
+  const { data } = await api.post<{ url: string } | ApiEnvelope<{ url: string }>>(
+    "/users/avatar",
+    form
+  );
   return unwrap<{ url: string }>(data).url;
 }
 
@@ -198,7 +208,7 @@ export async function getMemberProducts(
 
 export function pickProductImage(p?: MemberProduct) {
   return (
-    p?.productImagesList?.find(x => x.isPrimary)?.imageUrl ||
+    p?.productImagesList?.find((x) => x.isPrimary)?.imageUrl ||
     p?.productImagesList?.[0]?.imageUrl ||
     p?.productImagesList?.[0]?.url ||
     "/images/placeholder.png"
@@ -215,4 +225,40 @@ export function formatVND(v?: string | number | null) {
   if (!digits) return "—";
   const n = Number(digits);
   return Number.isFinite(n) ? n.toLocaleString("vi-VN") + " đ" : "—";
+}
+
+export interface MessageResponse {
+  message: string;
+}
+
+export async function requestPasswordReset(phone: string) {
+  const { data } = await api.post<MessageResponse | ApiEnvelope<MessageResponse>>(
+    "api/password/reset/request",
+    { phone }
+  );
+  return unwrap<MessageResponse>(data);
+}
+
+export async function resetPassword(payload: {
+  phone: string;
+  otp: string;
+  newPassword: string;
+}) {
+  const { data } = await api.post<MessageResponse | ApiEnvelope<MessageResponse>>(
+    "api/password/reset",
+    payload
+  );
+  return unwrap<MessageResponse>(data);
+}
+
+export async function updatePassword(payload: {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
+}) {
+  const { data } = await api.put<MessageResponse | ApiEnvelope<MessageResponse>>(
+    "/password/update",
+    payload
+  );
+  return unwrap<MessageResponse>(data);
 }

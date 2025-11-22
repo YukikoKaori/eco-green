@@ -54,7 +54,7 @@ export default function ListingTabs({
       {/* Tabs */}
       <div className={styles.tabsBar}>
         <div className={styles.tabsWrapper} role="tablist" aria-label="Bộ lọc tin">
-          <Tab active={tab === "foryou"} onClick={() => handleChangeTab("foryou")} label="Dành cho bạn" />
+          {/* <Tab active={tab === "foryou"} onClick={() => handleChangeTab("foryou")} label="Dành cho bạn" /> */}
           <Tab active={tab === "latest"} onClick={() => handleChangeTab("latest")} label="Mới nhất" />
         </div>
       </div>

@@ -28,7 +28,7 @@ const mainNav = [
   { label: "EcoGreen", to: "/" },
   { label: "Xe điện", to: "/xe-dien" },
   { label: "Pin điện", to: "/pin-dien" },
-  { label: "EcoBlog", to: "/blog" },
+  // { label: "EcoBlog", to: "/blog" },
 ];
 
 export default function Navbar() {

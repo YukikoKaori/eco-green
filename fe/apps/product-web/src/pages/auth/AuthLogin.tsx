@@ -8,7 +8,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import api from "@/lib/axios";
 import ReCAPTCHA from "react-google-recaptcha";
 
-const API_URL = import.meta.env.VITE_API_URL as string; 
+const API_URL = import.meta.env.VITE_API_URL as string;
+function isValidVietnamPhone(phone: string) {
+  return /^0\d{9}$/.test(phone);
+}
 
 export default function AuthLogin() {
   const [showPw, setShowPw] = useState(false);
@@ -17,6 +20,7 @@ export default function AuthLogin() {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY as string | undefined;
@@ -32,21 +36,32 @@ export default function AuthLogin() {
     const p = phone.trim();
     const pw = password;
 
-    if (!/^\d{9,11}$/.test(p)) {
-      setError("Số điện thoại không hợp lệ (9–11 chữ số).");
+    setError(null);
+    setPhoneError(null);
+    if (!isValidVietnamPhone(p)) {
+      if (!p) {
+        setPhoneError("Vui lòng nhập số điện thoại.");
+      } else if (p[0] !== "0") {
+        setPhoneError("Số điện thoại phải bắt đầu bằng số 0.");
+      } else if (p.length !== 10) {
+        setPhoneError("Số điện thoại gồm đúng 10 chữ số.");
+      } else {
+        setPhoneError("Số điện thoại không hợp lệ.");
+      }
+      setError("Thông tin đăng nhập chưa hợp lệ, vui lòng kiểm tra lại.");
       return;
     }
     if (!pw) {
       setError("Vui lòng nhập mật khẩu.");
       return;
     }
+
     if (siteKey && !captchaToken) {
       setError("Vui lòng xác nhận reCAPTCHA trước khi đăng nhập.");
       return;
     }
 
     setLoading(true);
-    setError(null);
 
     try {
       const res = await loginApi({
@@ -89,7 +104,17 @@ export default function AuthLogin() {
 
       nav("/");
     } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || "Đăng nhập thất bại";
+      const status = err?.response?.status as number | undefined;
+      const apiMsg = err?.response?.data?.message as string | undefined;
+
+      let msg = "Đăng nhập thất bại, vui lòng thử lại.";
+
+      if (status === 400 || status === 401) {
+        msg = "Số điện thoại hoặc mật khẩu không đúng.";
+      } else if (apiMsg) {
+        msg = apiMsg;
+      }
+
       setError(msg);
       recaptchaRef.current?.reset();
       setCaptchaToken(null);
@@ -100,9 +125,12 @@ export default function AuthLogin() {
 
   function onGooglePopup() {
     const redirect = `${window.location.origin}/oauth2/popup-bridge`;
-    const authUrl = `${API_URL}/oauth2/authorization/google?redirect_uri=${encodeURIComponent(redirect)}`;
+    const authUrl = `${API_URL}/oauth2/authorization/google?redirect_uri=${encodeURIComponent(
+      redirect
+    )}`;
 
-    const w = 520, h = 640;
+    const w = 520,
+      h = 640;
     const left = window.screenX + (window.outerWidth - w) / 2;
     const top = window.screenY + (window.outerHeight - h) / 2;
     const popup = window.open(
@@ -112,17 +140,21 @@ export default function AuthLogin() {
     );
 
     function onMsg(ev: MessageEvent) {
-      if (ev.origin !== window.location.origin) return; 
+      if (ev.origin !== window.location.origin) return;
       const { token, error } = ev.data || {};
       window.removeEventListener("message", onMsg);
-      try { popup?.close(); } catch {}
+      try {
+        popup?.close();
+      } catch {}
 
       if (error || !token) {
         setError(error || "Không nhận được token từ Google");
         return;
       }
 
-      const bare = String(token).startsWith("Bearer ") ? String(token).slice(7) : String(token);
+      const bare = String(token).startsWith("Bearer ")
+        ? String(token).slice(7)
+        : String(token);
       localStorage.setItem("access_token", bare);
       api.defaults.headers.common.Authorization = `Bearer ${bare}`;
 
@@ -148,7 +180,9 @@ export default function AuthLogin() {
           );
           nav("/", { replace: true });
         })
-        .catch(() => setError("Không lấy được thông tin tài khoản sau khi đăng nhập Google."));
+        .catch(() =>
+          setError("Không lấy được thông tin tài khoản sau khi đăng nhập Google.")
+        );
     }
 
     window.addEventListener("message", onMsg);
@@ -164,7 +198,7 @@ export default function AuthLogin() {
       }}
     >
       <div className="relative w-full max-w-md rounded-xl border border-gray-200 !bg-white/95 shadow-lg p-8 py-2">
-        <div className="text-center text-3xl font-bold text-[#0f766e] mb-6">Đăng nhập</div>
+        <div className="text-center text-3xl font-bold text-[#0f766e] my-4">Đăng nhập</div>
 
         {error && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -183,20 +217,40 @@ export default function AuthLogin() {
                 name="phone"
                 type="tel"
                 inputMode="tel"
-                pattern="[0-9]{9,11}"
+                pattern="0[0-9]{9}"
+                maxLength={10}
                 autoComplete="tel"
-                placeholder="Vui lòng nhập số điện thoại"
+                placeholder="VD: 0981234567"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "");
+                  setPhone(value);
+
+                  if (!value) {
+                    setPhoneError(null);
+                    return;
+                  }
+
+                  if (value[0] !== "0") {
+                    setPhoneError("Số điện thoại phải bắt đầu bằng số 0.");
+                  } else if (value.length !== 10) {
+                    setPhoneError("Số điện thoại gồm đúng 10 chữ số.");
+                  } else {
+                    setPhoneError(null);
+                  }
+                }}
                 className="h-10 border-0 shadow-none focus-visible:ring-0"
               />
             </div>
+            {phoneError && (
+              <p className="mt-1 text-xs text-red-600">{phoneError}</p>
+            )}
           </label>
 
           {/* Password */}
           <label className="block">
             <span className="text-sm font-bold text-[#0f766e]">Mật khẩu</span>
-            <div className="mt-2 flex itemsCenter gap-2 rounded-xl border border-gray-300 bg-white px-3">
+            <div className="mt-2 flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3">
               <Lock className="mt-2 w-4 h-6 text-gray-500" />
               <Input
                 required
@@ -278,7 +332,6 @@ export default function AuthLogin() {
 
         {/* Social Login */}
         <div className="grid gap-2 mb-5">
-          {/* ✅ Google popup */}
           <button
             onClick={onGooglePopup}
             type="button"
@@ -296,10 +349,22 @@ export default function AuthLogin() {
 function GoogleIcon({ className = "" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 533.5 544.3" aria-hidden>
-      <path fill="#4285f4" d="M533.5 278.4c0-18.4-1.7-36.1-4.9-53.3H272v100.9h147.2c-6.4 34.7-26 64.1-55.6 83.8v69.5h89.9c52.5-48.4 80-119.7 80-200.9z" />
-      <path fill="#34a853" d="M272 544.3c72.5 0 133.5-24 178-65.1l-89.9-69.5c-24.9 16.7-56.8 26.6-88.1 26.6-67.7 0-125.2-45.7-145.8-107.1H34.5v67.3C79.2 486.2 169.9 544.3 272 544.3z" />
-      <path fill="#fbbc04" d="M126.2 329.1c-9.6-28.8-9.6-60.2 0-88.9V172.9H34.5c-40.5 80.8-40.5 176.9 0 257.7l91.7-101.5z" />
-      <path fill="#ea4335" d="M272 106.5c39.4-.6 77.3 14.2 106.1 41.2l79.1-79.1C403.2-8.7 324.3-23.7 249.8 4.2 147.9 42 57.2 100.1 34.5 172.9l91.7 67.3C146.8 178.8 204.3 106.5 272 106.5z" />
+      <path
+        fill="#4285f4"
+        d="M533.5 278.4c0-18.4-1.7-36.1-4.9-53.3H272v100.9h147.2c-6.4 34.7-26 64.1-55.6 83.8v69.5h89.9c52.5-48.4 80-119.7 80-200.9z"
+      />
+      <path
+        fill="#34a853"
+        d="M272 544.3c72.5 0 133.5-24 178-65.1l-89.9-69.5c-24.9 16.7-56.8 26.6-88.1 26.6-67.7 0-125.2-45.7-145.8-107.1H34.5v67.3C79.2 486.2 169.9 544.3 272 544.3z"
+      />
+      <path
+        fill="#fbbc04"
+        d="M126.2 329.1c-9.6-28.8-9.6-60.2 0-88.9V172.9H34.5c-40.5 80.8-40.5 176.9 0 257.7l91.7-101.5z"
+      />
+      <path
+        fill="#ea4335"
+        d="M272 106.5c39.4-.6 77.3 14.2 106.1 41.2l79.1-79.1C403.2-8.7 324.3-23.7 249.8 4.2 147.9 42 57.2 100.1 34.5 172.9l91.7 67.3C146.8 178.8 204.3 106.5 272 106.5z"
+      />
     </svg>
   );
 }

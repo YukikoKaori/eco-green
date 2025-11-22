@@ -130,6 +130,7 @@ export const fetchSimilarBatteries = async (id: string) => {
   return normalizeSimilar(data);
 };
 
+/* --------------------- Purchase Request --------------------- */
 
 export type PurchaseRequestPayload = {
   productId: string;
@@ -164,7 +165,14 @@ export type PurchaseRequestDTO = {
   contractUrl?: string | null;
 
   createdAt?: string | null;
-  respondedAt?: string | null; 
+  respondedAt?: string | null;
+
+  // các field mới BE trả về
+  buyerSignedAt?: string | null;
+  sellerSignedAt?: string | null;
+
+  // field dùng để disable nút mua
+  hasPurchaseRequested?: boolean;
 };
 
 export const createPurchaseRequest = async (payload: PurchaseRequestPayload) => {

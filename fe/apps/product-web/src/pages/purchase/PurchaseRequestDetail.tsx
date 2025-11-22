@@ -156,6 +156,8 @@ export default function PurchaseRequestDetail() {
       ? (data as any).contractUrl
       : undefined;
 
+  const isPending = data.status === "PENDING";
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="mb-4">
@@ -228,7 +230,7 @@ export default function PurchaseRequestDetail() {
             </div>
           </div>
 
-          {data.status !== "PENDING" && (
+          {!isPending && (
             <>
               <Separator className="my-3" />
               <div className="text-sm text-amber-700">
@@ -268,26 +270,29 @@ export default function PurchaseRequestDetail() {
 
           <Separator className="my-4" />
 
-          <div className="flex flex-wrap gap-2">
-            <Button
-              className="!bg-[#246f67] text-white hover:bg-emerald-700 gap-1"
-              onClick={() => onRespond(true)}
-              disabled={busy || data.status !== "PENDING"}
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              Đồng ý bán
-            </Button>
+          {/* Chỉ hiển thị nút khi còn PENDING, và chắc chắn disable khi đã đồng ý/từ chối */}
+          {isPending && (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                className="!bg-[#246f67] text-white hover:bg-emerald-700 gap-1"
+                onClick={() => onRespond(true)}
+                disabled={busy || !isPending}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                Đồng ý bán
+              </Button>
 
-            <Button
-              variant="destructive"
-              className="gap-1 !bg-red-500"
-              onClick={() => setRejectOpen(true)}
-              disabled={busy || data.status !== "PENDING"}
-            >
-              <XCircle className="w-4 h-4" />
-              Từ chối
-            </Button>
-          </div>
+              <Button
+                variant="destructive"
+                className="gap-1 !bg-red-500"
+                onClick={() => setRejectOpen(true)}
+                disabled={busy || !isPending}
+              >
+                <XCircle className="w-4 h-4" />
+                Từ chối
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

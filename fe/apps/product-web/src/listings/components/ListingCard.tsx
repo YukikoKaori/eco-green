@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Listing } from "@/listings/types";
-import { Camera, MapPin } from "lucide-react";
+import { Camera, MapPin, Flame } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import LikeButton from "@/listings/components/LikeButton";
@@ -21,10 +21,12 @@ function formatPrice(v: Listing["price"]): string {
   const n = Number(cleaned);
   return Number.isFinite(n) ? n.toLocaleString("vi-VN") + " đ" : "—";
 }
+
 function getThumb(item: Listing): string | undefined {
   const fromMedia = item.media?.cover ?? item.media?.images?.[0] ?? undefined;
   return fromMedia ?? item.thumbnail ?? undefined;
 }
+
 function timeAgo(iso?: string) {
   if (!iso) return "";
   const t = Date.parse(iso);
@@ -76,6 +78,16 @@ export default function ListingCard({ item, onLikeChange }: Props) {
     <Card className="h-full overflow-hidden shadow-sm transition hover:shadow-md">
       {/* MEDIA */}
       <div className="relative aspect-[4/3] w-full bg-muted overflow-hidden">
+        {/* HOT BADGE */}
+        {item.isHot && (
+          <div className="absolute left-2 top-2 z-20">
+            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-orange-500 to-red-500 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm">
+              <Flame className="h-3 w-3" />
+              Hot
+            </span>
+          </div>
+        )}
+
         {thumb ? (
           <img
             src={thumb}
@@ -92,18 +104,23 @@ export default function ListingCard({ item, onLikeChange }: Props) {
           </div>
         )}
 
+        {/* gradient dưới đáy ảnh */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/10 to-transparent" />
 
+        {/* Nút like */}
         <LikeButton
           liked={liked}
           onToggle={handleToggleLike}
-          className="absolute right-2 top-2 p-0"
+          className="absolute right-2 top-2 z-20 p-0"
           size={20}
         />
 
+        {/* Thông tin nhỏ dưới góc ảnh */}
         <div className="absolute left-2 bottom-2 flex items-center gap-2 text-[11px] text-white">
           {createdLabel && (
-            <span className="rounded-md bg-black/50 px-2 py-0.5">{createdLabel}</span>
+            <span className="rounded-md bg-black/50 px-2 py-0.5">
+              {createdLabel}
+            </span>
           )}
           {mediaCount > 0 && (
             <span className="flex items-center gap-1 rounded-md bg-black/50 px-2 py-0.5">
@@ -114,14 +131,15 @@ export default function ListingCard({ item, onLikeChange }: Props) {
         </div>
       </div>
 
-
       {/* CONTENT */}
       <CardContent className="flex h-full flex-col p-3">
         <h3 className="min-h-[40px] line-clamp-2 text-[15px] font-medium leading-snug">
           {item.title}
         </h3>
 
-        <div className="mt-1 text-lg font-semibold text-rose-600">{priceLabel}</div>
+        <div className="mt-1 text-lg font-semibold text-rose-600">
+          {priceLabel}
+        </div>
 
         <div className="mt-auto flex items-center justify-between pt-2 text-sm text-muted-foreground">
           <div className="flex items-center gap-1">

@@ -1,3 +1,4 @@
+// src/pages/posts/PostCard.tsx
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import {
   updateProductStatus,
   type BEStatus,
   retryPayment,
+  renewProduct,
 } from "@/api/manageStatus";
 
 export type ListingStatus =
@@ -37,6 +39,9 @@ export type ListingItem = {
   cover: string;
   views?: number;
   rejectReason?: string;
+
+  // loại sản phẩm: "VEHICLE" | "BATTERY" | ...
+  productType?: string;
 };
 
 type Props = {
@@ -67,12 +72,24 @@ const FE2BE: Record<ListingStatus, BEStatus> = {
   sold: "SOLD",
 };
 
+// package mặc định dùng để gia hạn (tạm thời hard-code, cần thì đổi)
+const DEFAULT_STANDARD_PACKAGE_ID = "99948170-ae4c-11f0-82a9-a2aad89b694c";
+
 export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
   const nav = useNavigate();
 
   const viewPost = () =>
     window.open(`/product/${it.id}`, "_blank", "noopener,noreferrer");
-  const editPost = () => nav(`/post/new?edit=${encodeURIComponent(it.id)}`);
+
+  const editPost = () => {
+    const search = new URLSearchParams();
+    search.set("edit", it.id);
+    if (it.productType) {
+      // truyền loại sản phẩm để form biết là xe hay pin
+      search.set("type", it.productType);
+    }
+    nav(`/post/new?${search.toString()}`);
+  };
 
   const handleRetryPayment = async () => {
     try {
@@ -81,7 +98,7 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
         toast.error("Không lấy được link thanh toán.");
         return;
       }
-      window.location.href = res.paymentUrl; 
+      window.location.href = res.paymentUrl;
     } catch (e: any) {
       const msg =
         e?.response?.data?.message ||
@@ -105,7 +122,7 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
         return;
       }
 
-      setStatus(it.id, next); 
+      setStatus(it.id, next);
       if (next === "active") toast.success(message || "Đã bật tin thành công.");
       else if (next === "hidden") toast.success(message || "Đã ẩn tin.");
       else if (next === "pending")
@@ -116,6 +133,62 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
         e?.response?.data?.message ||
         e?.message ||
         "Cập nhật trạng thái thất bại. Vui lòng thử lại.";
+      toast.error(msg);
+    }
+  };
+
+  // Gia hạn / đăng lại tin hết hạn, đã bán
+  const handleRenew = async () => {
+    try {
+      const res = await renewProduct(it.id, {
+        standardPackageId: DEFAULT_STANDARD_PACKAGE_ID,
+        addonPackageId: null,
+        optionId: null,
+        paymentMethod: "VNPAY",
+      });
+
+      if (res.paymentUrl) {
+        // chuyển sang trang thanh toán
+        window.location.href = res.paymentUrl;
+        return;
+      }
+
+      // nếu BE không trả paymentUrl (miễn phí chẳng hạn) thì cập nhật trạng thái local
+      const beStatus = String(res.status).toUpperCase();
+      let nextStatus: ListingStatus = it.status;
+      switch (beStatus) {
+        case "ACTIVE":
+          nextStatus = "active";
+          break;
+        case "PENDING_REVIEW":
+          nextStatus = "pending";
+          break;
+        case "PENDING_PAYMENT":
+          nextStatus = "unpaid";
+          break;
+        case "DRAFT":
+          nextStatus = "draft";
+          break;
+        case "REJECTED":
+          nextStatus = "rejected";
+          break;
+        case "EXPIRED":
+          nextStatus = "expired";
+          break;
+        case "HIDDEN":
+          nextStatus = "hidden";
+          break;
+        case "SOLD":
+          nextStatus = "sold";
+          break;
+      }
+      setStatus(it.id, nextStatus);
+      toast.success("Gia hạn tin thành công.");
+    } catch (e: any) {
+      const msg =
+        e?.response?.data?.message ||
+        e?.message ||
+        "Gia hạn tin thất bại. Vui lòng thử lại.";
       toast.error(msg);
     }
   };
@@ -151,15 +224,7 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
               variant="outline"
               size="sm"
               className="text-[#246f67] !border-[#246f67] bg-white"
-              onClick={viewPost}
-            >
-              <Eye className="w-4 h-4 mr-1 bg-white" /> Xem tin
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-[#246f67] !border-[#246f67] bg-white"
-              onClick={() => update("pending")}
+              onClick={handleRenew}
             >
               <RotateCcw className="w-4 h-4 mr-1 bg-white" /> Đăng lại
             </Button>
@@ -172,7 +237,7 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
             <Button
               variant="outline"
               size="sm"
-              className="text-[#246f67] !border-[#246f67] bg-white"
+              className="!text-[#246f67] !border-[#246f67] bg-white"
               onClick={() => onShowReason(it.rejectReason)}
             >
               <Info className="w-4 h-4 mr-1 bg-white" /> Xem lý do
@@ -232,7 +297,7 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
             variant="outline"
             size="sm"
             className="text-[#246f67] !border-[#246f67] bg-white"
-            onClick={() => update("pending")}
+            onClick={handleRenew}
           >
             <RotateCcw className="w-4 h-4 mr-1" /> Đăng lại
           </Button>
@@ -247,13 +312,19 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
     <Card className="overflow-hidden">
       <div className="flex">
         <div className="w-40 h-28 shrink-0">
-          <img src={it.cover} alt="cover" className="w-full h-full object-cover" />
+          <img
+            src={it.cover}
+            alt="cover"
+            className="w-full h-full object-cover"
+          />
         </div>
 
         <div className="flex-1 p-3">
           <div className="flex items-start justify-between gap-3">
             <div className="pr-2">
-              <CardTitle className="text-sm line-clamp-2">{it.title}</CardTitle>
+              <CardTitle className="text-sm line-clamp-2">
+                {it.title}
+              </CardTitle>
               <div className="mt-1 text-[#246f67] font-semibold">
                 {currency(it.price)}
               </div>
@@ -265,7 +336,10 @@ export default function PostCard({ item: it, setStatus, onShowReason }: Props) {
             <div className="text-right text-xs text-muted-foreground">
               {typeof it.views === "number" && (
                 <div>
-                  Xem: <span className="font-semibold text-gray-800">{it.views}</span>
+                  Xem:{" "}
+                  <span className="font-semibold text-gray-800">
+                    {it.views}
+                  </span>
                 </div>
               )}
             </div>

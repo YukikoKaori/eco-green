@@ -29,6 +29,7 @@ import BrandProductsPage from "@/pages/listingEV/BrandProductsPage";
 import SellerPublic from "@/pages/account/SellerPublic";
 import BoughtProductsPage from "@/pages/bought/BoughtProductsPage";
 import NotificationCenterPage from "@/pages/notification/NotificationsPage";
+import AuthForgotPassword from "@/pages/auth/AuthForgotPassword";
 
 export default function App() {
   return (
@@ -57,6 +58,7 @@ export default function App() {
         <Route path="/profile/:username" element={<ProfilePublicPage />} />
         <Route path="/brands/:brandId" element={<BrandProductsPage />} />
         <Route path="/seller/:userId" element={<SellerPublic />} />
+        <Route path="/forgot" element={<AuthForgotPassword />} />
         <Route
           path="/notifications"
           element={<NotificationCenterPage />}

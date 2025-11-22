@@ -28,7 +28,7 @@ export default function AccountLayout() {
           <nav className="space-y-1">
             {item("profile", "Thông tin cá nhân")}
             {item("account", "Tài khoản")}
-            {item("social", "Liên kết mạng xã hội")}
+            {/* {item("social", "Liên kết mạng xã hội")} */}
           </nav>
         </aside>
 
