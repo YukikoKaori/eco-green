@@ -1,7 +1,4 @@
-// src/api/manageStatus.ts
 import api from "@/lib/axios";
-
-/* ===== Trạng thái BE ===== */
 
 export type BEStatus =
   | "ACTIVE"
@@ -13,7 +10,6 @@ export type BEStatus =
   | "HIDDEN"
   | "SOLD";
 
-/* ===== Toggle status ===== */
 
 export type ToggleStatusResponse = {
   productId: string;
@@ -43,8 +39,6 @@ export const activateProduct = (productId: string) =>
 export const hideProduct = (productId: string) =>
   updateProductStatus(productId, "HIDDEN");
 
-/* ===== Retry payment ===== */
-
 export type RetryPaymentResponse = {
   productId: string;
   status: "PENDING_PAYMENT" | string;
@@ -59,8 +53,6 @@ export async function retryPayment(productId: string) {
   );
   return data;
 }
-
-/* ===== Renew product (gia hạn bài đăng) ===== */
 
 export type RenewPayload = {
   standardPackageId: string;
@@ -79,10 +71,7 @@ export type RenewResponse = {
   startRenewalAt?: string | null;
 };
 
-/**
- * Gọi API gia hạn bài đăng
- * PUT /member/products/renewal/{productId}
- */
+
 export async function renewProduct(
   productId: string,
   body: RenewPayload
@@ -94,20 +83,18 @@ export async function renewProduct(
   return data;
 }
 
-/* ===== Draft product types (theo response BE) ===== */
-
 export type DraftImage = {
   id: string;
   url: string;
   position: number;
   width?: number;
   height?: number;
-  primary?: boolean; // BE đang trả primary: true/false
+  primary?: boolean; 
 };
 
 export interface VehicleDraft {
   productId: string;
-  status: BEStatus; // "DRAFT" | "PENDING_REVIEW" | ...
+  status: BEStatus; 
   title: string;
   description?: string;
   price: number;
@@ -125,8 +112,6 @@ export interface VehicleDraft {
   brandId: string;
   brandName?: string;
   categoryName?: string;
-
-  // thêm các field đang dùng ở PostNew
   year?: number | string | null;
   modelId?: string | null;
   versionId?: string | null;
@@ -157,8 +142,6 @@ export interface BatteryDraft {
   addressDetail?: string;
 
   createdAt: string;
-
-  // thêm để dùng ở PostNew
   batteryTypeId?: string | null;
   batteryTypeName?: string;
 
@@ -172,12 +155,8 @@ export interface BatteryDraft {
   images?: DraftImage[];
 }
 
-/* ===== Image meta gửi khi update ===== */
-
 export type ImageMeta = { position: number; isPrimary: boolean };
 export type DraftData = Record<string, any>;
-
-/* ===== GET draft chi tiết theo productId ===== */
 
 export async function getVehicleDraft(
   productId: string
@@ -197,11 +176,9 @@ export async function getBatteryDraft(
   return data;
 }
 
-/* ===== UPDATE draft (merge old + data mới, kèm ảnh) ===== */
-
 export async function updateVehicleDraft(params: {
   productId: string;
-  data: DraftData; // partial VehicleDraft
+  data: DraftData; 
   images?: (File | Blob)[];
   imagesMeta?: ImageMeta[];
 }) {

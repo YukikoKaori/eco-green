@@ -1,4 +1,3 @@
-// src/pages/posts/PostCard.tsx
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
