@@ -242,10 +242,10 @@ export default function Sidebar() {
                 className={({ isActive }) =>
                   [linkBase, isActive ? linkActive : linkIdle].join(" ")
                 }
-                aria-label="Hoa hồng đăng tin"
+                aria-label="Doanh thu đăng bài"
               >
                 <DollarSign className="h-4 w-4" />
-                <span className="truncate">Hoa hồng đăng tin</span>
+                <span className="truncate">Doanh thu đăng bài</span>
               </NavLink>
             </div>
 

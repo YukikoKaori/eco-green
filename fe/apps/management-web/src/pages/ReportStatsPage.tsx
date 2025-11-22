@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   fetchReportCountsPaged,
   fetchReportsShowPaged,
@@ -9,8 +8,10 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, List, PieChart, Clock } from "lucide-react";
+import { BarChart3, List, PieChart } from "lucide-react";
 import ReportDetailDialog from "@/components/ReportDetailDialog";
+const CLIENT_SITE_URL =
+  import.meta.env.VITE_PUBLIC_SITE_URL || "https://eco-green.store";
 
 function Progress({ value }: { value: number }) {
   const v = Math.max(0, Math.min(100, value));
@@ -22,8 +23,6 @@ function Progress({ value }: { value: number }) {
 }
 
 export default function ReportStatsPage() {
-  const nav = useNavigate();
-
   // ── States dùng cho tab “Thống kê”
   const [items, setItems] = useState<ReportCountRow[]>([]);
   const [page, setPage] = useState(0);
@@ -66,8 +65,15 @@ export default function ReportStatsPage() {
     (async () => {
       try {
         setLoadingPending(true);
-        const res = await fetchReportsShowPaged(0, 8, { status: "PENDING" }, ac.signal);
-        setPendingReports((res.content ?? []).filter(r => r.status === "PENDING"));
+        const res = await fetchReportsShowPaged(
+          0,
+          8,
+          { status: "PENDING" },
+          ac.signal
+        );
+        setPendingReports(
+          (res.content ?? []).filter((r) => r.status === "PENDING")
+        );
       } finally {
         setLoadingPending(false);
       }
@@ -81,7 +87,12 @@ export default function ReportStatsPage() {
     (async () => {
       try {
         setTableLoading(true);
-        const res = await fetchReportsShowPaged(tablePage, 12, { keyword: q.trim() || undefined }, ac.signal);
+        const res = await fetchReportsShowPaged(
+          tablePage,
+          12,
+          { keyword: q.trim() || undefined },
+          ac.signal
+        );
         setTableItems(res.content ?? []);
         setTablePages(res.totalPages ?? 1);
       } finally {
@@ -95,7 +106,7 @@ export default function ReportStatsPage() {
     if (!q.trim()) return items;
     const s = q.toLowerCase();
     return items.filter(
-      i =>
+      (i) =>
         i.productId.toLowerCase().includes(s) ||
         (i.productName ?? "").toLowerCase().includes(s)
     );
@@ -103,14 +114,25 @@ export default function ReportStatsPage() {
 
   const stats = useMemo(() => {
     const totalProducts = filtered.length;
-    const totalReports = filtered.reduce((sum, x) => sum + (x.reportCount ?? 0), 0);
-    const maxReports = filtered.reduce((m, x) => Math.max(m, x.reportCount ?? 0), 0);
-    const top = [...filtered].sort((a, b) => (b.reportCount ?? 0) - (a.reportCount ?? 0)).slice(0, 8);
+    const totalReports = filtered.reduce(
+      (sum, x) => sum + (x.reportCount ?? 0),
+      0
+    );
+    const maxReports = filtered.reduce(
+      (m, x) => Math.max(m, x.reportCount ?? 0),
+      0
+    );
+    const top = [...filtered]
+      .sort((a, b) => (b.reportCount ?? 0) - (a.reportCount ?? 0))
+      .slice(0, 8);
     return { totalProducts, totalReports, maxReports, top };
   }, [filtered]);
 
+  // 👉 Mở trang product trên site client trong tab mới
   const goToProductDetail = (id: string) => {
-    nav(`/posts/${id}`);
+    const base = CLIENT_SITE_URL.replace(/\/+$/, "");
+    const url = `${base}/product/${id}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -118,7 +140,9 @@ export default function ReportStatsPage() {
       {/* Header */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <h1 className="!text-2xl font-semibold text-[#0f766e]">Các khiếu nại</h1>
+          <h1 className="!text-2xl font-semibold text-[#0f766e]">
+            Các khiếu nại
+          </h1>
         </div>
 
         <div className="flex items-center gap-2">
@@ -150,14 +174,22 @@ export default function ReportStatsPage() {
           <div className="grid sm:grid-cols-2 gap-3 mb-4">
             <Card>
               <CardContent className="p-4">
-                <div className="!text-xl font-semibold text-[#0f766e]">Tổng số tin có khiếu nại</div>
-                <div className="text-2xl font-bold mt-1">{stats.totalProducts}</div>
+                <div className="!text-xl font-semibold text-[#0f766e]">
+                  Tổng số tin có khiếu nại
+                </div>
+                <div className="text-2xl font-bold mt-1">
+                  {stats.totalProducts}
+                </div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="!text-xl font-semibold text-[#0f766e]">Tổng số khiếu nại</div>
-                <div className="text-2xl font-bold mt-1 text-rose-600">{stats.totalReports}</div>
+                <div className="!text-xl font-semibold text-[#0f766e]">
+                  Tổng số khiếu nại
+                </div>
+                <div className="text-2xl font-bold mt-1 text-rose-600">
+                  {stats.totalReports}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -167,9 +199,13 @@ export default function ReportStatsPage() {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <PieChart className="h-4 w-4 text-slate-600" />
-                  <div className="font-semibold">Top tin có nhiều khiếu nại</div>
+                  <div className="font-semibold">
+                    Top tin có nhiều khiếu nại
+                  </div>
                 </div>
-                <div className="text-xs text-slate-500">Dựa trên {filtered.length} tin</div>
+                <div className="text-xs text-slate-500">
+                  Dựa trên {filtered.length} tin
+                </div>
               </div>
 
               {loading ? (
@@ -179,13 +215,22 @@ export default function ReportStatsPage() {
               ) : (
                 <div className="space-y-3">
                   {stats.top.map((r) => {
-                    const pct = stats.maxReports ? Math.round((r.reportCount / stats.maxReports) * 100) : 0;
+                    const pct = stats.maxReports
+                      ? Math.round((r.reportCount / stats.maxReports) * 100)
+                      : 0;
                     return (
-                      <div key={r.productId} className="border rounded-md p-3">
+                      <div
+                        key={r.productId}
+                        className="border rounded-md p-3"
+                      >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <div className="font-medium truncate">{r.productName || "(Không có tiêu đề)"}</div>
-                            <div className="text-[11px] text-slate-500 font-mono truncate">{r.productId}</div>
+                            <div className="font-medium truncate">
+                              {r.productName || "(Không có tiêu đề)"}
+                            </div>
+                            <div className="text-[11px] text-slate-500 font-mono truncate">
+                              {r.productId}
+                            </div>
                           </div>
                           <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100">
                             {r.reportCount}
@@ -193,7 +238,9 @@ export default function ReportStatsPage() {
                         </div>
                         <div className="mt-2">
                           <Progress value={pct} />
-                          <div className="mt-1 text-[11px] text-slate-500">{pct}% so với mức cao nhất</div>
+                          <div className="mt-1 text-[11px] text-slate-500">
+                            {pct}% so với mức cao nhất
+                          </div>
                         </div>
                       </div>
                     );
@@ -223,19 +270,33 @@ export default function ReportStatsPage() {
                 </thead>
                 <tbody>
                   {tableLoading ? (
-                    <tr><td className="px-4 py-4 text-slate-500" colSpan={6}>Đang tải…</td></tr>
+                    <tr>
+                      <td className="px-4 py-4 text-slate-500" colSpan={6}>
+                        Đang tải…
+                      </td>
+                    </tr>
                   ) : tableItems.length === 0 ? (
-                    <tr><td className="px-4 py-4 text-slate-500" colSpan={6}>Không có dữ liệu.</td></tr>
+                    <tr>
+                      <td className="px-4 py-4 text-slate-500" colSpan={6}>
+                        Không có dữ liệu.
+                      </td>
+                    </tr>
                   ) : (
                     tableItems.map((r) => (
                       <tr key={r.id} className="border-t align-top">
                         <td className="px-4 py-3">
-                          <div className="font-medium">{r.productName || "(Không có tiêu đề)"}</div>
-                          <div className="text-[11px] text-slate-500 font-mono">{r.productId}</div>
+                          <div className="font-medium">
+                            {r.productName || "(Không có tiêu đề)"}
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-mono">
+                            {r.productId}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <div>{r.phone || "-"}</div>
-                          <div className="text-[11px] text-slate-500">{r.email || ""}</div>
+                          <div className="text-[11px] text-slate-500">
+                            {r.email || ""}
+                          </div>
                         </td>
                         <td className="px-4 py-3">{r.reportReason}</td>
                         <td className="px-4 py-3">
@@ -251,11 +312,17 @@ export default function ReportStatsPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="text-[12px] text-slate-600">
-                            {r.createdAt ? new Date(r.createdAt).toLocaleString("vi-VN") : "-"}
+                            {r.createdAt
+                              ? new Date(r.createdAt).toLocaleString("vi-VN")
+                              : "-"}
                           </div>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <Button size="sm" variant="outline" onClick={() => goToProductDetail(r.productId)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => goToProductDetail(r.productId)}
+                          >
                             Xem chi tiết tin
                           </Button>
                         </td>
@@ -269,15 +336,22 @@ export default function ReportStatsPage() {
             {/* Pagination cho bảng */}
             {tablePages > 1 && (
               <div className="flex items-center justify-center gap-2 p-3 border-t">
-                <Button size="sm" variant="outline" disabled={tablePage <= 0} onClick={() => setTablePage(p => p - 1)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={tablePage <= 0}
+                  onClick={() => setTablePage((p) => p - 1)}
+                >
                   Trước
                 </Button>
-                <div className="text-sm">Trang {tablePage + 1} / {tablePages}</div>
+                <div className="text-sm">
+                  Trang {tablePage + 1} / {tablePages}
+                </div>
                 <Button
                   size="sm"
                   variant="outline"
                   disabled={tablePage + 1 >= tablePages}
-                  onClick={() => setTablePage(p => p + 1)}
+                  onClick={() => setTablePage((p) => p + 1)}
                 >
                   Sau
                 </Button>
@@ -287,7 +361,6 @@ export default function ReportStatsPage() {
         </Card>
       )}
 
-      {/* (Tuỳ chọn) Modal cũ: xem danh sách report theo productId */}
       <ReportDetailDialog
         productId={detailId}
         open={!!detailId}
